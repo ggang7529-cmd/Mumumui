@@ -132,12 +132,33 @@
 
   /* library grid */
 
+  .library-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.1rem;
+  }
+
   .library-meta {
     color: var(--ink-faint);
     font-size: 0.85rem;
     letter-spacing: 0.04em;
-    margin-bottom: 1.1rem;
+    margin: 0;
     font-variant-numeric: tabular-nums;
+  }
+
+  .search-box input[type="search"] {
+    width: 220px;
+    max-width: 100%;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
   }
 
   .shelf {
@@ -497,9 +518,35 @@
   }
 
   #commentList .c-text {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  #commentList .c-like {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  #commentList .c-like:hover { border-color: var(--accent); color: var(--accent); }
+
+  #commentList .c-like.liked {
+    color: var(--accent);
+    border-color: var(--accent);
   }
 
   #commentList .c-date {
@@ -582,7 +629,12 @@
 
   <main>
     <section id="libraryView">
-      <p class="library-meta" id="countLabel"></p>
+      <div class="library-toolbar">
+        <p class="library-meta" id="countLabel"></p>
+        <div class="search-box">
+          <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
+        </div>
+      </div>
       <div class="shelf" id="shelfGrid"></div>
     </section>
 
@@ -641,7 +693,7 @@
         <button class="btn-ghost-danger" id="deleteBtn" type="button">이 리뷰 삭제</button>
 
         <section class="comments">
-          <h3>한 줄 댓글 <span class="count" id="commentCount"></span></h3>
+          <h3>한 줄 댓글 <span class="count" id="commentCount"></span> <span class="count">· 좋아요 많은 순</span></h3>
           <ul id="commentList"></ul>
           <form id="commentForm">
             <input type="text" id="commentInput" maxlength="60" required placeholder="한 줄로 남겨보세요" autocomplete="off">
@@ -687,15 +739,15 @@
         id: uid(), title: "채식주의자", author: "한강", rating: 5, date: "2026.03.02", cover: null,
         text: "세 사람의 시선이 같은 사건을 전혀 다르게 비춘다",
         comments: [
-          { id: uid(), text: "다 읽고 나서 며칠은 아무 책도 못 골랐다", date: "2026.03.03" },
-          { id: uid(), text: "2부 시점이 가장 오래 남는다", date: "2026.03.05" }
+          { id: uid(), text: "다 읽고 나서 며칠은 아무 책도 못 골랐다", date: "2026.03.03", likes: 4, likedByMe: false },
+          { id: uid(), text: "2부 시점이 가장 오래 남는다", date: "2026.03.05", likes: 1, likedByMe: false }
         ]
       },
       {
         id: uid(), title: "달러구트 꿈 백화점", author: "이미예", rating: 4, date: "2026.02.14", cover: null,
         text: "잠들기 전 읽기 좋은 다정한 판타지",
         comments: [
-          { id: uid(), text: "페니 캐릭터가 제일 좋았어요", date: "2026.02.16" }
+          { id: uid(), text: "페니 캐릭터가 제일 좋았어요", date: "2026.02.16", likes: 2, likedByMe: false }
         ]
       },
       {
@@ -707,10 +759,21 @@
         id: uid(), title: "아몬드", author: "손원평", rating: 5, date: "2025.12.09", cover: null,
         text: "감정을 모르는 아이가 되묻는, 감정이란 무엇인가",
         comments: [
-          { id: uid(), text: "곤이 이야기에서 울 뻔했다", date: "2025.12.10" }
+          { id: uid(), text: "곤이 이야기에서 울 뻔했다", date: "2025.12.10", likes: 3, likedByMe: false }
         ]
       }
     ];
+  }
+
+  function normalize(reviews) {
+    reviews.forEach(function (r) {
+      if (r.cover === undefined) r.cover = null;
+      r.comments.forEach(function (c) {
+        if (typeof c.likes !== "number") c.likes = 0;
+        if (typeof c.likedByMe !== "boolean") c.likedByMe = false;
+      });
+    });
+    return reviews;
   }
 
   function load() {
@@ -721,7 +784,7 @@
         save(seeded);
         return seeded;
       }
-      return JSON.parse(raw);
+      return normalize(JSON.parse(raw));
     } catch (e) {
       return seedData();
     }
@@ -736,9 +799,11 @@
   var currentId = null;
   var formRating = 0;
   var formCover = null;
+  var searchQuery = "";
 
   var $shelf = document.getElementById("shelfGrid");
   var $countLabel = document.getElementById("countLabel");
+  var $searchInput = document.getElementById("searchInput");
   var $libraryView = document.getElementById("libraryView");
   var $formView = document.getElementById("formView");
   var $detailView = document.getElementById("detailView");
@@ -829,7 +894,17 @@
   }
 
   function renderLibrary() {
-    $countLabel.textContent = reviews.length ? "총 " + reviews.length + "권의 리뷰" : "";
+    var query = searchQuery.trim().toLowerCase();
+    var visible = query
+      ? reviews.filter(function (r) { return r.title.toLowerCase().indexOf(query) !== -1; })
+      : reviews;
+
+    if (query) {
+      $countLabel.textContent = visible.length + "권 검색됨 (전체 " + reviews.length + "권)";
+    } else {
+      $countLabel.textContent = reviews.length ? "총 " + reviews.length + "권의 리뷰" : "";
+    }
+
     $shelf.innerHTML = "";
 
     if (reviews.length === 0) {
@@ -837,9 +912,14 @@
       note.className = "empty-note";
       note.textContent = "아직 등록된 책이 없어요. 첫 리뷰를 남겨보세요.";
       $shelf.appendChild(note);
+    } else if (query && visible.length === 0) {
+      var noMatch = document.createElement("p");
+      noMatch.className = "empty-note";
+      noMatch.textContent = "\"" + searchQuery.trim() + "\"에 해당하는 책이 없어요.";
+      $shelf.appendChild(noMatch);
     }
 
-    reviews.forEach(function (r) {
+    visible.forEach(function (r) {
       var card = document.createElement("button");
       card.type = "button";
       card.className = "book-card";
@@ -949,12 +1029,27 @@
       li.textContent = "아직 댓글이 없어요. 첫 한 줄을 남겨보세요.";
       $list.appendChild(li);
     } else {
-      r.comments.forEach(function (c) {
+      var sortedComments = r.comments.slice().sort(function (a, b) { return b.likes - a.likes; });
+
+      sortedComments.forEach(function (c) {
         var item = document.createElement("li");
         var textSpan = document.createElement("span");
         textSpan.className = "c-text";
         textSpan.textContent = c.text;
         textSpan.title = c.text;
+
+        var likeBtn = document.createElement("button");
+        likeBtn.type = "button";
+        likeBtn.className = "c-like" + (c.likedByMe ? " liked" : "");
+        likeBtn.textContent = "♥ " + c.likes;
+        likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
+        likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
+        likeBtn.addEventListener("click", function () {
+          c.likedByMe = !c.likedByMe;
+          c.likes += c.likedByMe ? 1 : -1;
+          save(reviews);
+          renderDetail();
+        });
 
         var dateSpan = document.createElement("span");
         dateSpan.className = "c-date";
@@ -972,12 +1067,18 @@
         });
 
         item.appendChild(textSpan);
+        item.appendChild(likeBtn);
         item.appendChild(dateSpan);
         item.appendChild(delBtn);
         $list.appendChild(item);
       });
     }
   }
+
+  $searchInput.addEventListener("input", function (e) {
+    searchQuery = e.target.value;
+    renderLibrary();
+  });
 
   document.getElementById("newReviewBtn").addEventListener("click", openForm);
   document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
@@ -1021,7 +1122,7 @@
     if (!text) return;
 
     var r = findReview(currentId);
-    r.comments.push({ id: uid(), text: text.slice(0, 60), date: todayStr() });
+    r.comments.push({ id: uid(), text: text.slice(0, 60), date: todayStr(), likes: 0, likedByMe: false });
     save(reviews);
     input.value = "";
     renderDetail();
