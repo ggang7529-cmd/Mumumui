@@ -234,28 +234,6 @@
     margin-top: 0.25rem;
   }
 
-  .add-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 2 / 3;
-    border: 1.5px dashed var(--line);
-    border-radius: 4px;
-    background: transparent;
-    color: var(--ink-soft);
-    font-family: inherit;
-    font-size: 0.95rem;
-    cursor: pointer;
-    text-align: center;
-    padding: 0.75rem;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-
-  .add-card:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
   .empty-note {
     color: var(--ink-faint);
     font-size: 0.9rem;
@@ -968,13 +946,6 @@
 
       $shelf.appendChild(card);
     });
-
-    var addCard = document.createElement("button");
-    addCard.type = "button";
-    addCard.className = "add-card";
-    addCard.textContent = "+ 새 리뷰 작성";
-    addCard.addEventListener("click", openForm);
-    $shelf.appendChild(addCard);
   }
 
   function openForm() {
