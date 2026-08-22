@@ -142,21 +142,21 @@
 
   .shelf {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1.1rem;
   }
 
   .book-card {
     position: relative;
-    display: flex;
-    flex-direction: column;
+    display: block;
+    aspect-ratio: 2 / 3;
     text-align: left;
     background: var(--cover, var(--accent));
     color: #F3EEE4;
     border: none;
     border-radius: 4px;
-    padding: 1.1rem 1rem 1rem;
-    min-height: 190px;
+    padding: 0;
+    overflow: hidden;
     cursor: pointer;
     font-family: inherit;
     box-shadow: 0 3px 10px var(--shadow);
@@ -168,50 +168,56 @@
     box-shadow: 0 8px 18px var(--shadow);
   }
 
-  .book-card::before {
-    content: "";
+  .b-cover-img {
     position: absolute;
-    top: 0;
-    right: 14px;
-    width: 8px;
-    height: 34px;
-    background: var(--accent);
-    filter: brightness(0.85);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  .b-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 0.85rem 0.8rem 0.75rem;
+    background: linear-gradient(to top, rgba(10, 8, 6, 0.85) 0%, rgba(10, 8, 6, 0.55) 48%, rgba(10, 8, 6, 0) 100%);
   }
 
   .book-card .b-title {
     font-family: "Gowun Batang", serif;
     font-weight: 700;
-    font-size: 1.08rem;
+    font-size: 1.05rem;
     line-height: 1.35;
     text-wrap: balance;
-    margin: 0.5rem 0 0.35rem;
+    margin: 0 0 0.3rem;
   }
 
   .book-card .b-author {
-    font-size: 0.82rem;
-    opacity: 0.85;
-    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin: 0 0 0.5rem;
   }
 
   .book-card .b-stars {
-    margin-top: auto;
     font-size: 0.85rem;
     letter-spacing: 0.06em;
   }
 
   .book-card .b-comment-count {
-    font-size: 0.75rem;
-    opacity: 0.75;
-    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
   }
 
   .add-card {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 190px;
+    aspect-ratio: 2 / 3;
     border: 1.5px dashed var(--line);
     border-radius: 4px;
     background: transparent;
@@ -219,6 +225,8 @@
     font-family: inherit;
     font-size: 0.95rem;
     cursor: pointer;
+    text-align: center;
+    padding: 0.75rem;
     transition: border-color 0.15s ease, color 0.15s ease;
   }
 
@@ -275,6 +283,51 @@
 
   .field textarea { min-height: 110px; line-height: 1.6; }
 
+  .cover-picker {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .cover-preview {
+    width: 72px;
+    aspect-ratio: 2 / 3;
+    flex: none;
+    border-radius: 4px;
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.4;
+    padding: 0.3rem;
+  }
+
+  .cover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .cover-picker-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cover-picker-controls input[type="file"] {
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    max-width: 230px;
+  }
+
   .star-picker {
     display: flex;
     gap: 0.25rem;
@@ -326,13 +379,39 @@
 
   .back-btn:hover { color: var(--accent); }
 
+  .detail-top {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 1.1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .detail-cover {
+    width: 96px;
+    aspect-ratio: 2 / 3;
+    flex: none;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--cover, var(--accent));
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+
+  .detail-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
   .detail-card header {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    margin-bottom: 1.1rem;
-    padding-bottom: 1.1rem;
-    border-bottom: 1px solid var(--line);
+    flex: 1;
+    min-width: 200px;
   }
 
   .detail-card h2 {
@@ -354,11 +433,21 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .detail-text {
+  .detail-review {
     max-width: 62ch;
-    white-space: pre-wrap;
-    font-size: 1.02rem;
+    font-family: "Gowun Batang", serif;
+    font-size: 1.18rem;
+    line-height: 1.5;
+    margin: 0 0 0.25rem;
   }
+
+  .detail-review::before,
+  .detail-review::after {
+    color: var(--accent);
+  }
+
+  .detail-review::before { content: "\201C"; }
+  .detail-review::after { content: "\201D"; }
 
   .btn-ghost-danger {
     background: none;
@@ -510,12 +599,23 @@
             <input type="text" id="fAuthor" required maxlength="60" placeholder="예: 손원평">
           </div>
           <div class="field">
+            <label for="fCover">책 표지 사진</label>
+            <div class="cover-picker">
+              <div class="cover-preview" id="coverPreview">표지 없음</div>
+              <div class="cover-picker-controls">
+                <input type="file" id="fCover" accept="image/*">
+                <button type="button" class="btn-ghost" id="clearCover" hidden>사진 지우기</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
             <label>별점</label>
             <div class="star-picker" id="fStars" role="radiogroup" aria-label="별점"></div>
           </div>
           <div class="field">
-            <label for="fText">리뷰</label>
-            <textarea id="fText" required maxlength="1200" placeholder="이 책에 대한 생각을 자유롭게 남겨보세요"></textarea>
+            <label for="fText">한 줄 리뷰</label>
+            <input type="text" id="fText" required maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
+            <p class="char-hint">최대 80자, 한 줄로 남겨주세요</p>
           </div>
           <div class="form-actions">
             <button type="button" class="btn-ghost" id="cancelForm">취소</button>
@@ -528,13 +628,16 @@
     <section id="detailView" hidden>
       <button class="back-btn" id="backBtn" type="button">‹ 서재로</button>
       <div class="panel detail-card">
-        <header>
-          <h2 id="detailTitle"></h2>
-          <p class="detail-author" id="detailAuthor"></p>
-          <div class="stars" id="detailStars"></div>
-          <p class="meta-date" id="detailDate"></p>
-        </header>
-        <p class="detail-text" id="detailText"></p>
+        <div class="detail-top">
+          <div class="detail-cover" id="detailCover"></div>
+          <header>
+            <h2 id="detailTitle"></h2>
+            <p class="detail-author" id="detailAuthor"></p>
+            <div class="stars" id="detailStars"></div>
+            <p class="meta-date" id="detailDate"></p>
+          </header>
+        </div>
+        <p class="detail-review" id="detailText"></p>
         <button class="btn-ghost-danger" id="deleteBtn" type="button">이 리뷰 삭제</button>
 
         <section class="comments">
@@ -578,37 +681,31 @@
     return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-
   function seedData() {
     return [
       {
-        id: uid(), title: "채식주의자", author: "한강", rating: 5, date: "2026.03.02",
-        text: "폭력을 거부하려는 한 사람의 선택이 주변 사람들에게 어떻게 뒤틀려 받아들여지는지가 서늘하게 그려진다. 세 사람의 시선을 거치며 같은 사건이 전혀 다른 이야기로 보이는 구성이 인상 깊었다.",
+        id: uid(), title: "채식주의자", author: "한강", rating: 5, date: "2026.03.02", cover: null,
+        text: "세 사람의 시선이 같은 사건을 전혀 다르게 비춘다",
         comments: [
           { id: uid(), text: "다 읽고 나서 며칠은 아무 책도 못 골랐다", date: "2026.03.03" },
           { id: uid(), text: "2부 시점이 가장 오래 남는다", date: "2026.03.05" }
         ]
       },
       {
-        id: uid(), title: "달러구트 꿈 백화점", author: "이미예", rating: 4, date: "2026.02.14",
-        text: "꿈을 파는 백화점이라는 설정 하나로 이렇게 다정한 이야기를 만들 수 있다니. 에피소드마다 톤이 조금씩 달라서 지루할 틈이 없었고, 무엇보다 잠들기 전에 읽기 딱 좋은 책이었다.",
+        id: uid(), title: "달러구트 꿈 백화점", author: "이미예", rating: 4, date: "2026.02.14", cover: null,
+        text: "잠들기 전 읽기 좋은 다정한 판타지",
         comments: [
           { id: uid(), text: "페니 캐릭터가 제일 좋았어요", date: "2026.02.16" }
         ]
       },
       {
-        id: uid(), title: "불편한 편의점", author: "김호연", rating: 4, date: "2026.01.20",
-        text: "편의점이라는 작은 공간에 모이는 사람들의 사연이 하나씩 풀리면서, 결국 다들 각자의 방식으로 서로를 구해주고 있었다는 걸 알게 된다. 편하게 읽히면서도 뭉클한 순간이 많았다.",
+        id: uid(), title: "불편한 편의점", author: "김호연", rating: 4, date: "2026.01.20", cover: null,
+        text: "작은 공간에서 만나는 각자의 방식의 다정함",
         comments: []
       },
       {
-        id: uid(), title: "아몬드", author: "손원평", rating: 5, date: "2025.12.09",
-        text: "감정을 느끼지 못하는 아이의 눈으로 세상을 보여주는 방식이 오히려 감정이 무엇인지를 더 선명하게 묻는다. 곤이와의 관계가 변해가는 과정이 특히 좋았다.",
+        id: uid(), title: "아몬드", author: "손원평", rating: 5, date: "2025.12.09", cover: null,
+        text: "감정을 모르는 아이가 되묻는, 감정이란 무엇인가",
         comments: [
           { id: uid(), text: "곤이 이야기에서 울 뻔했다", date: "2025.12.10" }
         ]
@@ -638,6 +735,7 @@
   var view = "library";
   var currentId = null;
   var formRating = 0;
+  var formCover = null;
 
   var $shelf = document.getElementById("shelfGrid");
   var $countLabel = document.getElementById("countLabel");
@@ -646,6 +744,55 @@
   var $detailView = document.getElementById("detailView");
   var $fStars = document.getElementById("fStars");
   var $reviewForm = document.getElementById("reviewForm");
+  var $coverPreview = document.getElementById("coverPreview");
+  var $fCover = document.getElementById("fCover");
+  var $clearCover = document.getElementById("clearCover");
+
+  function updateCoverPreview() {
+    $coverPreview.innerHTML = "";
+    if (formCover) {
+      var img = document.createElement("img");
+      img.src = formCover;
+      img.alt = "";
+      $coverPreview.appendChild(img);
+      $clearCover.hidden = false;
+    } else {
+      $coverPreview.textContent = "표지 없음";
+      $clearCover.hidden = true;
+    }
+  }
+
+  function readCoverFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var maxWidth = 480;
+        var scale = Math.min(1, maxWidth / img.width);
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        formCover = canvas.toDataURL("image/jpeg", 0.82);
+        updateCoverPreview();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  $fCover.addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (file) readCoverFile(file);
+  });
+
+  $clearCover.addEventListener("click", function () {
+    formCover = null;
+    $fCover.value = "";
+    updateCoverPreview();
+  });
 
   function renderStars(container, rating, interactive) {
     container.innerHTML = "";
@@ -699,14 +846,41 @@
       card.style.setProperty("--cover", coverFor(r.title));
       card.setAttribute("aria-label", r.title + ", " + r.author + ", 별점 " + r.rating + "점");
 
+      if (r.cover) {
+        var img = document.createElement("img");
+        img.className = "b-cover-img";
+        img.src = r.cover;
+        img.alt = "";
+        card.appendChild(img);
+      }
+
       var stars = "";
       for (var i = 1; i <= 5; i++) stars += i <= r.rating ? "★" : "☆";
 
-      card.innerHTML =
-        '<div class="b-title">' + escapeHtml(r.title) + "</div>" +
-        '<div class="b-author">' + escapeHtml(r.author) + "</div>" +
-        '<div class="b-stars">' + stars + "</div>" +
-        '<div class="b-comment-count">댓글 ' + r.comments.length + "개</div>";
+      var overlay = document.createElement("div");
+      overlay.className = "b-overlay";
+
+      var titleEl = document.createElement("div");
+      titleEl.className = "b-title";
+      titleEl.textContent = r.title;
+
+      var authorEl = document.createElement("div");
+      authorEl.className = "b-author";
+      authorEl.textContent = r.author;
+
+      var starsEl = document.createElement("div");
+      starsEl.className = "b-stars";
+      starsEl.textContent = stars;
+
+      var countEl = document.createElement("div");
+      countEl.className = "b-comment-count";
+      countEl.textContent = "댓글 " + r.comments.length + "개";
+
+      overlay.appendChild(titleEl);
+      overlay.appendChild(authorEl);
+      overlay.appendChild(starsEl);
+      overlay.appendChild(countEl);
+      card.appendChild(overlay);
 
       card.addEventListener("click", function (id) {
         return function () { openDetail(id); };
@@ -726,7 +900,9 @@
   function openForm() {
     $reviewForm.reset();
     formRating = 0;
+    formCover = null;
     renderStars($fStars, 0, true);
+    updateCoverPreview();
     showView("form");
     document.getElementById("fTitle").focus();
   }
@@ -751,6 +927,16 @@
     document.getElementById("detailDate").textContent = r.date + " 기록";
     document.getElementById("detailText").textContent = r.text;
     renderStars(document.getElementById("detailStars"), r.rating, false);
+
+    var $detailCover = document.getElementById("detailCover");
+    $detailCover.innerHTML = "";
+    $detailCover.style.setProperty("--cover", coverFor(r.title));
+    if (r.cover) {
+      var coverImg = document.createElement("img");
+      coverImg.src = r.cover;
+      coverImg.alt = "";
+      $detailCover.appendChild(coverImg);
+    }
 
     var $list = document.getElementById("commentList");
     $list.innerHTML = "";
@@ -812,7 +998,7 @@
     }
 
     reviews.unshift({
-      id: uid(), title: title, author: author, rating: formRating,
+      id: uid(), title: title, author: author, rating: formRating, cover: formCover,
       date: todayStr(), text: text, comments: []
     });
     save(reviews);
