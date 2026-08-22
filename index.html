@@ -224,14 +224,9 @@
   }
 
   .book-card .b-stars {
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-  }
-
-  .book-card .b-comment-count {
-    font-size: 0.72rem;
-    opacity: 0.8;
-    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
   }
 
   .empty-note {
@@ -425,6 +420,18 @@
   .stars { color: var(--accent); letter-spacing: 0.08em; font-size: 1.05rem; }
   .stars .empty { color: var(--ink-faint); }
 
+  .rating-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .rating-meta {
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+
   .meta-date {
     color: var(--ink-faint);
     font-size: 0.8rem;
@@ -503,6 +510,13 @@
     white-space: nowrap;
   }
 
+  #commentList .c-rating {
+    flex: none;
+    color: var(--accent);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+
   #commentList .c-like {
     flex: none;
     display: flex;
@@ -548,6 +562,21 @@
 
   #commentForm {
     display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  #commentForm .field {
+    margin-bottom: 0;
+  }
+
+  #commentForm .field label {
+    font-size: 0.78rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .comment-input-row {
+    display: flex;
     gap: 0.6rem;
   }
 
@@ -562,7 +591,7 @@
     padding: 0.55rem 0.7rem;
   }
 
-  #commentForm button {
+  .comment-input-row button {
     background: var(--accent);
     color: var(--paper-raised);
     border: none;
@@ -572,7 +601,7 @@
     cursor: pointer;
   }
 
-  #commentForm button:hover { background: var(--accent-soft); }
+  .comment-input-row button:hover { background: var(--accent-soft); }
 
   .char-hint {
     font-size: 0.72rem;
@@ -639,10 +668,6 @@
             </div>
           </div>
           <div class="field">
-            <label>별점</label>
-            <div class="star-picker" id="fStars" role="radiogroup" aria-label="별점"></div>
-          </div>
-          <div class="field">
             <label for="fText">한 줄 리뷰</label>
             <input type="text" id="fText" required maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
             <p class="char-hint">최대 80자, 한 줄로 남겨주세요</p>
@@ -663,7 +688,10 @@
           <header>
             <h2 id="detailTitle"></h2>
             <p class="detail-author" id="detailAuthor"></p>
-            <div class="stars" id="detailStars"></div>
+            <div class="rating-line">
+              <div class="stars" id="detailStars"></div>
+              <span class="rating-meta" id="detailRatingMeta"></span>
+            </div>
             <p class="meta-date" id="detailDate"></p>
           </header>
         </div>
@@ -674,10 +702,16 @@
           <h3>한 줄 댓글 <span class="count" id="commentCount"></span> <span class="count">· 좋아요 많은 순</span></h3>
           <ul id="commentList"></ul>
           <form id="commentForm">
-            <input type="text" id="commentInput" maxlength="60" required placeholder="한 줄로 남겨보세요" autocomplete="off">
-            <button type="submit">남기기</button>
+            <div class="field">
+              <label>이 책의 별점</label>
+              <div class="star-picker" id="cStars" role="radiogroup" aria-label="댓글 별점"></div>
+            </div>
+            <div class="comment-input-row">
+              <input type="text" id="commentInput" maxlength="60" required placeholder="한 줄로 남겨보세요" autocomplete="off">
+              <button type="submit">남기기</button>
+            </div>
           </form>
-          <p class="char-hint">최대 60자, 한 줄만 남길 수 있어요</p>
+          <p class="char-hint">최대 60자, 한 줄만 남길 수 있어요. 별점도 함께 남겨주세요</p>
         </section>
       </div>
     </section>
@@ -714,30 +748,30 @@
   function seedData() {
     return [
       {
-        id: uid(), title: "채식주의자", author: "한강", rating: 5, date: "2026.03.02", cover: null,
+        id: uid(), title: "채식주의자", author: "한강", date: "2026.03.02", cover: null,
         text: "세 사람의 시선이 같은 사건을 전혀 다르게 비춘다",
         comments: [
-          { id: uid(), text: "다 읽고 나서 며칠은 아무 책도 못 골랐다", date: "2026.03.03", likes: 4, likedByMe: false },
-          { id: uid(), text: "2부 시점이 가장 오래 남는다", date: "2026.03.05", likes: 1, likedByMe: false }
+          { id: uid(), text: "다 읽고 나서 며칠은 아무 책도 못 골랐다", rating: 5, date: "2026.03.03", likes: 4, likedByMe: false },
+          { id: uid(), text: "2부 시점이 가장 오래 남는다", rating: 4, date: "2026.03.05", likes: 1, likedByMe: false }
         ]
       },
       {
-        id: uid(), title: "달러구트 꿈 백화점", author: "이미예", rating: 4, date: "2026.02.14", cover: null,
+        id: uid(), title: "달러구트 꿈 백화점", author: "이미예", date: "2026.02.14", cover: null,
         text: "잠들기 전 읽기 좋은 다정한 판타지",
         comments: [
-          { id: uid(), text: "페니 캐릭터가 제일 좋았어요", date: "2026.02.16", likes: 2, likedByMe: false }
+          { id: uid(), text: "페니 캐릭터가 제일 좋았어요", rating: 4, date: "2026.02.16", likes: 2, likedByMe: false }
         ]
       },
       {
-        id: uid(), title: "불편한 편의점", author: "김호연", rating: 4, date: "2026.01.20", cover: null,
+        id: uid(), title: "불편한 편의점", author: "김호연", date: "2026.01.20", cover: null,
         text: "작은 공간에서 만나는 각자의 방식의 다정함",
         comments: []
       },
       {
-        id: uid(), title: "아몬드", author: "손원평", rating: 5, date: "2025.12.09", cover: null,
+        id: uid(), title: "아몬드", author: "손원평", date: "2025.12.09", cover: null,
         text: "감정을 모르는 아이가 되묻는, 감정이란 무엇인가",
         comments: [
-          { id: uid(), text: "곤이 이야기에서 울 뻔했다", date: "2025.12.10", likes: 3, likedByMe: false }
+          { id: uid(), text: "곤이 이야기에서 울 뻔했다", rating: 5, date: "2025.12.10", likes: 3, likedByMe: false }
         ]
       }
     ];
@@ -749,9 +783,17 @@
       r.comments.forEach(function (c) {
         if (typeof c.likes !== "number") c.likes = 0;
         if (typeof c.likedByMe !== "boolean") c.likedByMe = false;
+        if (typeof c.rating !== "number") c.rating = null;
       });
     });
     return reviews;
+  }
+
+  function reviewRating(r) {
+    var rated = r.comments.filter(function (c) { return typeof c.rating === "number"; });
+    if (rated.length === 0) return null;
+    var sum = rated.reduce(function (total, c) { return total + c.rating; }, 0);
+    return { avg: sum / rated.length, count: rated.length };
   }
 
   function load() {
@@ -775,7 +817,7 @@
   var reviews = load();
   var view = "library";
   var currentId = null;
-  var formRating = 0;
+  var commentRating = 0;
   var formCover = null;
   var searchQuery = "";
 
@@ -785,7 +827,7 @@
   var $libraryView = document.getElementById("libraryView");
   var $formView = document.getElementById("formView");
   var $detailView = document.getElementById("detailView");
-  var $fStars = document.getElementById("fStars");
+  var $cStars = document.getElementById("cStars");
   var $reviewForm = document.getElementById("reviewForm");
   var $coverPreview = document.getElementById("coverPreview");
   var $fCover = document.getElementById("fCover");
@@ -849,8 +891,8 @@
         btn.setAttribute("aria-label", i + "점");
         btn.addEventListener("click", function (idx) {
           return function () {
-            formRating = idx;
-            renderStars($fStars, formRating, true);
+            commentRating = idx;
+            renderStars($cStars, commentRating, true);
           };
         }(i));
         container.appendChild(btn);
@@ -898,11 +940,13 @@
     }
 
     visible.forEach(function (r) {
+      var rating = reviewRating(r);
       var card = document.createElement("button");
       card.type = "button";
       card.className = "book-card";
       card.style.setProperty("--cover", coverFor(r.title));
-      card.setAttribute("aria-label", r.title + ", " + r.author + ", 별점 " + r.rating + "점");
+      card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
+        (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
 
       if (r.cover) {
         var img = document.createElement("img");
@@ -911,9 +955,6 @@
         img.alt = "";
         card.appendChild(img);
       }
-
-      var stars = "";
-      for (var i = 1; i <= 5; i++) stars += i <= r.rating ? "★" : "☆";
 
       var overlay = document.createElement("div");
       overlay.className = "b-overlay";
@@ -928,16 +969,17 @@
 
       var starsEl = document.createElement("div");
       starsEl.className = "b-stars";
-      starsEl.textContent = stars;
-
-      var countEl = document.createElement("div");
-      countEl.className = "b-comment-count";
-      countEl.textContent = "댓글 " + r.comments.length + "개";
+      if (rating) {
+        var stars = "";
+        for (var i = 1; i <= 5; i++) stars += i <= Math.round(rating.avg) ? "★" : "☆";
+        starsEl.textContent = stars + " " + rating.avg.toFixed(1) + " (" + rating.count + ")";
+      } else {
+        starsEl.textContent = "평점 없음";
+      }
 
       overlay.appendChild(titleEl);
       overlay.appendChild(authorEl);
       overlay.appendChild(starsEl);
-      overlay.appendChild(countEl);
       card.appendChild(overlay);
 
       card.addEventListener("click", function (id) {
@@ -950,9 +992,7 @@
 
   function openForm() {
     $reviewForm.reset();
-    formRating = 0;
     formCover = null;
-    renderStars($fStars, 0, true);
     updateCoverPreview();
     showView("form");
     document.getElementById("fTitle").focus();
@@ -960,6 +1000,8 @@
 
   function openDetail(id) {
     currentId = id;
+    commentRating = 0;
+    renderStars($cStars, 0, true);
     renderDetail();
     showView("detail");
   }
@@ -977,7 +1019,12 @@
     document.getElementById("detailAuthor").textContent = r.author;
     document.getElementById("detailDate").textContent = r.date + " 기록";
     document.getElementById("detailText").textContent = r.text;
-    renderStars(document.getElementById("detailStars"), r.rating, false);
+
+    var rating = reviewRating(r);
+    renderStars(document.getElementById("detailStars"), rating ? Math.round(rating.avg) : 0, false);
+    document.getElementById("detailRatingMeta").textContent = rating
+      ? rating.avg.toFixed(1) + " (" + rating.count + ")"
+      : "아직 평점 없음";
 
     var $detailCover = document.getElementById("detailCover");
     $detailCover.innerHTML = "";
@@ -1009,6 +1056,14 @@
         textSpan.textContent = c.text;
         textSpan.title = c.text;
 
+        var ratingSpan = document.createElement("span");
+        ratingSpan.className = "c-rating";
+        if (typeof c.rating === "number") {
+          var ratingStars = "";
+          for (var i = 1; i <= 5; i++) ratingStars += i <= c.rating ? "★" : "☆";
+          ratingSpan.textContent = ratingStars;
+        }
+
         var likeBtn = document.createElement("button");
         likeBtn.type = "button";
         likeBtn.className = "c-like" + (c.likedByMe ? " liked" : "");
@@ -1038,6 +1093,7 @@
         });
 
         item.appendChild(textSpan);
+        item.appendChild(ratingSpan);
         item.appendChild(likeBtn);
         item.appendChild(dateSpan);
         item.appendChild(delBtn);
@@ -1064,13 +1120,10 @@
     var author = document.getElementById("fAuthor").value.trim();
     var text = document.getElementById("fText").value.trim();
 
-    if (!title || !author || !text || formRating === 0) {
-      if (formRating === 0) alert("별점을 선택해주세요.");
-      return;
-    }
+    if (!title || !author || !text) return;
 
     reviews.unshift({
-      id: uid(), title: title, author: author, rating: formRating, cover: formCover,
+      id: uid(), title: title, author: author, cover: formCover,
       date: todayStr(), text: text, comments: []
     });
     save(reviews);
@@ -1091,11 +1144,17 @@
     var input = document.getElementById("commentInput");
     var text = input.value.replace(/[\r\n]+/g, " ").trim();
     if (!text) return;
+    if (commentRating === 0) {
+      alert("별점을 선택해주세요.");
+      return;
+    }
 
     var r = findReview(currentId);
-    r.comments.push({ id: uid(), text: text.slice(0, 60), date: todayStr(), likes: 0, likedByMe: false });
+    r.comments.push({ id: uid(), text: text.slice(0, 60), rating: commentRating, date: todayStr(), likes: 0, likedByMe: false });
     save(reviews);
     input.value = "";
+    commentRating = 0;
+    renderStars($cStars, 0, true);
     renderDetail();
   });
 
