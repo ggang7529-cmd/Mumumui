@@ -829,6 +829,7 @@
           <button type="button" class="sort-tab active" data-sort="latest">최신순</button>
           <button type="button" class="sort-tab" data-sort="comments">리뷰순</button>
           <button type="button" class="sort-tab" data-sort="rating">별점순</button>
+          <button type="button" class="sort-tab" data-sort="title">가나다순</button>
         </div>
         <div class="search-box">
           <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
@@ -1367,6 +1368,8 @@
         var ra = bookRating(a), rb = bookRating(b);
         return (rb ? rb.avg : 0) - (ra ? ra.avg : 0) || b.createdAt - a.createdAt;
       });
+    } else if (sortMode === "title") {
+      visible.sort(function (a, b) { return a.title.localeCompare(b.title, "ko"); });
     } else {
       visible.sort(function (a, b) { return b.createdAt - a.createdAt; });
     }
