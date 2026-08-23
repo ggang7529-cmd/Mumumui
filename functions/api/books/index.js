@@ -56,5 +56,11 @@ export async function onRequestPost(context) {
     ).bind(commentId, id, text, rating, uid, name, now)
   ]);
 
-  return json({ id: id }, { status: 201 });
+  return json({
+    book: {
+      id: id, title: title, author: author, cover: cover, isbn: isbn || null, text: text,
+      rating_sum: rating, rating_count: 1, comment_count: 1,
+      owner_uid: uid, owner_name: name, owner_photo: null, created_at: now
+    }
+  }, { status: 201 });
 }
