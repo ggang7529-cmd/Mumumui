@@ -1,6 +1,14 @@
 # 책갈피 (Mumumui)
 
-Single-file static app (`index.html`) — a book review site backed by Firebase Auth (Google login) and Firestore.
+A book review site: `index.html` (static frontend) plus a Cloudflare Pages Functions API in `functions/` backed by a Cloudflare D1 (SQLite) database. No Firebase — Google login is done client-side with Google Identity Services (GSI), and the ID token is verified server-side in a Function using Web Crypto against Google's public JWKS. Sessions are a signed HttpOnly cookie (HMAC-SHA256), not a database-backed session table.
+
+Setup the user still needs to do in the Cloudflare/Google dashboards (not doable from this sandbox):
+- Create a D1 database, bind it to the Pages project as `DB` (Settings → Functions → D1 database bindings), and run `schema.sql` against it via the D1 Console tab.
+- Set two Pages environment variables/secrets: `GOOGLE_CLIENT_ID` (from a Google Cloud OAuth 2.0 Web client) and `SESSION_SECRET` (any long random string, used to sign session cookies).
+- Add the Pages `*.pages.dev` domain (and any custom domain) as an Authorized JavaScript origin on that Google OAuth client.
+- Put the same `GOOGLE_CLIENT_ID` into `index.html`'s `GOOGLE_CLIENT_ID` constant (it's a public identifier, fine to commit).
+
+API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.
 
 ## Workflow
 

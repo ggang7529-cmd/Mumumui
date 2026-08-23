@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --paper: #EFEAE1;
@@ -141,22 +142,6 @@
   }
 
   .auth-box { display: flex; align-items: center; }
-
-  .btn-google {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--paper-raised);
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 0.6rem 1rem;
-    font-family: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .btn-google:hover { border-color: var(--ink-soft); }
 
   .user-chip {
     display: flex;
@@ -813,7 +798,7 @@
           <p class="char-hint" id="commentHint">별점을 선택하고 한 줄 감상을 남겨주세요 (최대 60자)</p>
           <div class="signin-prompt" id="commentSignin" hidden>
             <span>로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
-            <button type="button" class="btn-google" id="commentLoginBtn">Google로 로그인</button>
+            <div id="googleBtnComment"></div>
           </div>
         </section>
       </div>
@@ -826,39 +811,8 @@
 </footer>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-  import {
-    getFirestore, collection, doc, addDoc, deleteDoc, updateDoc, getDocs,
-    onSnapshot, query, orderBy, serverTimestamp, increment, arrayUnion, arrayRemove, writeBatch
-  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-  // 아래 값을 본인의 Firebase 프로젝트 설정(Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱)으로 교체하세요.
-  var firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-    document.getElementById("shelfGrid").innerHTML =
-      '<p class="empty-note">Firebase 설정이 아직 연결되지 않았어요. index.html의 firebaseConfig 값을 본인의 Firebase 프로젝트 설정으로 교체해주세요.</p>';
-    document.getElementById("newReviewBtn").disabled = true;
-  } else {
-    runApp();
-  }
-
-  function runApp() {
-
-  var app = initializeApp(firebaseConfig);
-  var auth = getAuth(app);
-  var db = getFirestore(app);
-  var provider = new GoogleAuthProvider();
+  // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (Firebase 불필요).
+  var GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
   var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -868,9 +822,9 @@
     return COVERS[hash % COVERS.length];
   }
 
-  function formatDate(ts) {
-    if (!ts || !ts.toDate) return "방금 등록";
-    var d = ts.toDate();
+  function formatDate(ms) {
+    if (!ms) return "방금 등록";
+    var d = new Date(ms);
     return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
   }
 
@@ -879,9 +833,36 @@
     return { avg: b.ratingSum / b.ratingCount, count: b.ratingCount };
   }
 
-  function signIn() {
-    return signInWithPopup(auth, provider).catch(function (e) {
-      alert("로그인에 실패했어요: " + e.message);
+  function normalizeBook(row) {
+    return {
+      id: row.id, title: row.title, author: row.author, cover: row.cover, text: row.text,
+      ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
+      ownerUid: row.owner_uid, ownerName: row.owner_name, ownerPhoto: row.owner_photo,
+      createdAt: row.created_at
+    };
+  }
+
+  function normalizeComment(row) {
+    return {
+      id: row.id, text: row.text, rating: row.rating,
+      authorUid: row.author_uid, authorName: row.author_name, authorPhoto: row.author_photo,
+      createdAt: row.created_at, likes: row.likes, likedByMe: !!row.liked_by_me
+    };
+  }
+
+  function api(path, opts) {
+    opts = opts || {};
+    var headers = opts.body ? { "Content-Type": "application/json" } : {};
+    return fetch(path, {
+      method: opts.method || "GET",
+      headers: headers,
+      credentials: "same-origin",
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (res) {
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!res.ok) throw new Error((data && data.error) || ("요청이 실패했어요 (" + res.status + ")"));
+        return data;
+      });
     });
   }
 
@@ -889,7 +870,8 @@
   var books = [];
   var booksLoaded = false;
   var comments = [];
-  var unsubscribeComments = null;
+  var libraryPollTimer = null;
+  var detailPollTimer = null;
   var view = "library";
   var currentId = null;
   var commentRating = 0;
@@ -989,11 +971,32 @@
     renderStars($fStars, formRating, true, selectFormRating);
   }
 
+  function stopLibraryPolling() {
+    if (libraryPollTimer) { clearInterval(libraryPollTimer); libraryPollTimer = null; }
+  }
+
+  function startLibraryPolling() {
+    stopLibraryPolling();
+    libraryPollTimer = setInterval(refreshBooks, 20000);
+  }
+
+  function stopDetailPolling() {
+    if (detailPollTimer) { clearInterval(detailPollTimer); detailPollTimer = null; }
+  }
+
+  function startDetailPolling() {
+    stopDetailPolling();
+    detailPollTimer = setInterval(function () { refreshBooks(); refreshComments(); }, 8000);
+  }
+
   function showView(name) {
     view = name;
     $libraryView.hidden = name !== "library";
     $formView.hidden = name !== "form";
     $detailView.hidden = name !== "detail";
+    if (name === "library") { stopDetailPolling(); startLibraryPolling(); }
+    else if (name === "detail") { stopLibraryPolling(); startDetailPolling(); }
+    else { stopLibraryPolling(); stopDetailPolling(); }
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
@@ -1002,9 +1005,56 @@
     return null;
   }
 
-  function leaveDetail() {
-    if (unsubscribeComments) { unsubscribeComments(); unsubscribeComments = null; }
-    comments = [];
+  function refreshBooks() {
+    return api("/api/books").then(function (data) {
+      books = (data.books || []).map(normalizeBook);
+      booksLoaded = true;
+      if (view === "library") renderLibrary();
+      else if (view === "detail") renderDetail();
+    }).catch(function (e) {
+      booksLoaded = true;
+      if (view === "library") $countLabel.textContent = "불러오지 못했어요: " + e.message;
+    });
+  }
+
+  function refreshComments() {
+    if (!currentId) return Promise.resolve();
+    return api("/api/books/" + currentId + "/comments").then(function (data) {
+      comments = (data.comments || []).map(normalizeComment);
+      if (view === "detail") renderDetail();
+    }).catch(function () {});
+  }
+
+  function renderGoogleButtons() {
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+    ["googleBtnHeader", "googleBtnComment"].forEach(function (slotId) {
+      var slot = document.getElementById(slotId);
+      if (!slot) return;
+      slot.innerHTML = "";
+      google.accounts.id.renderButton(slot, { theme: "outline", size: "medium", shape: "pill", text: "signin_with", locale: "ko" });
+    });
+  }
+
+  function handleGoogleCredential(response) {
+    api("/api/auth/google", { method: "POST", body: { credential: response.credential } })
+      .then(function (data) {
+        currentUser = data.user;
+        renderAuthBox();
+        if (view === "detail") renderDetail();
+      })
+      .catch(function (e) {
+        alert("로그인에 실패했어요: " + e.message);
+      });
+  }
+
+  function initGoogleSignIn() {
+    if (GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") === 0) return;
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+      setTimeout(initGoogleSignIn, 200);
+      return;
+    }
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+    renderAuthBox();
   }
 
   function renderAuthBox() {
@@ -1013,31 +1063,35 @@
     if (currentUser) {
       var chip = document.createElement("div");
       chip.className = "user-chip";
-      if (currentUser.photoURL) {
+      if (currentUser.picture) {
         var avatar = document.createElement("img");
         avatar.className = "user-avatar";
-        avatar.src = currentUser.photoURL;
+        avatar.src = currentUser.picture;
         avatar.alt = "";
         chip.appendChild(avatar);
       }
       var name = document.createElement("span");
       name.className = "user-name";
-      name.textContent = currentUser.displayName || "사용자";
+      name.textContent = currentUser.name || "사용자";
       chip.appendChild(name);
       var logout = document.createElement("button");
       logout.type = "button";
       logout.className = "btn-logout";
       logout.textContent = "로그아웃";
-      logout.addEventListener("click", function () { signOut(auth); });
+      logout.addEventListener("click", function () {
+        api("/api/auth/logout", { method: "POST" }).then(function () {
+          currentUser = null;
+          renderAuthBox();
+          if (view === "detail") renderDetail();
+        });
+      });
       chip.appendChild(logout);
       $box.appendChild(chip);
     } else {
-      var loginBtn = document.createElement("button");
-      loginBtn.type = "button";
-      loginBtn.className = "btn-google";
-      loginBtn.textContent = "Google로 로그인";
-      loginBtn.addEventListener("click", function () { signIn(); });
-      $box.appendChild(loginBtn);
+      var slot = document.createElement("div");
+      slot.id = "googleBtnHeader";
+      $box.appendChild(slot);
+      renderGoogleButtons();
     }
   }
 
@@ -1132,16 +1186,13 @@
 
   function openDetail(id) {
     currentId = id;
+    comments = [];
     commentRating = 0;
     renderStars($cStars, 0, true, selectCommentRating);
-    leaveDetail();
-    var commentsQuery = query(collection(db, "books", id, "comments"), orderBy("createdAt", "asc"));
-    unsubscribeComments = onSnapshot(commentsQuery, function (snap) {
-      comments = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
-      if (view === "detail" && currentId === id) renderDetail();
-    });
     renderDetail();
     showView("detail");
+    renderGoogleButtons();
+    refreshComments();
   }
 
   function renderDetail() {
@@ -1190,14 +1241,9 @@
       li.textContent = "아직 댓글이 없어요. 별점과 함께 첫 한 줄을 남겨보세요.";
       $list.appendChild(li);
     } else {
-      var sortedComments = comments.slice().sort(function (a, b) {
-        return (b.likedBy ? b.likedBy.length : 0) - (a.likedBy ? a.likedBy.length : 0);
-      });
+      var sortedComments = comments.slice().sort(function (a, b) { return b.likes - a.likes; });
 
       sortedComments.forEach(function (c) {
-        var likedBy = c.likedBy || [];
-        var likedByMe = !!(currentUser && likedBy.indexOf(currentUser.uid) !== -1);
-
         var item = document.createElement("li");
         var textSpan = document.createElement("span");
         textSpan.className = "c-text";
@@ -1218,14 +1264,15 @@
 
         var likeBtn = document.createElement("button");
         likeBtn.type = "button";
-        likeBtn.className = "c-like" + (likedByMe ? " liked" : "");
-        likeBtn.textContent = "♥ " + likedBy.length;
-        likeBtn.setAttribute("aria-pressed", likedByMe ? "true" : "false");
-        likeBtn.setAttribute("aria-label", "좋아요 " + likedBy.length + "개");
+        likeBtn.className = "c-like" + (c.likedByMe ? " liked" : "");
+        likeBtn.textContent = "♥ " + c.likes;
+        likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
+        likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
         likeBtn.addEventListener("click", function () {
-          if (!currentUser) { signIn(); return; }
-          var cRef = doc(db, "books", currentId, "comments", c.id);
-          updateDoc(cRef, { likedBy: likedByMe ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
+          if (!currentUser) return;
+          api("/api/comments/" + c.id + "/like", { method: "POST" })
+            .then(function () { refreshComments(); })
+            .catch(function (e) { alert(e.message); });
         });
 
         var dateSpan = document.createElement("span");
@@ -1245,13 +1292,9 @@
           delBtn.textContent = "×";
           delBtn.setAttribute("aria-label", "댓글 삭제");
           delBtn.addEventListener("click", function () {
-            var bookId = currentId;
-            deleteDoc(doc(db, "books", bookId, "comments", c.id));
-            updateDoc(doc(db, "books", bookId), {
-              ratingSum: increment(-c.rating),
-              ratingCount: increment(-1),
-              commentCount: increment(-1)
-            });
+            api("/api/comments/" + c.id, { method: "DELETE" })
+              .then(function () { return Promise.all([refreshBooks(), refreshComments()]); })
+              .catch(function (e) { alert(e.message); });
           });
           item.appendChild(delBtn);
         }
@@ -1267,16 +1310,13 @@
   });
 
   document.getElementById("newReviewBtn").addEventListener("click", function () {
-    if (auth.currentUser) { openForm(); return; }
-    signIn().then(function () { if (auth.currentUser) openForm(); });
+    if (!currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
+    openForm();
   });
   document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
   document.getElementById("backBtn").addEventListener("click", function () {
-    leaveDetail();
-    renderLibrary();
     showView("library");
   });
-  document.getElementById("commentLoginBtn").addEventListener("click", function () { signIn(); });
 
   $reviewForm.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -1287,31 +1327,18 @@
     var text = document.getElementById("fText").value.trim();
 
     if (!title || !author || !text) return;
-
-    var isDuplicate = books.some(function (r) {
-      return r.title.trim().toLowerCase() === title.toLowerCase();
-    });
-    if (isDuplicate) {
-      alert("이미 등록된 책 제목이에요. 서재에서 기존 리뷰를 확인해보세요.");
-      document.getElementById("fTitle").focus();
-      return;
-    }
-
     if (formRating === 0) {
       alert("별점을 선택해주세요.");
       return;
     }
 
-    addDoc(collection(db, "books"), {
-      title: title, author: author, cover: formCover, text: text,
-      ratingSum: formRating, ratingCount: 1, commentCount: 0,
-      ownerUid: currentUser.uid, ownerName: currentUser.displayName || "사용자", ownerPhoto: currentUser.photoURL || null,
-      createdAt: serverTimestamp()
-    }).then(function () {
-      showView("library");
-    }).catch(function (e) {
-      alert("저장에 실패했어요: " + e.message);
-    });
+    api("/api/books", { method: "POST", body: { title: title, author: author, cover: formCover, text: text, rating: formRating } })
+      .then(function () { return refreshBooks(); })
+      .then(function () { showView("library"); })
+      .catch(function (e) {
+        alert(e.message);
+        if (e.message.indexOf("이미 등록된") !== -1) document.getElementById("fTitle").focus();
+      });
   });
 
   document.getElementById("deleteBtn").addEventListener("click", function () {
@@ -1319,24 +1346,15 @@
     if (!r || !currentUser || currentUser.uid !== r.ownerUid) return;
     if (!confirm("이 리뷰를 삭제할까요? 댓글도 함께 사라져요.")) return;
 
-    var bookId = currentId;
-    getDocs(collection(db, "books", bookId, "comments")).then(function (snap) {
-      var batch = writeBatch(db);
-      snap.forEach(function (d) { batch.delete(d.ref); });
-      batch.delete(doc(db, "books", bookId));
-      return batch.commit();
-    }).then(function () {
-      leaveDetail();
-      renderLibrary();
-      showView("library");
-    }).catch(function (e) {
-      alert("삭제에 실패했어요: " + e.message);
-    });
+    api("/api/books/" + currentId, { method: "DELETE" })
+      .then(function () { return refreshBooks(); })
+      .then(function () { showView("library"); })
+      .catch(function (e) { alert(e.message); });
   });
 
   document.getElementById("commentForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!currentUser) { signIn(); return; }
+    if (!currentUser) return;
 
     var input = document.getElementById("commentInput");
     var text = input.value.replace(/[\r\n]+/g, " ").trim();
@@ -1346,46 +1364,27 @@
       return;
     }
 
-    var bookId = currentId;
-    var rating = commentRating;
-    addDoc(collection(db, "books", bookId, "comments"), {
-      text: text.slice(0, 60), rating: rating,
-      authorUid: currentUser.uid, authorName: currentUser.displayName || "사용자", authorPhoto: currentUser.photoURL || null,
-      likedBy: [], createdAt: serverTimestamp()
-    }).then(function () {
-      return updateDoc(doc(db, "books", bookId), {
-        ratingSum: increment(rating),
-        ratingCount: increment(1),
-        commentCount: increment(1)
-      });
-    }).then(function () {
-      input.value = "";
-      commentRating = 0;
-      renderStars($cStars, 0, true, selectCommentRating);
-    }).catch(function (e) {
-      alert("등록에 실패했어요: " + e.message);
-    });
+    api("/api/books/" + currentId + "/comments", { method: "POST", body: { text: text, rating: commentRating } })
+      .then(function () {
+        input.value = "";
+        commentRating = 0;
+        renderStars($cStars, 0, true, selectCommentRating);
+        return Promise.all([refreshBooks(), refreshComments()]);
+      })
+      .catch(function (e) { alert(e.message); });
   });
 
-  onAuthStateChanged(auth, function (user) {
-    currentUser = user;
+  api("/api/me").then(function (data) {
+    currentUser = data.user || null;
     renderAuthBox();
     if (view === "detail") renderDetail();
-    else if (view === "library") renderLibrary();
+  }).catch(function () {
+    renderAuthBox();
   });
 
-  onSnapshot(query(collection(db, "books"), orderBy("createdAt", "desc")), function (snap) {
-    books = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
-    booksLoaded = true;
-    if (view === "library") renderLibrary();
-    else if (view === "detail") renderDetail();
-  });
-
-  renderAuthBox();
-  renderLibrary();
+  initGoogleSignIn();
+  refreshBooks();
   showView("library");
-
-  } // end runApp
 </script>
 </body>
 </html>
