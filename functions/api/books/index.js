@@ -1,4 +1,4 @@
-import { getSessionUser } from "../../_lib/session.js";
+import { getAnonUid } from "../../_lib/identity.js";
 import { json, newId } from "../../_lib/db.js";
 
 export async function onRequestGet(context) {
@@ -12,8 +12,8 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   var env = context.env;
-  var user = await getSessionUser(context.request, env.SESSION_SECRET);
-  if (!user) return json({ error: "로그인이 필요해요." }, { status: 401 });
+  var uid = getAnonUid(context.request);
+  if (!uid) return json({ error: "닉네임을 입력해주세요." }, { status: 401 });
 
   var body;
   try {
@@ -25,10 +25,12 @@ export async function onRequestPost(context) {
   var title = String(body.title || "").trim().slice(0, 80);
   var author = String(body.author || "").trim().slice(0, 60);
   var text = String(body.text || "").trim().slice(0, 80);
+  var name = String(body.name || "").trim().slice(0, 20);
   var rating = Number(body.rating);
   var cover = typeof body.cover === "string" ? body.cover : null;
   var isbn = String(body.isbn || "").trim().slice(0, 40);
 
+  if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
   if (!title || !author || !text) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
 
@@ -44,8 +46,8 @@ export async function onRequestPost(context) {
   var now = Date.now();
   await env.DB.prepare(
     "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
-    "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 0, ?8, ?9, ?10, ?11)"
-  ).bind(id, title, author, cover, isbn || null, text, rating, user.uid, user.name, user.picture, now).run();
+    "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 0, ?8, ?9, NULL, ?10)"
+  ).bind(id, title, author, cover, isbn || null, text, rating, uid, name, now).run();
 
   return json({ id: id }, { status: 201 });
 }

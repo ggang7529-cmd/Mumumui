@@ -1,14 +1,17 @@
 # 책갈피 (Mumumui)
 
-A book review site: `index.html` (static frontend) plus a Cloudflare Pages Functions API in `functions/` backed by a Cloudflare D1 (SQLite) database. No Firebase — Google login is done client-side with Google Identity Services (GSI), and the ID token is verified server-side in a Function using Web Crypto against Google's public JWKS. Sessions are a signed HttpOnly cookie (HMAC-SHA256), not a database-backed session table.
+A book review site: `index.html` (static frontend) plus a Cloudflare Pages Functions API in `functions/` backed by a Cloudflare D1 (SQLite) database. No Firebase.
+
+**Auth is currently in nickname mode, not Google login.** `AUTH_MODE` in `index.html`'s script is set to `"nickname"`: no signup/login at all, people just type a nickname inline when posting a book or a comment. Identity is a random id (`ANON_ID`) generated once per browser and kept in `localStorage`, sent on every mutating request as the `X-Anon-Id` header; the server (`functions/_lib/identity.js`, `getAnonUid()`) trusts that header as-is — there's no real security here, it only lets someone recognize/delete their own past posts on the same browser. The nickname itself is also cached in `localStorage` and just pre-fills the field next time.
+
+The Google-login path (Google Identity Services client-side + server-side ID token verification against Google's JWKS + signed HttpOnly session cookie) still exists and is NOT deleted — it's in `functions/_lib/session.js`, `functions/api/auth/*`, `functions/api/me.js`, and the `googleConfigured()`/`renderGoogleButtons()`/`initGoogleSignIn()`/google branches in `index.html`, all gated behind `AUTH_MODE === "google"` so they're simply unreached right now. To switch back: set `AUTH_MODE = "google"` in `index.html`, and swap the `getAnonUid(...)` calls back to `getSessionUser(...)` in the five route files under `functions/api/books/` and `functions/api/comments/` (they were changed together when nickname mode was introduced — check git log around that commit for the exact diff to reverse).
 
 Adding a book requires searching Kakao's book search API (`/api/search-books`, proxied server-side in `functions/api/search-books.js`) and picking a result — there's no free-text title/author entry anymore, specifically to avoid duplicate/typo'd entries. The picked result's `isbn` is stored on the book row and enforced unique (partial unique index, since older/self-added rows may have no isbn); title is still deduped case-insensitively as a fallback.
 
-Setup the user still needs to do in the Cloudflare/Google/Kakao dashboards (not doable from this sandbox):
+Setup the user still needs to do in the Cloudflare/Kakao dashboards (not doable from this sandbox) — D1 is required even in nickname mode, since that's where books/comments live:
 - Create a D1 database, bind it to the Pages project as `DB` (Settings → Functions → D1 database bindings), and run `schema.sql` against it via the D1 Console tab.
-- Set Pages environment variables/secrets: `GOOGLE_CLIENT_ID` (from a Google Cloud OAuth 2.0 Web client), `SESSION_SECRET` (any long random string, used to sign session cookies), and `KAKAO_REST_API_KEY` (from a Kakao Developers app's REST API key, used server-side only — never exposed to the client).
-- Add the Pages `*.pages.dev` domain (and any custom domain) as an Authorized JavaScript origin on that Google OAuth client.
-- Put the same `GOOGLE_CLIENT_ID` into `index.html`'s `GOOGLE_CLIENT_ID` constant (it's a public identifier, fine to commit).
+- Set the `KAKAO_REST_API_KEY` Pages environment variable/secret (from a Kakao Developers app's REST API key, used server-side only — never exposed to the client) for book search to work.
+- `GOOGLE_CLIENT_ID` / `SESSION_SECRET` and the matching Google OAuth client are only needed if/when switching back to `AUTH_MODE = "google"`.
 
 API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.
 

@@ -1,11 +1,10 @@
-import { getSessionUser } from "../../../_lib/session.js";
+import { getAnonUid } from "../../../_lib/identity.js";
 import { json, newId } from "../../../_lib/db.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
   var bookId = context.params.id;
-  var user = await getSessionUser(context.request, env.SESSION_SECRET);
-  var myUid = user ? user.uid : "";
+  var myUid = getAnonUid(context.request) || "";
 
   var rows = await env.DB.prepare(
     "SELECT c.id, c.text, c.rating, c.author_uid, c.author_name, c.author_photo, c.created_at, " +
@@ -20,8 +19,8 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   var env = context.env;
   var bookId = context.params.id;
-  var user = await getSessionUser(context.request, env.SESSION_SECRET);
-  if (!user) return json({ error: "로그인이 필요해요." }, { status: 401 });
+  var uid = getAnonUid(context.request);
+  if (!uid) return json({ error: "닉네임을 입력해주세요." }, { status: 401 });
 
   var body;
   try {
@@ -31,7 +30,9 @@ export async function onRequestPost(context) {
   }
 
   var text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
+  var name = String(body.name || "").trim().slice(0, 20);
   var rating = Number(body.rating);
+  if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
   if (!text) return json({ error: "내용을 입력해주세요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
 
@@ -43,8 +44,8 @@ export async function onRequestPost(context) {
   await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"
-    ).bind(id, bookId, text, rating, user.uid, user.name, user.picture, now),
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)"
+    ).bind(id, bookId, text, rating, uid, name, now),
     env.DB.prepare(
       "UPDATE books SET rating_sum = rating_sum + ?1, rating_count = rating_count + 1, comment_count = comment_count + 1 WHERE id = ?2"
     ).bind(rating, bookId)

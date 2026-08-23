@@ -817,6 +817,10 @@
             </div>
           </div>
           <div class="field">
+            <label for="fNickname">닉네임</label>
+            <input type="text" id="fNickname" required maxlength="20" placeholder="예: 책벌레" autocomplete="off">
+          </div>
+          <div class="field">
             <label>별점 (필수)</label>
             <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
           </div>
@@ -857,6 +861,10 @@
           <ul id="commentList"></ul>
           <form id="commentForm" hidden>
             <div class="field">
+              <label for="cNickname">닉네임</label>
+              <input type="text" id="cNickname" required maxlength="20" placeholder="예: 책벌레" autocomplete="off">
+            </div>
+            <div class="field">
               <label>별점 (필수)</label>
               <div class="star-picker" id="cStars" role="radiogroup" aria-label="댓글 별점"></div>
             </div>
@@ -877,15 +885,49 @@
 </div>
 
 <footer>
-  <p>Google 계정으로 로그인해서 남긴 기록은 모두에게 실시간으로 공유돼요.</p>
+  <p>닉네임만 입력하면 누구나 남길 수 있고, 남긴 기록은 모두에게 공유돼요.</p>
 </footer>
 
 <script type="module">
-  // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (Firebase 불필요).
+  // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
+  // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
+  var AUTH_MODE = "nickname";
+
+  // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (AUTH_MODE가 "google"일 때만 쓰임).
   var GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
   function googleConfigured() {
-    return GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
+    return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
+  }
+
+  var ANON_ID_KEY = "chaekgalpi_anon_id";
+  var NICKNAME_KEY = "chaekgalpi_nickname";
+
+  function getAnonId() {
+    try {
+      var id = localStorage.getItem(ANON_ID_KEY);
+      if (!id) {
+        id = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+        localStorage.setItem(ANON_ID_KEY, id);
+      }
+      return id;
+    } catch (e) {
+      return "anon-" + Date.now().toString(36);
+    }
+  }
+
+  function getSavedNickname() {
+    try { return localStorage.getItem(NICKNAME_KEY) || ""; } catch (e) { return ""; }
+  }
+
+  function saveNickname(name) {
+    try { localStorage.setItem(NICKNAME_KEY, name); } catch (e) {}
+  }
+
+  var ANON_ID = AUTH_MODE === "nickname" ? getAnonId() : null;
+
+  function myUid() {
+    return AUTH_MODE === "nickname" ? ANON_ID : (currentUser ? currentUser.uid : null);
   }
 
   var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
@@ -926,7 +968,9 @@
 
   function api(path, opts) {
     opts = opts || {};
-    var headers = opts.body ? { "Content-Type": "application/json" } : {};
+    var headers = {};
+    if (opts.body) headers["Content-Type"] = "application/json";
+    if (AUTH_MODE === "nickname") headers["X-Anon-Id"] = ANON_ID;
     return fetch(path, {
       method: opts.method || "GET",
       headers: headers,
@@ -1189,6 +1233,19 @@
   function renderAuthBox() {
     var $box = document.getElementById("authBox");
     $box.innerHTML = "";
+    if (AUTH_MODE === "nickname") {
+      var nickname = getSavedNickname();
+      if (nickname) {
+        var savedChip = document.createElement("div");
+        savedChip.className = "user-chip";
+        var savedName = document.createElement("span");
+        savedName.className = "user-name";
+        savedName.textContent = nickname;
+        savedChip.appendChild(savedName);
+        $box.appendChild(savedChip);
+      }
+      return;
+    }
     if (currentUser) {
       var chip = document.createElement("div");
       chip.className = "user-chip";
@@ -1317,6 +1374,7 @@
     $bookResults.hidden = true;
     $bookResults.innerHTML = "";
     renderStars($fStars, 0, true, selectFormRating);
+    if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
     showView("form");
     $bookSearchInput.focus();
   }
@@ -1326,6 +1384,7 @@
     comments = [];
     commentRating = 0;
     renderStars($cStars, 0, true, selectCommentRating);
+    if (AUTH_MODE === "nickname") document.getElementById("cNickname").value = getSavedNickname();
     renderDetail();
     showView("detail");
     renderGoogleButtons();
@@ -1358,19 +1417,25 @@
       $detailCover.appendChild(coverImg);
     }
 
-    document.getElementById("deleteBtn").hidden = !(currentUser && currentUser.uid === r.ownerUid);
+    document.getElementById("deleteBtn").hidden = myUid() !== r.ownerUid;
 
     var $commentForm = document.getElementById("commentForm");
     var $commentSignin = document.getElementById("commentSignin");
     var $commentHint = document.getElementById("commentHint");
-    $commentForm.hidden = !currentUser;
-    $commentSignin.hidden = !!currentUser;
-    $commentHint.hidden = !currentUser;
-    if (!currentUser) {
-      document.getElementById("commentSigninText").textContent = googleConfigured()
-        ? "로그인하면 이 책에 한줄평을 남길 수 있어요."
-        : "아직 Google 로그인이 설정되지 않았어요.";
-      document.getElementById("googleBtnComment").hidden = !googleConfigured();
+    if (AUTH_MODE === "nickname") {
+      $commentForm.hidden = false;
+      $commentSignin.hidden = true;
+      $commentHint.hidden = false;
+    } else {
+      $commentForm.hidden = !currentUser;
+      $commentSignin.hidden = !!currentUser;
+      $commentHint.hidden = !currentUser;
+      if (!currentUser) {
+        document.getElementById("commentSigninText").textContent = googleConfigured()
+          ? "로그인하면 이 책에 한줄평을 남길 수 있어요."
+          : "아직 Google 로그인이 설정되지 않았어요.";
+        document.getElementById("googleBtnComment").hidden = !googleConfigured();
+      }
     }
 
     var $list = document.getElementById("commentList");
@@ -1412,7 +1477,7 @@
         likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
         likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
         likeBtn.addEventListener("click", function () {
-          if (!currentUser) return;
+          if (!myUid()) return;
           api("/api/comments/" + c.id + "/like", { method: "POST" })
             .then(function () { refreshComments(); })
             .catch(function (e) { alert(e.message); });
@@ -1428,7 +1493,7 @@
         item.appendChild(likeBtn);
         item.appendChild(dateSpan);
 
-        if (currentUser && currentUser.uid === c.authorUid) {
+        if (myUid() === c.authorUid) {
           var delBtn = document.createElement("button");
           delBtn.className = "c-del";
           delBtn.type = "button";
@@ -1453,6 +1518,7 @@
   });
 
   document.getElementById("newReviewBtn").addEventListener("click", function () {
+    if (AUTH_MODE === "nickname") { openForm(); return; }
     if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
     if (!currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
     openForm();
@@ -1464,8 +1530,14 @@
 
   $reviewForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!currentUser) { alert("로그인 후 등록할 수 있어요."); return; }
+    if (AUTH_MODE !== "nickname" && !currentUser) { alert("로그인 후 등록할 수 있어요."); return; }
     if (!selectedBook) { alert("책을 검색해서 선택해주세요."); return; }
+
+    var nickname = "";
+    if (AUTH_MODE === "nickname") {
+      nickname = document.getElementById("fNickname").value.trim().slice(0, 20);
+      if (!nickname) { alert("닉네임을 입력해주세요."); return; }
+    }
 
     var text = document.getElementById("fText").value.trim();
     if (!text) return;
@@ -1474,14 +1546,16 @@
       return;
     }
 
+    if (AUTH_MODE === "nickname") saveNickname(nickname);
+
     api("/api/books", {
       method: "POST",
       body: {
         title: selectedBook.title, author: selectedBook.author, cover: selectedBook.cover,
-        isbn: selectedBook.isbn, text: text, rating: formRating
+        isbn: selectedBook.isbn, text: text, rating: formRating, name: nickname
       }
     })
-      .then(function () { return refreshBooks(); })
+      .then(function () { renderAuthBox(); return refreshBooks(); })
       .then(function () { showView("library"); })
       .catch(function (e) {
         alert(e.message);
@@ -1491,7 +1565,7 @@
 
   document.getElementById("deleteBtn").addEventListener("click", function () {
     var r = findBook(currentId);
-    if (!r || !currentUser || currentUser.uid !== r.ownerUid) return;
+    if (!r || myUid() !== r.ownerUid) return;
     if (!confirm("이 리뷰를 삭제할까요? 댓글도 함께 사라져요.")) return;
 
     api("/api/books/" + currentId, { method: "DELETE" })
@@ -1502,7 +1576,13 @@
 
   document.getElementById("commentForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!currentUser) return;
+    if (AUTH_MODE !== "nickname" && !currentUser) return;
+
+    var nickname = "";
+    if (AUTH_MODE === "nickname") {
+      nickname = document.getElementById("cNickname").value.trim().slice(0, 20);
+      if (!nickname) { alert("닉네임을 입력해주세요."); return; }
+    }
 
     var input = document.getElementById("commentInput");
     var text = input.value.replace(/[\r\n]+/g, " ").trim();
@@ -1512,25 +1592,32 @@
       return;
     }
 
-    api("/api/books/" + currentId + "/comments", { method: "POST", body: { text: text, rating: commentRating } })
+    if (AUTH_MODE === "nickname") saveNickname(nickname);
+
+    api("/api/books/" + currentId + "/comments", { method: "POST", body: { text: text, rating: commentRating, name: nickname } })
       .then(function () {
         input.value = "";
         commentRating = 0;
         renderStars($cStars, 0, true, selectCommentRating);
+        renderAuthBox();
         return Promise.all([refreshBooks(), refreshComments()]);
       })
       .catch(function (e) { alert(e.message); });
   });
 
-  api("/api/me").then(function (data) {
-    currentUser = data.user || null;
+  if (AUTH_MODE === "google") {
+    api("/api/me").then(function (data) {
+      currentUser = data.user || null;
+      renderAuthBox();
+      if (view === "detail") renderDetail();
+    }).catch(function () {
+      renderAuthBox();
+    });
+    initGoogleSignIn();
+  } else {
     renderAuthBox();
-    if (view === "detail") renderDetail();
-  }).catch(function () {
-    renderAuthBox();
-  });
+  }
 
-  initGoogleSignIn();
   refreshBooks();
   showView("library");
 </script>
