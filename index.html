@@ -327,6 +327,7 @@
   }
 
   .field input[type="text"],
+  .field input[type="email"],
   .field textarea {
     width: 100%;
     font-family: inherit;
@@ -768,6 +769,7 @@
     </div>
     <div class="header-actions">
       <div class="auth-box" id="authBox"></div>
+      <button class="btn-ghost" id="feedbackBtn" type="button">의견 보내기</button>
       <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
     </div>
   </header>
@@ -871,6 +873,27 @@
         </section>
       </div>
     </section>
+
+    <section id="feedbackView" hidden>
+      <div class="panel">
+        <h2>의견 보내기</h2>
+        <p class="char-hint">사이트에 대한 개선 요청이나 의견을 남겨주세요. 운영자에게 이메일로 전달돼요.</p>
+        <form id="feedbackForm">
+          <div class="field">
+            <label for="feedbackText">내용</label>
+            <textarea id="feedbackText" required maxlength="1000" placeholder="예: 이런 기능이 있으면 좋겠어요"></textarea>
+          </div>
+          <div class="field">
+            <label for="feedbackEmail">답장받을 이메일 (선택)</label>
+            <input type="email" id="feedbackEmail" maxlength="100" placeholder="비워두면 답장을 못 받을 수 있어요" autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" id="cancelFeedback">취소</button>
+            <button type="submit" class="btn-primary">보내기</button>
+          </div>
+        </form>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -885,6 +908,10 @@
 
   // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (AUTH_MODE가 "google"일 때만 쓰임).
   var GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+
+  // web3forms.com에서 이메일로 가입하고 발급받은 Access Key로 교체하세요. 공개돼도 되는 값이에요
+  // (요청 출처/사용량은 web3forms 대시보드에서 제한·확인 가능).
+  var WEB3FORMS_ACCESS_KEY = "YOUR_WEB3FORMS_ACCESS_KEY";
 
   function googleConfigured() {
     return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -993,6 +1020,7 @@
   var $libraryView = document.getElementById("libraryView");
   var $formView = document.getElementById("formView");
   var $detailView = document.getElementById("detailView");
+  var $feedbackView = document.getElementById("feedbackView");
   var $cStars = document.getElementById("cStars");
   var $fStars = document.getElementById("fStars");
   var $reviewForm = document.getElementById("reviewForm");
@@ -1156,6 +1184,7 @@
     $libraryView.hidden = name !== "library";
     $formView.hidden = name !== "form";
     $detailView.hidden = name !== "detail";
+    $feedbackView.hidden = name !== "feedback";
     if (name === "library") { stopDetailPolling(); startLibraryPolling(); }
     else if (name === "detail") { stopLibraryPolling(); startDetailPolling(); }
     else { stopLibraryPolling(); stopDetailPolling(); }
@@ -1513,6 +1542,43 @@
     openForm();
   });
   document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
+  document.getElementById("feedbackBtn").addEventListener("click", function () {
+    document.getElementById("feedbackForm").reset();
+    showView("feedback");
+  });
+  document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
+  document.getElementById("feedbackForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (WEB3FORMS_ACCESS_KEY.indexOf("YOUR_WEB3FORMS_ACCESS_KEY") === 0) {
+      alert("아직 의견 보내기 기능이 설정되지 않았어요.");
+      return;
+    }
+
+    var text = document.getElementById("feedbackText").value.trim();
+    if (!text) return;
+    var replyEmail = document.getElementById("feedbackEmail").value.trim();
+    var submitBtn = e.target.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+
+    fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_ACCESS_KEY,
+        subject: "[책갈피] 새 의견이 도착했어요",
+        message: text,
+        email: replyEmail || undefined
+      })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.success) throw new Error(data.message || "전송에 실패했어요.");
+        alert("의견이 전달됐어요. 감사합니다!");
+        showView("library");
+      })
+      .catch(function (e) { alert(e.message); })
+      .finally(function () { submitBtn.disabled = false; });
+  });
   document.getElementById("backBtn").addEventListener("click", function () {
     showView("library");
   });
