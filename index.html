@@ -797,7 +797,7 @@
           </form>
           <p class="char-hint" id="commentHint">별점을 선택하고 한 줄 감상을 남겨주세요 (최대 60자)</p>
           <div class="signin-prompt" id="commentSignin" hidden>
-            <span>로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
+            <span id="commentSigninText">로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
             <div id="googleBtnComment"></div>
           </div>
         </section>
@@ -813,6 +813,10 @@
 <script type="module">
   // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (Firebase 불필요).
   var GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+
+  function googleConfigured() {
+    return GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
+  }
 
   var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -1026,6 +1030,7 @@
   }
 
   function renderGoogleButtons() {
+    if (!googleConfigured()) return;
     if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
     ["googleBtnHeader", "googleBtnComment"].forEach(function (slotId) {
       var slot = document.getElementById(slotId);
@@ -1048,7 +1053,7 @@
   }
 
   function initGoogleSignIn() {
-    if (GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") === 0) return;
+    if (!googleConfigured()) return;
     if (!window.google || !window.google.accounts || !window.google.accounts.id) {
       setTimeout(initGoogleSignIn, 200);
       return;
@@ -1087,6 +1092,11 @@
       });
       chip.appendChild(logout);
       $box.appendChild(chip);
+    } else if (!googleConfigured()) {
+      var note = document.createElement("span");
+      note.className = "user-name";
+      note.textContent = "Google 로그인 설정 필요";
+      $box.appendChild(note);
     } else {
       var slot = document.createElement("div");
       slot.id = "googleBtnHeader";
@@ -1229,6 +1239,12 @@
     $commentForm.hidden = !currentUser;
     $commentSignin.hidden = !!currentUser;
     $commentHint.hidden = !currentUser;
+    if (!currentUser) {
+      document.getElementById("commentSigninText").textContent = googleConfigured()
+        ? "로그인하면 이 책에 한줄평을 남길 수 있어요."
+        : "아직 Google 로그인이 설정되지 않았어요.";
+      document.getElementById("googleBtnComment").hidden = !googleConfigured();
+    }
 
     var $list = document.getElementById("commentList");
     $list.innerHTML = "";
@@ -1310,6 +1326,7 @@
   });
 
   document.getElementById("newReviewBtn").addEventListener("click", function () {
+    if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
     if (!currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
     openForm();
   });
