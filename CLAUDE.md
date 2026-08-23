@@ -11,6 +11,7 @@ Adding a book requires searching Kakao's book search API (`/api/search-books`, p
 Setup the user still needs to do in the Cloudflare/Kakao dashboards (not doable from this sandbox) — D1 is required even in nickname mode, since that's where books/comments live:
 - Create a D1 database, bind it to the Pages project as `DB` (Settings → Functions → D1 database bindings), and run `schema.sql` against it via the D1 Console tab.
 - Set the `KAKAO_REST_API_KEY` Pages environment variable/secret (from a Kakao Developers app's REST API key, used server-side only — never exposed to the client) for book search to work.
+- Set the `ADMIN_KEY` Pages environment variable/secret (any password you choose) to enable deleting a book review. Book deletion is admin-only now (not the original poster) since comments pile up under a book — the delete button prompts for this password client-side and sends it as the `X-Admin-Key` header; `functions/api/books/[id]/index.js` checks it against `env.ADMIN_KEY`.
 - `GOOGLE_CLIENT_ID` / `SESSION_SECRET` and the matching Google OAuth client are only needed if/when switching back to `AUTH_MODE = "google"`.
 
 API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.

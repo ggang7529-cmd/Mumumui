@@ -951,7 +951,7 @@
 
   function api(path, opts) {
     opts = opts || {};
-    var headers = {};
+    var headers = Object.assign({}, opts.headers);
     if (opts.body) headers["Content-Type"] = "application/json";
     if (AUTH_MODE === "nickname") headers["X-Anon-Id"] = ANON_ID;
     return fetch(path, {
@@ -1399,7 +1399,7 @@
       $detailCover.appendChild(coverImg);
     }
 
-    document.getElementById("deleteBtn").hidden = myUid() !== r.ownerUid;
+    document.getElementById("deleteBtn").hidden = false;
 
     var $commentForm = document.getElementById("commentForm");
     var $commentSignin = document.getElementById("commentSignin");
@@ -1547,10 +1547,12 @@
 
   document.getElementById("deleteBtn").addEventListener("click", function () {
     var r = findBook(currentId);
-    if (!r || myUid() !== r.ownerUid) return;
+    if (!r) return;
+    var adminKey = prompt("관리자 비밀번호를 입력하세요.");
+    if (adminKey === null) return;
     if (!confirm("이 리뷰를 삭제할까요? 댓글도 함께 사라져요.")) return;
 
-    api("/api/books/" + currentId, { method: "DELETE" })
+    api("/api/books/" + currentId, { method: "DELETE", headers: { "X-Admin-Key": adminKey } })
       .then(function () { return refreshBooks(); })
       .then(function () { showView("library"); })
       .catch(function (e) { alert(e.message); });
