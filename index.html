@@ -499,6 +499,19 @@
 
   .btn-ghost:hover { border-color: var(--ink-soft); color: var(--ink); }
 
+  .btn-accent-outline {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 3px;
+    padding: 0.6rem 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-accent-outline:hover { background: var(--accent); color: var(--paper-raised); }
+
   /* detail */
 
   .back-btn {
@@ -769,7 +782,7 @@
     </div>
     <div class="header-actions">
       <div class="auth-box" id="authBox"></div>
-      <button class="btn-ghost" id="feedbackBtn" type="button">의견 보내기</button>
+      <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
       <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
     </div>
   </header>
