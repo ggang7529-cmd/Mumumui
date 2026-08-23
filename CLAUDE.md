@@ -2,9 +2,11 @@
 
 A book review site: `index.html` (static frontend) plus a Cloudflare Pages Functions API in `functions/` backed by a Cloudflare D1 (SQLite) database. No Firebase — Google login is done client-side with Google Identity Services (GSI), and the ID token is verified server-side in a Function using Web Crypto against Google's public JWKS. Sessions are a signed HttpOnly cookie (HMAC-SHA256), not a database-backed session table.
 
-Setup the user still needs to do in the Cloudflare/Google dashboards (not doable from this sandbox):
+Adding a book requires searching Kakao's book search API (`/api/search-books`, proxied server-side in `functions/api/search-books.js`) and picking a result — there's no free-text title/author entry anymore, specifically to avoid duplicate/typo'd entries. The picked result's `isbn` is stored on the book row and enforced unique (partial unique index, since older/self-added rows may have no isbn); title is still deduped case-insensitively as a fallback.
+
+Setup the user still needs to do in the Cloudflare/Google/Kakao dashboards (not doable from this sandbox):
 - Create a D1 database, bind it to the Pages project as `DB` (Settings → Functions → D1 database bindings), and run `schema.sql` against it via the D1 Console tab.
-- Set two Pages environment variables/secrets: `GOOGLE_CLIENT_ID` (from a Google Cloud OAuth 2.0 Web client) and `SESSION_SECRET` (any long random string, used to sign session cookies).
+- Set Pages environment variables/secrets: `GOOGLE_CLIENT_ID` (from a Google Cloud OAuth 2.0 Web client), `SESSION_SECRET` (any long random string, used to sign session cookies), and `KAKAO_REST_API_KEY` (from a Kakao Developers app's REST API key, used server-side only — never exposed to the client).
 - Add the Pages `*.pages.dev` domain (and any custom domain) as an Authorized JavaScript origin on that Google OAuth client.
 - Put the same `GOOGLE_CLIENT_ID` into `index.html`'s `GOOGLE_CLIENT_ID` constant (it's a public identifier, fine to commit).
 

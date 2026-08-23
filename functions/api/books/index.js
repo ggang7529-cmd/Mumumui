@@ -4,7 +4,7 @@ import { json, newId } from "../../_lib/db.js";
 export async function onRequestGet(context) {
   var env = context.env;
   var rows = await env.DB.prepare(
-    "SELECT id, title, author, cover, text, rating_sum, rating_count, comment_count, " +
+    "SELECT id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
     "owner_uid, owner_name, owner_photo, created_at FROM books ORDER BY created_at DESC"
   ).all();
   return json({ books: rows.results });
@@ -27,19 +27,25 @@ export async function onRequestPost(context) {
   var text = String(body.text || "").trim().slice(0, 80);
   var rating = Number(body.rating);
   var cover = typeof body.cover === "string" ? body.cover : null;
+  var isbn = String(body.isbn || "").trim().slice(0, 40);
 
   if (!title || !author || !text) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
 
-  var dup = await env.DB.prepare("SELECT id FROM books WHERE lower(title) = lower(?1)").bind(title).first();
-  if (dup) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
+  if (isbn) {
+    var dupIsbn = await env.DB.prepare("SELECT id FROM books WHERE isbn = ?1").bind(isbn).first();
+    if (dupIsbn) return json({ error: "이미 등록된 책이에요." }, { status: 409 });
+  }
+
+  var dupTitle = await env.DB.prepare("SELECT id FROM books WHERE lower(title) = lower(?1)").bind(title).first();
+  if (dupTitle) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
 
   var id = newId();
   var now = Date.now();
   await env.DB.prepare(
-    "INSERT INTO books (id, title, author, cover, text, rating_sum, rating_count, comment_count, " +
-    "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, 0, ?7, ?8, ?9, ?10)"
-  ).bind(id, title, author, cover, text, rating, user.uid, user.name, user.picture, now).run();
+    "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
+    "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 0, ?8, ?9, ?10, ?11)"
+  ).bind(id, title, author, cover, isbn || null, text, rating, user.uid, user.name, user.picture, now).run();
 
   return json({ id: id }, { status: 201 });
 }

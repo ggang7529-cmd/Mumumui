@@ -341,49 +341,117 @@
 
   .field textarea { min-height: 110px; line-height: 1.6; }
 
-  .cover-picker {
+  .book-search-row {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    gap: 0.6rem;
   }
 
-  .cover-preview {
-    width: 72px;
+  .book-search-row input {
+    flex: 1;
+  }
+
+  .book-results {
+    list-style: none;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .book-results li + li { border-top: 1px solid var(--line); }
+
+  .book-result-empty {
+    padding: 0.9rem;
+    color: var(--ink-faint);
+    font-size: 0.88rem;
+  }
+
+  .book-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0.7rem 0.9rem;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink);
+  }
+
+  .book-result-item:hover { background: var(--paper-soft); }
+
+  .book-result-item img,
+  .book-result-noimg {
+    width: 42px;
     aspect-ratio: 2 / 3;
     flex: none;
-    border-radius: 4px;
+    border-radius: 3px;
+    object-fit: cover;
     background: var(--paper-soft);
-    border: 1px solid var(--line);
-    overflow: hidden;
+  }
+
+  .book-result-noimg {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.6rem;
     color: var(--ink-faint);
-    font-size: 0.68rem;
     text-align: center;
-    line-height: 1.4;
-    padding: 0.3rem;
+    line-height: 1.3;
   }
 
-  .cover-preview img {
+  .book-result-title {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .book-result-author {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+  }
+
+  .selected-book {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .selected-book-cover {
+    width: 56px;
+    aspect-ratio: 2 / 3;
+    flex: none;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--cover, var(--accent));
+  }
+
+  .selected-book-cover img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
 
-  .cover-picker-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  .selected-book-info { flex: 1; min-width: 0; }
+
+  .selected-book-title {
+    font-family: "Gowun Batang", serif;
+    font-size: 1.05rem;
   }
 
-  .cover-picker-controls input[type="file"] {
-    font-family: inherit;
-    font-size: 0.82rem;
-    color: var(--ink-soft);
-    max-width: 230px;
+  .selected-book-author {
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    margin-top: 0.2rem;
   }
 
   .star-picker {
@@ -728,22 +796,24 @@
       <div class="panel">
         <h2>새 책 기록하기</h2>
         <form id="reviewForm">
-          <div class="field">
-            <label for="fTitle">책 제목</label>
-            <input type="text" id="fTitle" required maxlength="80" placeholder="예: 아몬드">
+          <div class="field" id="bookSearchField">
+            <label for="bookSearchInput">책 검색</label>
+            <div class="book-search-row">
+              <input type="search" id="bookSearchInput" placeholder="책 제목으로 검색 (예: 아몬드)" autocomplete="off">
+              <button type="button" class="btn-ghost" id="bookSearchBtn">검색</button>
+            </div>
+            <p class="char-hint">카카오 도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
+            <ul class="book-results" id="bookResults" hidden></ul>
           </div>
-          <div class="field">
-            <label for="fAuthor">저자</label>
-            <input type="text" id="fAuthor" required maxlength="60" placeholder="예: 손원평">
-          </div>
-          <div class="field">
-            <label for="fCover">책 표지 사진 (선택)</label>
-            <div class="cover-picker">
-              <div class="cover-preview" id="coverPreview">표지 없음</div>
-              <div class="cover-picker-controls">
-                <input type="file" id="fCover" accept="image/*">
-                <button type="button" class="btn-ghost" id="clearCover" hidden>사진 지우기</button>
+          <div class="field" id="selectedBookField" hidden>
+            <label>선택한 책</label>
+            <div class="selected-book">
+              <div class="selected-book-cover" id="selectedBookCover"></div>
+              <div class="selected-book-info">
+                <div class="selected-book-title" id="selectedBookTitle"></div>
+                <div class="selected-book-author" id="selectedBookAuthor"></div>
               </div>
+              <button type="button" class="btn-ghost" id="clearSelectedBook">다시 검색</button>
             </div>
           </div>
           <div class="field">
@@ -839,7 +909,7 @@
 
   function normalizeBook(row) {
     return {
-      id: row.id, title: row.title, author: row.author, cover: row.cover, text: row.text,
+      id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, text: row.text,
       ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
       ownerUid: row.owner_uid, ownerName: row.owner_name, ownerPhoto: row.owner_photo,
       createdAt: row.created_at
@@ -880,7 +950,7 @@
   var currentId = null;
   var commentRating = 0;
   var formRating = 0;
-  var formCover = null;
+  var selectedBook = null;
   var searchQuery = "";
 
   var $shelf = document.getElementById("shelfGrid");
@@ -892,55 +962,109 @@
   var $cStars = document.getElementById("cStars");
   var $fStars = document.getElementById("fStars");
   var $reviewForm = document.getElementById("reviewForm");
-  var $coverPreview = document.getElementById("coverPreview");
-  var $fCover = document.getElementById("fCover");
-  var $clearCover = document.getElementById("clearCover");
+  var $bookSearchInput = document.getElementById("bookSearchInput");
+  var $bookResults = document.getElementById("bookResults");
+  var $bookSearchField = document.getElementById("bookSearchField");
+  var $selectedBookField = document.getElementById("selectedBookField");
 
-  function updateCoverPreview() {
-    $coverPreview.innerHTML = "";
-    if (formCover) {
-      var img = document.createElement("img");
-      img.src = formCover;
-      img.alt = "";
-      $coverPreview.appendChild(img);
-      $clearCover.hidden = false;
-    } else {
-      $coverPreview.textContent = "표지 없음";
-      $clearCover.hidden = true;
+  function searchBooks(q) {
+    if (!q) { $bookResults.hidden = true; $bookResults.innerHTML = ""; return; }
+    api("/api/search-books?q=" + encodeURIComponent(q)).then(function (data) {
+      renderBookResults(data.books || []);
+    }).catch(function (e) {
+      $bookResults.hidden = false;
+      $bookResults.innerHTML = "";
+      var li = document.createElement("li");
+      li.className = "book-result-empty";
+      li.textContent = "검색에 실패했어요: " + e.message;
+      $bookResults.appendChild(li);
+    });
+  }
+
+  function renderBookResults(list) {
+    $bookResults.innerHTML = "";
+    $bookResults.hidden = false;
+
+    if (list.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "book-result-empty";
+      empty.textContent = "검색 결과가 없어요.";
+      $bookResults.appendChild(empty);
+      return;
     }
+
+    list.forEach(function (b) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "book-result-item";
+
+      if (b.cover) {
+        var img = document.createElement("img");
+        img.src = b.cover;
+        img.alt = "";
+        btn.appendChild(img);
+      } else {
+        var placeholder = document.createElement("div");
+        placeholder.className = "book-result-noimg";
+        placeholder.textContent = "표지 없음";
+        btn.appendChild(placeholder);
+      }
+
+      var info = document.createElement("div");
+      var t = document.createElement("div");
+      t.className = "book-result-title";
+      t.textContent = b.title;
+      var a = document.createElement("div");
+      a.className = "book-result-author";
+      a.textContent = b.author + (b.publisher ? " · " + b.publisher : "");
+      info.appendChild(t);
+      info.appendChild(a);
+      btn.appendChild(info);
+
+      btn.addEventListener("click", function () { selectBook(b); });
+      li.appendChild(btn);
+      $bookResults.appendChild(li);
+    });
   }
 
-  function readCoverFile(file) {
-    var reader = new FileReader();
-    reader.onload = function () {
-      var img = new Image();
-      img.onload = function () {
-        var maxWidth = 480;
-        var scale = Math.min(1, maxWidth / img.width);
-        var w = Math.round(img.width * scale);
-        var h = Math.round(img.height * scale);
-        var canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        formCover = canvas.toDataURL("image/jpeg", 0.82);
-        updateCoverPreview();
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
+  function selectBook(b) {
+    selectedBook = b;
+    $bookSearchField.hidden = true;
+    $selectedBookField.hidden = false;
+    $bookResults.hidden = true;
+    $bookResults.innerHTML = "";
+    $bookSearchInput.value = "";
+
+    var $cover = document.getElementById("selectedBookCover");
+    $cover.innerHTML = "";
+    $cover.style.setProperty("--cover", coverFor(b.title));
+    if (b.cover) {
+      var img = document.createElement("img");
+      img.src = b.cover;
+      img.alt = "";
+      $cover.appendChild(img);
+    }
+    document.getElementById("selectedBookTitle").textContent = b.title;
+    document.getElementById("selectedBookAuthor").textContent = b.author;
   }
 
-  $fCover.addEventListener("change", function (e) {
-    var file = e.target.files && e.target.files[0];
-    if (file) readCoverFile(file);
-  });
+  function clearSelectedBook() {
+    selectedBook = null;
+    $bookSearchField.hidden = false;
+    $selectedBookField.hidden = true;
+  }
 
-  $clearCover.addEventListener("click", function () {
-    formCover = null;
-    $fCover.value = "";
-    updateCoverPreview();
+  document.getElementById("bookSearchBtn").addEventListener("click", function () {
+    searchBooks($bookSearchInput.value.trim());
   });
+  $bookSearchInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      searchBooks($bookSearchInput.value.trim());
+    }
+  });
+  document.getElementById("clearSelectedBook").addEventListener("click", clearSelectedBook);
 
   function renderStars(container, rating, interactive, onSelect) {
     container.innerHTML = "";
@@ -1186,12 +1310,15 @@
 
   function openForm() {
     $reviewForm.reset();
-    formCover = null;
+    selectedBook = null;
     formRating = 0;
-    updateCoverPreview();
+    $bookSearchField.hidden = false;
+    $selectedBookField.hidden = true;
+    $bookResults.hidden = true;
+    $bookResults.innerHTML = "";
     renderStars($fStars, 0, true, selectFormRating);
     showView("form");
-    document.getElementById("fTitle").focus();
+    $bookSearchInput.focus();
   }
 
   function openDetail(id) {
@@ -1338,23 +1465,27 @@
   $reviewForm.addEventListener("submit", function (e) {
     e.preventDefault();
     if (!currentUser) { alert("로그인 후 등록할 수 있어요."); return; }
+    if (!selectedBook) { alert("책을 검색해서 선택해주세요."); return; }
 
-    var title = document.getElementById("fTitle").value.trim();
-    var author = document.getElementById("fAuthor").value.trim();
     var text = document.getElementById("fText").value.trim();
-
-    if (!title || !author || !text) return;
+    if (!text) return;
     if (formRating === 0) {
       alert("별점을 선택해주세요.");
       return;
     }
 
-    api("/api/books", { method: "POST", body: { title: title, author: author, cover: formCover, text: text, rating: formRating } })
+    api("/api/books", {
+      method: "POST",
+      body: {
+        title: selectedBook.title, author: selectedBook.author, cover: selectedBook.cover,
+        isbn: selectedBook.isbn, text: text, rating: formRating
+      }
+    })
       .then(function () { return refreshBooks(); })
       .then(function () { showView("library"); })
       .catch(function (e) {
         alert(e.message);
-        if (e.message.indexOf("이미 등록된") !== -1) document.getElementById("fTitle").focus();
+        if (e.message.indexOf("이미 등록된") !== -1) clearSelectedBook();
       });
   });
 

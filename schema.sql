@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS books (
   title TEXT NOT NULL,
   author TEXT NOT NULL,
   cover TEXT,
+  isbn TEXT,
   text TEXT NOT NULL,
   rating_sum INTEGER NOT NULL,
   rating_count INTEGER NOT NULL,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS books (
 
 CREATE INDEX IF NOT EXISTS idx_books_created_at ON books (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_books_title ON books (title);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_books_isbn ON books (isbn) WHERE isbn IS NOT NULL AND isbn != '';
 
 CREATE TABLE IF NOT EXISTS comments (
   id TEXT PRIMARY KEY,
