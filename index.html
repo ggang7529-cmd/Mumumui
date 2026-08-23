@@ -1537,8 +1537,7 @@
         isbn: selectedBook.isbn, text: text, rating: formRating, name: nickname
       }
     })
-      .then(function () { renderAuthBox(); return refreshBooks(); })
-      .then(function () { showView("library"); })
+      .then(function () { renderAuthBox(); showView("library"); return refreshBooks(); })
       .catch(function (e) {
         alert(e.message);
         if (e.message.indexOf("이미 등록된") !== -1) clearSelectedBook();
@@ -1553,8 +1552,7 @@
     if (!confirm("이 리뷰를 삭제할까요? 댓글도 함께 사라져요.")) return;
 
     api("/api/books/" + currentId, { method: "DELETE", headers: { "X-Admin-Key": adminKey } })
-      .then(function () { return refreshBooks(); })
-      .then(function () { showView("library"); })
+      .then(function () { showView("library"); return refreshBooks(); })
       .catch(function (e) { alert(e.message); });
   });
 
