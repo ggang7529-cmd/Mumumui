@@ -43,11 +43,18 @@ export async function onRequestPost(context) {
   if (dupTitle) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
 
   var id = newId();
+  var commentId = newId();
   var now = Date.now();
-  await env.DB.prepare(
-    "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
-    "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 0, ?8, ?9, NULL, ?10)"
-  ).bind(id, title, author, cover, isbn || null, text, rating, uid, name, now).run();
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
+      "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 1, ?8, ?9, NULL, ?10)"
+    ).bind(id, title, author, cover, isbn || null, text, rating, uid, name, now),
+    env.DB.prepare(
+      "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)"
+    ).bind(commentId, id, text, rating, uid, name, now)
+  ]);
 
   return json({ id: id }, { status: 201 });
 }

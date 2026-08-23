@@ -578,22 +578,6 @@
     margin: 0.15rem 0 0;
   }
 
-  .detail-review {
-    max-width: 62ch;
-    font-family: "Gowun Batang", serif;
-    font-size: 1.18rem;
-    line-height: 1.5;
-    margin: 0 0 0.25rem;
-  }
-
-  .detail-review::before,
-  .detail-review::after {
-    color: var(--accent);
-  }
-
-  .detail-review::before { content: "\201C"; }
-  .detail-review::after { content: "\201D"; }
-
   .btn-ghost-danger {
     background: none;
     border: 1px solid var(--line);
@@ -853,7 +837,6 @@
             <p class="meta-owner" id="detailOwner"></p>
           </header>
         </div>
-        <p class="detail-review" id="detailText"></p>
         <button class="btn-ghost-danger" id="deleteBtn" type="button" hidden>이 책 리뷰 삭제하기</button>
 
         <section class="comments">
@@ -1399,7 +1382,6 @@
     document.getElementById("detailAuthor").textContent = r.author;
     document.getElementById("detailDate").textContent = formatDate(r.createdAt) + " 기록";
     document.getElementById("detailOwner").textContent = "등록: " + (r.ownerName || "알 수 없음");
-    document.getElementById("detailText").textContent = r.text;
 
     var rating = bookRating(r);
     renderStars(document.getElementById("detailStars"), rating ? Math.round(rating.avg) : 0, false);
