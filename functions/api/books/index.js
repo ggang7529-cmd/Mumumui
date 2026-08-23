@@ -5,7 +5,7 @@ export async function onRequestGet(context) {
   var env = context.env;
   var rows = await env.DB.prepare(
     "SELECT id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
-    "owner_uid, owner_name, owner_photo, created_at FROM books ORDER BY created_at DESC"
+    "owner_uid, owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
 }
@@ -48,7 +48,7 @@ export async function onRequestPost(context) {
   await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
-      "owner_uid, owner_name, owner_photo, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 1, ?8, ?9, NULL, ?10)"
+      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 1, ?8, ?9, NULL, ?10, ?10)"
     ).bind(id, title, author, cover, isbn || null, text, rating, uid, name, now),
     env.DB.prepare(
       "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at) " +
@@ -60,7 +60,7 @@ export async function onRequestPost(context) {
     book: {
       id: id, title: title, author: author, cover: cover, isbn: isbn || null, text: text,
       rating_sum: rating, rating_count: 1, comment_count: 1,
-      owner_uid: uid, owner_name: name, owner_photo: null, created_at: now
+      owner_uid: uid, owner_name: name, owner_photo: null, created_at: now, updated_at: now
     }
   }, { status: 201 });
 }

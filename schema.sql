@@ -19,10 +19,12 @@ CREATE TABLE IF NOT EXISTS books (
   owner_uid TEXT NOT NULL,
   owner_name TEXT,
   owner_photo TEXT,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_created_at ON books (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_books_updated_at ON books (updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_books_title ON books (title);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_isbn ON books (isbn) WHERE isbn IS NOT NULL AND isbn != '';
 

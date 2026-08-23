@@ -47,8 +47,8 @@ export async function onRequestPost(context) {
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)"
     ).bind(id, bookId, text, rating, uid, name, now),
     env.DB.prepare(
-      "UPDATE books SET rating_sum = rating_sum + ?1, rating_count = rating_count + 1, comment_count = comment_count + 1 WHERE id = ?2"
-    ).bind(rating, bookId)
+      "UPDATE books SET rating_sum = rating_sum + ?1, rating_count = rating_count + 1, comment_count = comment_count + 1, updated_at = ?3 WHERE id = ?2"
+    ).bind(rating, bookId, now)
   ]);
 
   return json({ id: id }, { status: 201 });
