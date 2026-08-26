@@ -60,14 +60,10 @@ export var dom = {
   randomCardTitle: document.getElementById("randomCardTitle"),
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
-  randomGoBtn: document.getElementById("randomGoBtn"),
-  adminToggleBtn: document.getElementById("adminToggleBtn")
+  randomGoBtn: document.getElementById("randomGoBtn")
 };
 
 function renderAdminToggle() {
-  var admin = isAdminMode();
-  dom.adminToggleBtn.textContent = admin ? "관리자 모드 해제" : "관리자";
-  dom.adminToggleBtn.classList.toggle("is-active", admin);
   if (state.view === "detail") renderDetail();
 }
 
@@ -260,7 +256,12 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
 });
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
-document.getElementById("adminToggleBtn").addEventListener("click", function () {
+
+// Ctrl+Shift+A (Mac: Cmd+Shift+A) — 화면에 아무 흔적도 남기지 않는 숨겨진 관리자 모드 전환 단축키.
+document.addEventListener("keydown", function (e) {
+  if (!e.shiftKey || e.key.toLowerCase() !== "a" || !(e.ctrlKey || e.metaKey)) return;
+  e.preventDefault();
+
   if (isAdminMode()) {
     if (!confirm("관리자 모드를 해제할까요?")) return;
     clearAdminKey();
@@ -270,8 +271,8 @@ document.getElementById("adminToggleBtn").addEventListener("click", function () 
   var key = prompt("관리자 비밀번호를 입력하세요.");
   if (key === null) return;
   verifyAdminKey(key).then(function (ok) {
-    if (!ok) { alert("비밀번호가 틀렸어요."); return; }
-    renderAdminToggle();
+    alert(ok ? "관리자 모드 켜짐" : "비밀번호가 틀렸어요.");
+    if (ok) renderAdminToggle();
   });
 });
 document.getElementById("feedbackForm").addEventListener("submit", function (e) {
@@ -417,6 +418,5 @@ if (AUTH_MODE === "google") {
   renderAuthBox();
 }
 
-renderAdminToggle();
 refreshBooks();
 showView("library");
