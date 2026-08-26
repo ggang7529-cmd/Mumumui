@@ -102,7 +102,12 @@ export function showView(name) {
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
-  if (name === "library") { stopDetailPolling(); startLibraryPolling(); }
+  if (name === "library") {
+    stopDetailPolling(); startLibraryPolling();
+    // /book/:id로 바로 들어왔다가 돌아오는 경우처럼, 책 목록이 로딩된 뒤로 한 번도
+    // 목록 화면 자체가 렌더링된 적이 없을 수 있으니 여기서도 다시 그려준다.
+    if (state.booksLoaded) renderLibrary();
+  }
   else if (name === "detail") { stopLibraryPolling(); startDetailPolling(); }
   else { stopLibraryPolling(); stopDetailPolling(); }
 
