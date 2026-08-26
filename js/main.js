@@ -105,6 +105,12 @@ export function showView(name) {
   if (name === "library") { stopDetailPolling(); startLibraryPolling(); }
   else if (name === "detail") { stopLibraryPolling(); startDetailPolling(); }
   else { stopLibraryPolling(); stopDetailPolling(); }
+
+  // 책 상세만 고유 URL(/book/:id)을 갖고, 나머지 화면(목록/글쓰기/랜덤/의견)은 모두 "/"로
+  // 취급한다. 이미 같은 경로면 history를 더 쌓지 않는다 (뒤로가기가 자연스럽게 목록으로).
+  var path = (name === "detail" && state.currentId) ? "/book/" + encodeURIComponent(state.currentId) : "/";
+  if (window.location.pathname !== path) history.pushState(null, "", path);
+
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
@@ -418,5 +424,19 @@ if (AUTH_MODE === "google") {
   renderAuthBox();
 }
 
+function bookIdFromPath(pathname) {
+  var m = pathname.match(/^\/book\/([^/]+)\/?$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+window.addEventListener("popstate", function () {
+  var id = bookIdFromPath(window.location.pathname);
+  if (id) openDetail(id);
+  else showView("library");
+});
+
+var initialBookId = bookIdFromPath(window.location.pathname);
+if (initialBookId) openDetail(initialBookId);
+else showView("library");
+
 refreshBooks();
-showView("library");

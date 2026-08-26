@@ -285,7 +285,13 @@ export function renderLibrary() {
 
 export function renderDetail() {
   var r = findBook(state.currentId);
-  if (!r) { showView("library"); return; }
+  if (!r) {
+    // 책 목록이 아직 안 불러와졌으면(예: /book/:id 직접 접속 직후) 아직 못 찾은 것뿐이니
+    // 목록 로딩이 끝난 뒤 다시 렌더링될 때까지 기다린다. 로딩이 끝났는데도 없으면 삭제된
+    // 책이거나 잘못된 링크인 것이므로 그때만 목록으로 돌려보낸다.
+    if (state.booksLoaded) showView("library");
+    return;
+  }
 
   document.getElementById("detailTitle").textContent = r.title;
   document.getElementById("detailAuthor").textContent = r.author;
