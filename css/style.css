@@ -424,7 +424,7 @@
     list-style: none;
     margin: 0.8rem 0 0;
     padding: 0;
-    max-height: 320px;
+    max-height: 380px;
     overflow-y: auto;
     border: 1px solid var(--line);
     border-radius: 4px;
@@ -441,11 +441,11 @@
   .book-result-item {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 1rem;
     width: 100%;
     background: none;
     border: none;
-    padding: 0.7rem 0.9rem;
+    padding: 0.85rem 0.9rem;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -456,52 +456,54 @@
 
   .book-result-item img,
   .book-result-noimg {
-    width: 42px;
+    width: 68px;
     aspect-ratio: 2 / 3;
     flex: none;
-    border-radius: 3px;
+    border-radius: 4px;
     object-fit: cover;
     background: var(--paper-soft);
+    box-shadow: 0 2px 6px var(--shadow);
   }
 
   .book-result-noimg {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     color: var(--ink-faint);
     text-align: center;
     line-height: 1.3;
   }
 
   .book-result-title {
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     line-height: 1.4;
   }
 
   .book-result-author {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--ink-faint);
-    margin-top: 0.15rem;
+    margin-top: 0.2rem;
   }
 
   .selected-book {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 1rem;
     background: var(--paper-soft);
     border: 1px solid var(--line);
     border-radius: 4px;
-    padding: 0.8rem 0.9rem;
+    padding: 0.9rem 1rem;
   }
 
   .selected-book-cover {
-    width: 56px;
+    width: 76px;
     aspect-ratio: 2 / 3;
     flex: none;
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
     background: var(--cover, var(--accent));
+    box-shadow: 0 2px 8px var(--shadow);
   }
 
   .selected-book-cover img {
@@ -591,9 +593,10 @@
 
   .detail-top {
     display: flex;
-    gap: 1.75rem;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
     margin-bottom: 1.4rem;
     padding-bottom: 1.4rem;
     border-bottom: 1px solid var(--line);
@@ -619,9 +622,9 @@
   .detail-card header {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    flex: 1;
-    min-width: 200px;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 480px;
   }
 
   .detail-card h2 {
@@ -639,6 +642,7 @@
   .rating-line {
     display: flex;
     align-items: baseline;
+    justify-content: center;
     gap: 0.6rem;
   }
 
