@@ -281,9 +281,9 @@ document.addEventListener("keydown", function (e) {
   }
   var key = prompt("관리자 비밀번호를 입력하세요.");
   if (key === null) return;
-  verifyAdminKey(key).then(function (ok) {
-    alert(ok ? "관리자 모드 켜짐" : "비밀번호가 틀렸어요.");
-    if (ok) renderAdminToggle();
+  verifyAdminKey(key).then(function (result) {
+    alert(result.ok ? "관리자 모드 켜짐" : result.error);
+    if (result.ok) renderAdminToggle();
   });
 });
 document.getElementById("feedbackForm").addEventListener("submit", function (e) {

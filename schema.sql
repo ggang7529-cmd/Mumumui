@@ -46,3 +46,10 @@ CREATE TABLE IF NOT EXISTS comment_likes (
   user_id TEXT NOT NULL,
   PRIMARY KEY (comment_id, user_id)
 );
+
+-- 관리자 비밀번호 무차별 대입 방어용 요청 횟수 제한 (functions/_lib/rateLimit.js).
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id TEXT PRIMARY KEY,
+  count INTEGER NOT NULL,
+  window_start INTEGER NOT NULL
+);

@@ -51,13 +51,15 @@ export function clearAdminKey() {
 export function verifyAdminKey(key) {
   return fetch("/api/admin/verify", { method: "POST", headers: { "X-Admin-Key": key } })
     .then(function (res) {
-      if (res.ok) {
-        try { localStorage.setItem(ADMIN_KEY_STORAGE, key); } catch (e) {}
-        return true;
-      }
-      return false;
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (res.ok) {
+          try { localStorage.setItem(ADMIN_KEY_STORAGE, key); } catch (e) {}
+          return { ok: true };
+        }
+        return { ok: false, error: (data && data.error) || "비밀번호가 틀렸어요." };
+      });
     })
-    .catch(function () { return false; });
+    .catch(function () { return { ok: false, error: "요청이 실패했어요." }; });
 }
 
 export function normalizeBook(row) {
