@@ -832,6 +832,87 @@
     font-size: 0.78rem;
   }
 
+  /* random pick */
+
+  .random-panel { text-align: center; }
+  .random-panel h2 { text-align: left; }
+  .random-panel .char-hint { text-align: left; margin-top: -0.6rem; }
+
+  .random-stage {
+    display: flex;
+    justify-content: center;
+    padding: 1.75rem 0 0.5rem;
+  }
+
+  .random-card {
+    width: 170px;
+    max-width: 60vw;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--paper-soft);
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+
+  .random-card-cover {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    background: var(--cover, var(--accent));
+  }
+
+  .random-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .random-card-title {
+    min-height: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    background: var(--paper-raised);
+    font-family: "Gowun Batang", serif;
+    font-size: 0.92rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  .random-card.spinning {
+    animation: randomShake 0.12s linear infinite;
+  }
+
+  @keyframes randomShake {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-2px) rotate(-0.6deg); }
+    100% { transform: translateY(0) rotate(0.6deg); }
+  }
+
+  .random-info { margin-top: 0.75rem; }
+
+  .random-info h3 {
+    font-family: "Gowun Batang", serif;
+    font-size: 1.35rem;
+    margin: 0 0 0.3rem;
+    text-wrap: balance;
+  }
+
+  .random-info-review {
+    margin: 1rem auto 0;
+    max-width: 480px;
+    padding: 0.9rem 1.1rem;
+    background: var(--paper-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    font-size: 0.95rem;
+    color: var(--ink);
+    text-align: left;
+  }
+
+  .random-actions { justify-content: center; }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -849,6 +930,7 @@
     <div class="header-actions">
       <div class="auth-box" id="authBox"></div>
       <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
+      <button class="btn-accent-outline" id="randomBtn" type="button">랜덤 책 추천</button>
       <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
     </div>
   </header>
@@ -956,6 +1038,34 @@
             <div id="googleBtnComment"></div>
           </div>
         </section>
+      </div>
+    </section>
+
+    <section id="randomView" hidden>
+      <button class="back-btn" id="randomBackBtn" type="button">‹ 서재로</button>
+      <div class="panel random-panel">
+        <h2>랜덤 책 추천</h2>
+        <p class="char-hint">등록된 책 중에서 무작위로 한 권을 뽑아드려요.</p>
+        <div class="random-stage">
+          <div class="random-card" id="randomCard">
+            <div class="random-card-cover" id="randomCardCover"></div>
+            <div class="random-card-title" id="randomCardTitle"></div>
+          </div>
+        </div>
+        <div class="random-info" id="randomInfo" hidden>
+          <h3 id="randomInfoTitle"></h3>
+          <p class="detail-author" id="randomInfoAuthor"></p>
+          <div class="rating-line" style="justify-content: center;">
+            <div class="stars" id="randomInfoStars"></div>
+            <span class="rating-meta" id="randomInfoRatingMeta"></span>
+          </div>
+          <p class="meta-owner" id="randomInfoOwner"></p>
+          <blockquote class="random-info-review" id="randomInfoReview" hidden></blockquote>
+        </div>
+        <div class="form-actions random-actions">
+          <button type="button" class="btn-primary" id="randomDrawBtn">책 뽑기</button>
+          <button type="button" class="btn-ghost" id="randomGoBtn" hidden>이 책 리뷰 보러가기</button>
+        </div>
       </div>
     </section>
 
@@ -1108,6 +1218,7 @@
   var $libraryView = document.getElementById("libraryView");
   var $formView = document.getElementById("formView");
   var $detailView = document.getElementById("detailView");
+  var $randomView = document.getElementById("randomView");
   var $feedbackView = document.getElementById("feedbackView");
   var $cStars = document.getElementById("cStars");
   var $fStars = document.getElementById("fStars");
@@ -1272,6 +1383,7 @@
     $libraryView.hidden = name !== "library";
     $formView.hidden = name !== "form";
     $detailView.hidden = name !== "detail";
+    $randomView.hidden = name !== "random";
     $feedbackView.hidden = name !== "feedback";
     if (name === "library") { stopDetailPolling(); startLibraryPolling(); }
     else if (name === "detail") { stopLibraryPolling(); startDetailPolling(); }
@@ -1697,6 +1809,119 @@
   });
   document.getElementById("backBtn").addEventListener("click", function () {
     showView("library");
+  });
+
+  var $randomCard = document.getElementById("randomCard");
+  var $randomCardCover = document.getElementById("randomCardCover");
+  var $randomCardTitle = document.getElementById("randomCardTitle");
+  var $randomInfo = document.getElementById("randomInfo");
+  var $randomDrawBtn = document.getElementById("randomDrawBtn");
+  var $randomGoBtn = document.getElementById("randomGoBtn");
+  var randomPickedId = null;
+  var randomSpinning = false;
+
+  function renderRandomCard(b) {
+    $randomCardCover.innerHTML = "";
+    $randomCardCover.style.setProperty("--cover", coverFor(b.title));
+    if (b.cover) {
+      var img = document.createElement("img");
+      img.src = b.cover;
+      img.alt = "";
+      $randomCardCover.appendChild(img);
+    }
+    $randomCardTitle.textContent = b.title;
+  }
+
+  function openRandomView() {
+    randomPickedId = null;
+    randomSpinning = false;
+    $randomInfo.hidden = true;
+    $randomGoBtn.hidden = true;
+    $randomDrawBtn.disabled = false;
+    $randomCard.classList.remove("spinning");
+    $randomCardCover.innerHTML = "";
+    $randomCardCover.style.removeProperty("--cover");
+    $randomCardTitle.textContent = "책 뽑기 버튼을 눌러보세요";
+    showView("random");
+  }
+
+  function drawRandomBook() {
+    if (randomSpinning) return;
+    if (!booksLoaded || books.length === 0) {
+      alert("아직 등록된 책이 없어요. 먼저 책을 기록해보세요.");
+      return;
+    }
+
+    randomSpinning = true;
+    $randomDrawBtn.disabled = true;
+    $randomInfo.hidden = true;
+    $randomGoBtn.hidden = true;
+    $randomCard.classList.add("spinning");
+
+    var pool = books;
+    var target = pool[Math.floor(Math.random() * pool.length)];
+    var duration = 2000;
+    var minDelay = 45;
+    var maxDelay = 260;
+    var elapsed = 0;
+
+    function pickFlash() {
+      if (pool.length === 1) return pool[0];
+      var b;
+      do { b = pool[Math.floor(Math.random() * pool.length)]; } while (b.id === target.id);
+      return b;
+    }
+
+    function step() {
+      var progress = Math.min(elapsed / duration, 1);
+      if (progress >= 1) {
+        renderRandomCard(target);
+        $randomCard.classList.remove("spinning");
+        randomSpinning = false;
+        $randomDrawBtn.disabled = false;
+        finishRandomDraw(target);
+        return;
+      }
+      renderRandomCard(pickFlash());
+      var eased = Math.pow(progress, 2.2);
+      var delay = minDelay + (maxDelay - minDelay) * eased;
+      elapsed += delay;
+      setTimeout(step, delay);
+    }
+
+    step();
+  }
+
+  function finishRandomDraw(b) {
+    randomPickedId = b.id;
+    document.getElementById("randomInfoTitle").textContent = b.title;
+    document.getElementById("randomInfoAuthor").textContent = b.author;
+
+    var rating = bookRating(b);
+    renderStars(document.getElementById("randomInfoStars"), rating ? Math.round(rating.avg) : 0, false);
+    document.getElementById("randomInfoRatingMeta").textContent = rating
+      ? rating.avg.toFixed(1) + " (" + rating.count + ")"
+      : "아직 평점 없음";
+    document.getElementById("randomInfoOwner").textContent =
+      "등록: " + (b.ownerName || "알 수 없음") + " · " + formatDate(b.createdAt);
+
+    var $review = document.getElementById("randomInfoReview");
+    if (b.text) {
+      $review.textContent = "“" + b.text + "”";
+      $review.hidden = false;
+    } else {
+      $review.hidden = true;
+    }
+
+    $randomInfo.hidden = false;
+    $randomGoBtn.hidden = false;
+  }
+
+  document.getElementById("randomBtn").addEventListener("click", openRandomView);
+  document.getElementById("randomBackBtn").addEventListener("click", function () { showView("library"); });
+  $randomDrawBtn.addEventListener("click", drawRandomBook);
+  $randomGoBtn.addEventListener("click", function () {
+    if (randomPickedId) openDetail(randomPickedId);
   });
 
   $reviewForm.addEventListener("submit", function (e) {
