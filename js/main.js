@@ -250,6 +250,7 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
   showView("feedback");
 });
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
+document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
 document.getElementById("feedbackForm").addEventListener("submit", function (e) {
   e.preventDefault();
   if (WEB3FORMS_ACCESS_KEY.indexOf("YOUR_WEB3FORMS_ACCESS_KEY") === 0) {
