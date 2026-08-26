@@ -1,5 +1,5 @@
 import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
-import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, renderGoogleButtons } from "./api.js";
+import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, renderGoogleButtons, isAdminMode } from "./api.js";
 
 var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -308,7 +308,7 @@ export function renderDetail() {
     $detailCover.appendChild(coverImg);
   }
 
-  document.getElementById("deleteBtn").hidden = false;
+  document.getElementById("deleteBtn").hidden = !isAdminMode();
 
   var $commentForm = document.getElementById("commentForm");
   var $commentSignin = document.getElementById("commentSignin");

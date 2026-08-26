@@ -576,6 +576,20 @@
 
   .btn-accent-outline:hover { background: var(--accent); color: var(--paper-raised); }
 
+  .btn-admin-link {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .btn-admin-link:hover { color: var(--ink-soft); }
+  .btn-admin-link.is-active { color: var(--accent); font-weight: 600; }
+
   /* detail */
 
   .back-btn {

@@ -1,6 +1,7 @@
 import {
   googleConfigured, api, refreshBooks, refreshComments,
-  getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons
+  getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
+  isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
@@ -59,8 +60,16 @@ export var dom = {
   randomCardTitle: document.getElementById("randomCardTitle"),
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
-  randomGoBtn: document.getElementById("randomGoBtn")
+  randomGoBtn: document.getElementById("randomGoBtn"),
+  adminToggleBtn: document.getElementById("adminToggleBtn")
 };
+
+function renderAdminToggle() {
+  var admin = isAdminMode();
+  dom.adminToggleBtn.textContent = admin ? "관리자 모드 해제" : "관리자";
+  dom.adminToggleBtn.classList.toggle("is-active", admin);
+  if (state.view === "detail") renderDetail();
+}
 
 function selectCommentRating(idx) {
   state.commentRating = idx;
@@ -251,6 +260,20 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
 });
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
+document.getElementById("adminToggleBtn").addEventListener("click", function () {
+  if (isAdminMode()) {
+    if (!confirm("관리자 모드를 해제할까요?")) return;
+    clearAdminKey();
+    renderAdminToggle();
+    return;
+  }
+  var key = prompt("관리자 비밀번호를 입력하세요.");
+  if (key === null) return;
+  verifyAdminKey(key).then(function (ok) {
+    if (!ok) { alert("비밀번호가 틀렸어요."); return; }
+    renderAdminToggle();
+  });
+});
 document.getElementById("feedbackForm").addEventListener("submit", function (e) {
   e.preventDefault();
   if (WEB3FORMS_ACCESS_KEY.indexOf("YOUR_WEB3FORMS_ACCESS_KEY") === 0) {
@@ -336,17 +359,18 @@ dom.reviewForm.addEventListener("submit", function (e) {
 document.getElementById("deleteBtn").addEventListener("click", function () {
   var r = findBook(state.currentId);
   if (!r) return;
-  var adminKey = prompt("관리자 비밀번호를 입력하세요.");
-  if (adminKey === null) return;
   if (!confirm("이 리뷰를 삭제할까요? 댓글도 함께 사라져요.")) return;
 
-  api("/api/books/" + state.currentId, { method: "DELETE", headers: { "X-Admin-Key": adminKey } })
+  api("/api/books/" + state.currentId, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
     .then(function () {
       state.books = state.books.filter(function (b) { return b.id !== state.currentId; });
       showView("library");
       renderLibrary();
     })
-    .catch(function (e) { alert(e.message); });
+    .catch(function (e) {
+      alert(e.message);
+      if (e.message.indexOf("권한이 없") !== -1) { clearAdminKey(); renderAdminToggle(); }
+    });
 });
 
 document.getElementById("commentForm").addEventListener("submit", function (e) {
@@ -393,5 +417,6 @@ if (AUTH_MODE === "google") {
   renderAuthBox();
 }
 
+renderAdminToggle();
 refreshBooks();
 showView("library");

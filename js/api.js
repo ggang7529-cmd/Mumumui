@@ -7,6 +7,7 @@ export function googleConfigured() {
 
 var ANON_ID_KEY = "chaekgalpi_anon_id";
 var NICKNAME_KEY = "chaekgalpi_nickname";
+var ADMIN_KEY_STORAGE = "chaekgalpi_admin_key";
 
 export function getAnonId() {
   try {
@@ -31,6 +32,32 @@ export function saveNickname(name) {
 
 export function myUid() {
   return AUTH_MODE === "nickname" ? getAnonId() : (state.currentUser ? state.currentUser.uid : null);
+}
+
+// 이 브라우저가 관리자 비밀번호를 확인받은 적 있는지 여부. 로그인이 없는 사이트라 "나"를
+// 서버가 알지는 못하고, 비밀번호를 맞춰 저장해둔 브라우저인지만 구분한다.
+export function isAdminMode() {
+  try { return !!localStorage.getItem(ADMIN_KEY_STORAGE); } catch (e) { return false; }
+}
+
+export function getAdminKey() {
+  try { return localStorage.getItem(ADMIN_KEY_STORAGE) || ""; } catch (e) { return ""; }
+}
+
+export function clearAdminKey() {
+  try { localStorage.removeItem(ADMIN_KEY_STORAGE); } catch (e) {}
+}
+
+export function verifyAdminKey(key) {
+  return fetch("/api/admin/verify", { method: "POST", headers: { "X-Admin-Key": key } })
+    .then(function (res) {
+      if (res.ok) {
+        try { localStorage.setItem(ADMIN_KEY_STORAGE, key); } catch (e) {}
+        return true;
+      }
+      return false;
+    })
+    .catch(function () { return false; });
 }
 
 export function normalizeBook(row) {
