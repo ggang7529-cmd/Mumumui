@@ -1,0 +1,416 @@
+import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
+import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, renderGoogleButtons } from "./api.js";
+
+var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
+
+export function coverFor(title) {
+  var hash = 0;
+  for (var i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
+  return COVERS[hash % COVERS.length];
+}
+
+export function formatDate(ms) {
+  if (!ms) return "방금 등록";
+  var d = new Date(ms);
+  return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
+}
+
+var NEW_BADGE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function isNewBook(b) {
+  return Date.now() - b.updatedAt < NEW_BADGE_WINDOW_MS;
+}
+
+export function bookRating(b) {
+  if (!b.ratingCount) return null;
+  return { avg: b.ratingSum / b.ratingCount, count: b.ratingCount };
+}
+
+export function findBook(id) {
+  for (var i = 0; i < state.books.length; i++) if (state.books[i].id === id) return state.books[i];
+  return null;
+}
+
+export function renderStars(container, rating, interactive, onSelect) {
+  container.innerHTML = "";
+  for (var i = 1; i <= 5; i++) {
+    var filled = i <= rating;
+    if (interactive) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = filled ? "filled" : "";
+      btn.textContent = filled ? "★" : "☆";
+      btn.setAttribute("aria-label", i + "점");
+      btn.addEventListener("click", function (idx) {
+        return function () { onSelect(idx); };
+      }(i));
+      container.appendChild(btn);
+    } else {
+      var span = document.createElement("span");
+      span.className = filled ? "" : "empty";
+      span.textContent = filled ? "★" : "☆";
+      container.appendChild(span);
+    }
+  }
+}
+
+export function selectBook(b) {
+  state.selectedBook = b;
+  dom.bookSearchField.hidden = true;
+  dom.selectedBookField.hidden = false;
+  dom.bookResults.hidden = true;
+  dom.bookResults.innerHTML = "";
+  dom.bookSearchInput.value = "";
+
+  var $cover = document.getElementById("selectedBookCover");
+  $cover.innerHTML = "";
+  $cover.style.setProperty("--cover", coverFor(b.title));
+  if (b.cover) {
+    var img = document.createElement("img");
+    img.src = b.cover;
+    img.alt = "";
+    $cover.appendChild(img);
+  }
+  document.getElementById("selectedBookTitle").textContent = b.title;
+  document.getElementById("selectedBookAuthor").textContent = b.author;
+}
+
+export function clearSelectedBook() {
+  state.selectedBook = null;
+  dom.bookSearchField.hidden = false;
+  dom.selectedBookField.hidden = true;
+}
+
+export function renderBookResults(list) {
+  dom.bookResults.innerHTML = "";
+  dom.bookResults.hidden = false;
+
+  if (list.length === 0) {
+    var empty = document.createElement("li");
+    empty.className = "book-result-empty";
+    empty.textContent = "검색 결과가 없어요.";
+    dom.bookResults.appendChild(empty);
+    return;
+  }
+
+  list.forEach(function (b) {
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "book-result-item";
+
+    if (b.cover) {
+      var img = document.createElement("img");
+      img.src = b.cover;
+      img.alt = "";
+      btn.appendChild(img);
+    } else {
+      var placeholder = document.createElement("div");
+      placeholder.className = "book-result-noimg";
+      placeholder.textContent = "표지 없음";
+      btn.appendChild(placeholder);
+    }
+
+    var info = document.createElement("div");
+    var t = document.createElement("div");
+    t.className = "book-result-title";
+    t.textContent = b.title;
+    var a = document.createElement("div");
+    a.className = "book-result-author";
+    a.textContent = b.author + (b.publisher ? " · " + b.publisher : "");
+    info.appendChild(t);
+    info.appendChild(a);
+    btn.appendChild(info);
+
+    btn.addEventListener("click", function () { selectBook(b); });
+    li.appendChild(btn);
+    dom.bookResults.appendChild(li);
+  });
+}
+
+export function renderAuthBox() {
+  var $box = document.getElementById("authBox");
+  $box.innerHTML = "";
+  if (AUTH_MODE === "nickname") {
+    var nickname = getSavedNickname();
+    if (nickname) {
+      var savedChip = document.createElement("div");
+      savedChip.className = "user-chip";
+      var savedName = document.createElement("span");
+      savedName.className = "user-name";
+      savedName.textContent = nickname;
+      savedChip.appendChild(savedName);
+      $box.appendChild(savedChip);
+    }
+    return;
+  }
+  if (state.currentUser) {
+    var chip = document.createElement("div");
+    chip.className = "user-chip";
+    if (state.currentUser.picture) {
+      var avatar = document.createElement("img");
+      avatar.className = "user-avatar";
+      avatar.src = state.currentUser.picture;
+      avatar.alt = "";
+      chip.appendChild(avatar);
+    }
+    var name = document.createElement("span");
+    name.className = "user-name";
+    name.textContent = state.currentUser.name || "사용자";
+    chip.appendChild(name);
+    var logout = document.createElement("button");
+    logout.type = "button";
+    logout.className = "btn-logout";
+    logout.textContent = "로그아웃";
+    logout.addEventListener("click", function () {
+      api("/api/auth/logout", { method: "POST" }).then(function () {
+        state.currentUser = null;
+        renderAuthBox();
+        if (state.view === "detail") renderDetail();
+      });
+    });
+    chip.appendChild(logout);
+    $box.appendChild(chip);
+  } else if (!googleConfigured()) {
+    var note = document.createElement("span");
+    note.className = "user-name";
+    note.textContent = "Google 로그인 설정 필요";
+    $box.appendChild(note);
+  } else {
+    var slot = document.createElement("div");
+    slot.id = "googleBtnHeader";
+    $box.appendChild(slot);
+    renderGoogleButtons();
+  }
+}
+
+export function renderLibrary() {
+  var query = state.searchQuery.trim().toLowerCase();
+  var visible = query
+    ? state.books.filter(function (r) { return r.title.toLowerCase().indexOf(query) !== -1; })
+    : state.books.slice();
+
+  if (state.sortMode === "comments") {
+    visible.sort(function (a, b) { return b.commentCount - a.commentCount || b.createdAt - a.createdAt; });
+  } else if (state.sortMode === "rating") {
+    visible.sort(function (a, b) {
+      var ra = bookRating(a), rb = bookRating(b);
+      return (rb ? rb.avg : 0) - (ra ? ra.avg : 0) || b.createdAt - a.createdAt;
+    });
+  } else if (state.sortMode === "title") {
+    visible.sort(function (a, b) { return a.title.localeCompare(b.title, "ko"); });
+  } else {
+    visible.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+  }
+
+  if (!state.booksLoaded) {
+    dom.countLabel.textContent = "불러오는 중...";
+  } else if (query) {
+    dom.countLabel.textContent = visible.length + "권 검색됨 (전체 " + state.books.length + "권)";
+  } else {
+    dom.countLabel.textContent = state.books.length ? "총 " + state.books.length + "권의 리뷰" : "";
+  }
+
+  dom.shelf.innerHTML = "";
+
+  if (state.booksLoaded && state.books.length === 0) {
+    var note = document.createElement("p");
+    note.className = "empty-note";
+    note.textContent = "아직 기록한 책이 없어요. 위쪽 '+ 책 기록하기' 버튼으로 첫 책을 남겨보세요.";
+    dom.shelf.appendChild(note);
+  } else if (query && visible.length === 0) {
+    var noMatch = document.createElement("p");
+    noMatch.className = "empty-note";
+    noMatch.textContent = "\"" + state.searchQuery.trim() + "\"에 해당하는 책이 없어요.";
+    dom.shelf.appendChild(noMatch);
+  }
+
+  visible.forEach(function (r) {
+    var rating = bookRating(r);
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "book-card";
+    card.style.setProperty("--cover", coverFor(r.title));
+    card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
+      (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
+
+    if (r.cover) {
+      var img = document.createElement("img");
+      img.className = "b-cover-img";
+      img.src = r.cover;
+      img.alt = "";
+      card.appendChild(img);
+    }
+
+    if (isNewBook(r)) {
+      var badge = document.createElement("span");
+      badge.className = "b-new-badge";
+      badge.textContent = "NEW";
+      card.appendChild(badge);
+    }
+
+    var overlay = document.createElement("div");
+    overlay.className = "b-overlay";
+
+    var titleEl = document.createElement("div");
+    titleEl.className = "b-title";
+    titleEl.textContent = r.title;
+
+    var authorEl = document.createElement("div");
+    authorEl.className = "b-author";
+    authorEl.textContent = r.author;
+
+    var starsEl = document.createElement("div");
+    starsEl.className = "b-stars";
+    if (rating) {
+      var stars = "";
+      for (var i = 1; i <= 5; i++) stars += i <= Math.round(rating.avg) ? "★" : "☆";
+      starsEl.textContent = stars + " " + rating.avg.toFixed(1) + " (" + rating.count + ")";
+    } else {
+      starsEl.textContent = "평점 없음";
+    }
+
+    overlay.appendChild(titleEl);
+    overlay.appendChild(authorEl);
+    overlay.appendChild(starsEl);
+    card.appendChild(overlay);
+
+    card.addEventListener("click", function (id) {
+      return function () { openDetail(id); };
+    }(r.id));
+
+    dom.shelf.appendChild(card);
+  });
+}
+
+export function renderDetail() {
+  var r = findBook(state.currentId);
+  if (!r) { showView("library"); return; }
+
+  document.getElementById("detailTitle").textContent = r.title;
+  document.getElementById("detailAuthor").textContent = r.author;
+  document.getElementById("detailDate").textContent = formatDate(r.createdAt) + " 기록";
+  document.getElementById("detailOwner").textContent = "등록: " + (r.ownerName || "알 수 없음");
+
+  var rating = bookRating(r);
+  renderStars(document.getElementById("detailStars"), rating ? Math.round(rating.avg) : 0, false);
+  document.getElementById("detailRatingMeta").textContent = rating
+    ? rating.avg.toFixed(1) + " (" + rating.count + ")"
+    : "아직 평점 없음";
+
+  var $detailCover = document.getElementById("detailCover");
+  $detailCover.innerHTML = "";
+  $detailCover.style.setProperty("--cover", coverFor(r.title));
+  if (r.cover) {
+    var coverImg = document.createElement("img");
+    coverImg.src = r.cover;
+    coverImg.alt = "";
+    $detailCover.appendChild(coverImg);
+  }
+
+  document.getElementById("deleteBtn").hidden = false;
+
+  var $commentForm = document.getElementById("commentForm");
+  var $commentSignin = document.getElementById("commentSignin");
+  var $commentHint = document.getElementById("commentHint");
+  if (AUTH_MODE === "nickname") {
+    $commentForm.hidden = false;
+    $commentSignin.hidden = true;
+    $commentHint.hidden = false;
+  } else {
+    $commentForm.hidden = !state.currentUser;
+    $commentSignin.hidden = !!state.currentUser;
+    $commentHint.hidden = !state.currentUser;
+    if (!state.currentUser) {
+      document.getElementById("commentSigninText").textContent = googleConfigured()
+        ? "로그인하면 이 책에 한줄평을 남길 수 있어요."
+        : "아직 Google 로그인이 설정되지 않았어요.";
+      document.getElementById("googleBtnComment").hidden = !googleConfigured();
+    }
+  }
+
+  var $list = document.getElementById("commentList");
+  $list.innerHTML = "";
+  document.getElementById("commentCount").textContent = state.comments.length ? "(" + state.comments.length + ")" : "";
+
+  if (state.comments.length === 0) {
+    var li = document.createElement("li");
+    li.style.color = "var(--ink-faint)";
+    li.style.fontSize = "0.88rem";
+    li.textContent = "아직 댓글이 없어요. 별점과 함께 첫 한 줄을 남겨보세요.";
+    $list.appendChild(li);
+  } else {
+    var sortedComments = state.comments.slice().sort(function (a, b) { return b.likes - a.likes; });
+
+    sortedComments.forEach(function (c) {
+      var item = document.createElement("li");
+      var textSpan = document.createElement("span");
+      textSpan.className = "c-text";
+      textSpan.textContent = c.text;
+      textSpan.title = c.text;
+
+      var authorSpan = document.createElement("span");
+      authorSpan.className = "c-author";
+      authorSpan.textContent = c.authorName || "익명";
+
+      var ratingSpan = document.createElement("span");
+      ratingSpan.className = "c-rating";
+      if (typeof c.rating === "number") {
+        var ratingStars = "";
+        for (var i = 1; i <= 5; i++) ratingStars += i <= c.rating ? "★" : "☆";
+        ratingSpan.textContent = ratingStars;
+      }
+
+      var likeBtn = document.createElement("button");
+      likeBtn.type = "button";
+      likeBtn.className = "c-like" + (c.likedByMe ? " liked" : "");
+      likeBtn.textContent = "♥ " + c.likes;
+      likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
+      likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
+      likeBtn.addEventListener("click", function () {
+        if (!myUid()) return;
+        api("/api/comments/" + c.id + "/like", { method: "POST" })
+          .then(function () { refreshComments(); })
+          .catch(function (e) { alert(e.message); });
+      });
+
+      var dateSpan = document.createElement("span");
+      dateSpan.className = "c-date";
+      dateSpan.textContent = formatDate(c.createdAt);
+
+      item.appendChild(textSpan);
+      item.appendChild(authorSpan);
+      item.appendChild(ratingSpan);
+      item.appendChild(likeBtn);
+      item.appendChild(dateSpan);
+
+      if (myUid() === c.authorUid) {
+        var delBtn = document.createElement("button");
+        delBtn.className = "c-del";
+        delBtn.type = "button";
+        delBtn.textContent = "×";
+        delBtn.setAttribute("aria-label", "댓글 삭제");
+        delBtn.addEventListener("click", function () {
+          api("/api/comments/" + c.id, { method: "DELETE" })
+            .then(function () { return Promise.all([refreshBooks(), refreshComments()]); })
+            .catch(function (e) { alert(e.message); });
+        });
+        item.appendChild(delBtn);
+      }
+
+      $list.appendChild(item);
+    });
+  }
+}
+
+export function renderRandomCard(b) {
+  dom.randomCardCover.innerHTML = "";
+  dom.randomCardCover.style.setProperty("--cover", coverFor(b.title));
+  if (b.cover) {
+    var img = document.createElement("img");
+    img.src = b.cover;
+    img.alt = "";
+    dom.randomCardCover.appendChild(img);
+  }
+  dom.randomCardTitle.textContent = b.title;
+}
