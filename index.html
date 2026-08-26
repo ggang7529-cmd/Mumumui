@@ -36,6 +36,8 @@
     --ink-faint: #94897C;
     --accent: #8C2F39;
     --accent-soft: #B5555F;
+    --accent2: #3F6B63;
+    --accent2-soft: #578179;
     --line: rgba(36, 31, 28, 0.14);
     --shadow: rgba(36, 31, 28, 0.16);
   }
@@ -50,6 +52,8 @@
       --ink-faint: #766B5F;
       --accent: #E08A90;
       --accent-soft: #C1636B;
+      --accent2: #7FBEB1;
+      --accent2-soft: #97CBC0;
       --line: rgba(237, 230, 218, 0.16);
       --shadow: rgba(0, 0, 0, 0.4);
     }
@@ -64,6 +68,8 @@
     --ink-faint: #766B5F;
     --accent: #E08A90;
     --accent-soft: #C1636B;
+    --accent2: #7FBEB1;
+    --accent2-soft: #97CBC0;
     --line: rgba(237, 230, 218, 0.16);
     --shadow: rgba(0, 0, 0, 0.4);
   }
@@ -153,6 +159,23 @@
   .btn-primary:hover { background: var(--accent-soft); }
   .btn-primary:active { transform: translateY(1px); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-random {
+    flex: none;
+    background: var(--accent2);
+    color: var(--paper-raised);
+    border: none;
+    border-radius: 3px;
+    padding: 0.65rem 1.1rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn-random:hover { background: var(--accent2-soft); }
+  .btn-random:active { transform: translateY(1px); }
+
   .btn-primary:focus-visible,
   button:focus-visible,
   input:focus-visible,
@@ -930,7 +953,7 @@
     <div class="header-actions">
       <div class="auth-box" id="authBox"></div>
       <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
-      <button class="btn-accent-outline" id="randomBtn" type="button">랜덤 책 추천</button>
+      <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
       <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
     </div>
   </header>
