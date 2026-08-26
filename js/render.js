@@ -9,6 +9,15 @@ export function coverFor(title) {
   return COVERS[hash % COVERS.length];
 }
 
+// 카카오 도서 검색이 주는 썸네일은 표지가 화면에 표시되는 크기(최대 240px)보다 작은
+// 해상도(보통 130x200)라 확대돼서 흐릿하게 보인다. 썸네일 URL은 카카오의 argon 리사이징
+// 프록시(/WxH_품질_모드/ 형태)를 거치므로, 그 크기 구간만 더 크게 바꿔서 같은 원본 이미지를
+// 더 선명한 해상도로 요청한다. 패턴이 안 맞는 URL(다른 출처 등)은 그대로 둔다.
+export function upscaleCover(url) {
+  if (!url) return url;
+  return url.replace(/\/\d{2,4}x\d{2,4}_\d+_[a-z]+\//, "/400x600_95_c/");
+}
+
 export function formatDate(ms) {
   if (!ms) return "방금 등록";
   var d = new Date(ms);
@@ -67,7 +76,7 @@ export function selectBook(b) {
   $cover.style.setProperty("--cover", coverFor(b.title));
   if (b.cover) {
     var img = document.createElement("img");
-    img.src = b.cover;
+    img.src = upscaleCover(b.cover);
     img.alt = "";
     $cover.appendChild(img);
   }
@@ -101,7 +110,7 @@ export function renderBookResults(list) {
 
     if (b.cover) {
       var img = document.createElement("img");
-      img.src = b.cover;
+      img.src = upscaleCover(b.cover);
       img.alt = "";
       btn.appendChild(img);
     } else {
@@ -237,7 +246,7 @@ export function renderLibrary() {
     if (r.cover) {
       var img = document.createElement("img");
       img.className = "b-cover-img";
-      img.src = r.cover;
+      img.src = upscaleCover(r.cover);
       img.alt = "";
       card.appendChild(img);
     }
@@ -303,7 +312,7 @@ export function renderDetail() {
   $detailCover.style.setProperty("--cover", coverFor(r.title));
   if (r.cover) {
     var coverImg = document.createElement("img");
-    coverImg.src = r.cover;
+    coverImg.src = upscaleCover(r.cover);
     coverImg.alt = "";
     $detailCover.appendChild(coverImg);
   }
@@ -408,7 +417,7 @@ export function renderRandomCard(b) {
   dom.randomCardCover.style.setProperty("--cover", coverFor(b.title));
   if (b.cover) {
     var img = document.createElement("img");
-    img.src = b.cover;
+    img.src = upscaleCover(b.cover);
     img.alt = "";
     dom.randomCardCover.appendChild(img);
   }
