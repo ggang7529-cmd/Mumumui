@@ -60,7 +60,8 @@ export var dom = {
   randomCardTitle: document.getElementById("randomCardTitle"),
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
-  randomGoBtn: document.getElementById("randomGoBtn")
+  randomGoBtn: document.getElementById("randomGoBtn"),
+  homeBtn: document.getElementById("homeBtn")
 };
 
 function renderAdminToggle() {
@@ -102,6 +103,7 @@ export function showView(name) {
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
+  dom.homeBtn.hidden = name !== "detail";
   if (name === "library") {
     stopDetailPolling(); startLibraryPolling();
     // /book/:id로 바로 들어왔다가 돌아오는 경우처럼, 책 목록이 로딩된 뒤로 한 번도
