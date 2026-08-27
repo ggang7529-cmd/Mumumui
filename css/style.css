@@ -766,8 +766,8 @@
 
   .meta-owner {
     color: var(--ink-faint);
-    font-size: 0.8rem;
-    margin: 0.15rem 0 0;
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0;
   }
 
   .btn-ghost-danger {
@@ -811,8 +811,8 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.4rem 1rem;
-    padding: 0.7rem 0;
+    gap: 0.5rem 1rem;
+    padding: 0.85rem 0;
     border-bottom: 1px solid var(--line);
     font-size: 0.95rem;
   }
@@ -823,15 +823,19 @@
   #commentList .c-author {
     order: 1;
     flex: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1rem;
+    margin-right: 0.15rem;
   }
 
   #commentList .c-rating {
     order: 2;
     flex: none;
     color: var(--accent);
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
-    margin-right: 0.3rem;
+    font-size: 1.05rem;
+    letter-spacing: 0.06em;
+    margin-right: 0.35rem;
   }
 
   #commentList .c-text {
@@ -839,34 +843,6 @@
     flex: 1 1 220px;
     min-width: 0;
     word-break: break-word;
-  }
-
-  /* 닉네임 아바타(원형 이니셜) + 닉네임 이름 묶음. 원댓글/답글 공통. */
-  #commentList .c-author,
-  #commentList .c-reply-author {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
-  #commentList .c-avatar {
-    flex: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 0.66rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  #commentList .c-author .c-author-name {
-    color: var(--accent);
-    font-weight: 700;
-    font-size: 0.82rem;
   }
 
   #commentList .c-like {
@@ -946,8 +922,8 @@
     flex-wrap: wrap;
     /* 좋아요/날짜/삭제 버튼이 원댓글 줄과 세로로 맞도록 열 간격(column-gap)을
        원댓글(#commentList li)과 동일한 1rem으로 맞춘다. */
-    gap: 0.3rem 1rem;
-    padding: 0.3rem 0;
+    gap: 0.35rem 1rem;
+    padding: 0.4rem 0;
     font-size: 0.85rem;
   }
 
@@ -959,19 +935,10 @@
 
   #commentList .c-reply-author {
     flex: none;
-    margin-right: 0.3rem;
-  }
-
-  #commentList .c-reply-author .c-avatar {
-    width: 16px;
-    height: 16px;
-    font-size: 0.58rem;
-  }
-
-  #commentList .c-reply-author .c-author-name {
     color: var(--accent);
-    font-weight: 600;
-    font-size: 0.78rem;
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin-right: 0.35rem;
   }
 
   /* 원댓글 줄의 좋아요 다음에는 "답글" 버튼이 있지만 답글 줄에는 없다. 좋아요 버튼끼리
@@ -1079,10 +1046,7 @@
 
     #commentList .c-author {
       order: 2;
-    }
-
-    #commentList .c-author .c-author-name {
-      max-width: 5.5em;
+      max-width: 6.5em;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

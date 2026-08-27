@@ -9,34 +9,12 @@ export function coverFor(title) {
   return COVERS[hash % COVERS.length];
 }
 
-// 닉네임 문자열을 해시해 COVERS 팔레트에서 색을 골라준다 — 같은 닉네임은 항상 같은
-// 아바타 색으로 보이게 하기 위함. 책 표지 배색과 같은 팔레트를 재사용해 톤을 통일한다.
-function avatarColor(name) {
-  var str = name || "";
-  var hash = 0;
-  for (var i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
-  return COVERS[hash % COVERS.length];
-}
-
-// 댓글/답글 작성자 영역(아바타 원 + 닉네임)을 공통으로 만든다.
+// 댓글/답글 작성자 닉네임 span을 공통으로 만든다.
 function buildAuthorChip(name, className) {
-  var display = (name || "").trim() || "익명";
-  var chip = document.createElement("span");
-  chip.className = className;
-
-  var avatar = document.createElement("span");
-  avatar.className = "c-avatar";
-  avatar.textContent = display.charAt(0).toUpperCase();
-  avatar.style.background = avatarColor(display);
-  avatar.setAttribute("aria-hidden", "true");
-
-  var nameSpan = document.createElement("span");
-  nameSpan.className = "c-author-name";
-  nameSpan.textContent = display;
-
-  chip.appendChild(avatar);
-  chip.appendChild(nameSpan);
-  return chip;
+  var span = document.createElement("span");
+  span.className = className;
+  span.textContent = (name || "").trim() || "익명";
+  return span;
 }
 
 // 카카오 도서 검색이 주는 썸네일은 표지가 화면에 표시되는 크기(최대 240px)보다 작은
