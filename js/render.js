@@ -313,7 +313,13 @@ export function renderDetail() {
   document.getElementById("detailTitle").textContent = r.title;
   document.getElementById("detailAuthor").textContent = r.author;
   document.getElementById("detailDate").textContent = formatDate(r.createdAt) + " 기록";
-  document.getElementById("detailOwner").textContent = "등록: " + (r.ownerName || "알 수 없음");
+  var $detailOwner = document.getElementById("detailOwner");
+  $detailOwner.innerHTML = "";
+  $detailOwner.appendChild(document.createTextNode("등록: "));
+  var ownerNameSpan = document.createElement("span");
+  ownerNameSpan.className = "meta-owner-name";
+  ownerNameSpan.textContent = r.ownerName || "알 수 없음";
+  $detailOwner.appendChild(ownerNameSpan);
 
   var rating = bookRating(r);
   renderStars(document.getElementById("detailStars"), rating ? Math.round(rating.avg) : 0, false);

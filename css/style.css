@@ -766,8 +766,15 @@
 
   .meta-owner {
     color: var(--ink-faint);
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     margin: 0.25rem 0 0;
+  }
+
+  /* 한줄평 목록의 닉네임(#commentList .c-author)과 정확히 같은 크기·스타일로 맞춘다. */
+  .meta-owner-name {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1rem;
   }
 
   .btn-ghost-danger {
