@@ -61,7 +61,6 @@ export var dom = {
   selectedBookField: document.getElementById("selectedBookField"),
   randomCard: document.getElementById("randomCard"),
   randomCardCover: document.getElementById("randomCardCover"),
-  randomCardTitle: document.getElementById("randomCardTitle"),
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
   randomGoBtn: document.getElementById("randomGoBtn"),
@@ -162,7 +161,6 @@ function openRandomView() {
   dom.randomCard.classList.remove("spinning");
   dom.randomCardCover.innerHTML = "";
   dom.randomCardCover.style.removeProperty("--cover");
-  dom.randomCardTitle.textContent = "책 뽑기 버튼을 눌러보세요";
   showView("random");
 }
 

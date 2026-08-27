@@ -604,5 +604,4 @@ export function renderRandomCard(b) {
     img.alt = "";
     dom.randomCardCover.appendChild(img);
   }
-  dom.randomCardTitle.textContent = b.title;
 }
