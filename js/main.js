@@ -35,7 +35,10 @@ export var state = {
   searchQuery: "",
   sortMode: "latest",
   randomPickedId: null,
-  randomSpinning: false
+  randomSpinning: false,
+  // 8초 폴링(refreshComments)이 댓글 목록을 통째로 다시 그리기 때문에, 답글 입력 중이던
+  // 내용을 잃지 않도록 열려 있는 답글창의 임시 입력값을 부모 댓글 id별로 기억해둔다.
+  openReplies: {}
 };
 
 // 여러 파일에서 공유하는 DOM 참조.
@@ -141,6 +144,7 @@ export function openDetail(id) {
   state.currentId = id;
   state.comments = [];
   state.commentRating = 0;
+  state.openReplies = {};
   renderStars(dom.cStars, 0, true, selectCommentRating);
   if (AUTH_MODE === "nickname") document.getElementById("cNickname").value = getSavedNickname();
   renderDetail();

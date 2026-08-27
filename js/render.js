@@ -345,6 +345,14 @@ export function renderDetail() {
   }
 
   var $list = document.getElementById("commentList");
+  // $list.innerHTML을 비우면 그 안에 포커스가 있던 답글 입력창은 (removal로 인해) blur된다.
+  // 그 blur는 "사용자가 답글창을 떠났다"는 신호가 아니라 재렌더링의 부작용일 뿐이므로,
+  // 지우기 전에 지금 포커스가 어느 댓글의 답글창에 있었는지 미리 스냅샷해 재렌더링 후 복원한다.
+  var focusedReplyId = null;
+  var $activeEl = document.activeElement;
+  if ($activeEl && $activeEl.classList && $activeEl.classList.contains("c-reply-text-input")) {
+    focusedReplyId = $activeEl.dataset.replyFor || null;
+  }
   $list.innerHTML = "";
 
   var topLevel = state.comments.filter(function (c) { return !c.parentId; });
@@ -474,7 +482,8 @@ export function renderDetail() {
 
       var replyForm = document.createElement("div");
       replyForm.className = "c-reply-form";
-      replyForm.hidden = true;
+      var hasOpenDraft = Object.prototype.hasOwnProperty.call(state.openReplies, c.id);
+      replyForm.hidden = !hasOpenDraft;
 
       var replyNameInput = null;
       if (AUTH_MODE === "nickname") {
@@ -492,6 +501,8 @@ export function renderDetail() {
       replyTextInput.className = "c-reply-text-input";
       replyTextInput.placeholder = "답글을 남겨보세요";
       replyTextInput.maxLength = 60;
+      replyTextInput.dataset.replyFor = String(c.id);
+      if (hasOpenDraft) replyTextInput.value = state.openReplies[c.id];
       replyForm.appendChild(replyTextInput);
 
       var replySubmitBtn = document.createElement("button");
@@ -499,9 +510,18 @@ export function renderDetail() {
       replySubmitBtn.textContent = "등록";
       replyForm.appendChild(replySubmitBtn);
 
+      replyTextInput.addEventListener("input", function () {
+        state.openReplies[c.id] = replyTextInput.value;
+      });
+
       replyBtn.addEventListener("click", function () {
         replyForm.hidden = !replyForm.hidden;
-        if (!replyForm.hidden) replyTextInput.focus();
+        if (replyForm.hidden) {
+          delete state.openReplies[c.id];
+        } else {
+          state.openReplies[c.id] = replyTextInput.value;
+          replyTextInput.focus();
+        }
       });
 
       replySubmitBtn.addEventListener("click", function () {
@@ -523,14 +543,20 @@ export function renderDetail() {
             gtag("event", "post_reply");
             replyTextInput.value = "";
             replyForm.hidden = true;
+            delete state.openReplies[c.id];
             refreshComments();
           })
           .catch(function (e) { alert(e.message); });
       });
 
       item.appendChild(replyForm);
-
       $list.appendChild(item);
+
+      if (hasOpenDraft && focusedReplyId === String(c.id)) {
+        replyTextInput.focus();
+        var caret = replyTextInput.value.length;
+        replyTextInput.setSelectionRange(caret, caret);
+      }
     });
   }
 }
