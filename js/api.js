@@ -99,6 +99,7 @@ export function api(path, opts) {
 
 export function searchBooks(q) {
   if (!q) { dom.bookResults.hidden = true; dom.bookResults.innerHTML = ""; return; }
+  gtag("event", "search_book");
   api("/api/search-books?q=" + encodeURIComponent(q)).then(function (data) {
     renderBookResults(data.books || []);
   }).catch(function (e) {

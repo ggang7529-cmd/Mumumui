@@ -251,12 +251,14 @@ dom.searchInput.addEventListener("input", function (e) {
 document.querySelectorAll(".sort-tab").forEach(function (btn) {
   btn.addEventListener("click", function () {
     state.sortMode = btn.dataset.sort;
+    gtag("event", "change_sort", { sort_mode: state.sortMode });
     document.querySelectorAll(".sort-tab").forEach(function (b) { b.classList.toggle("active", b === btn); });
     renderLibrary();
   });
 });
 
 document.getElementById("newReviewBtn").addEventListener("click", function () {
+  gtag("event", "click_add_book");
   if (AUTH_MODE === "nickname") { openForm(); return; }
   if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
   if (!state.currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
@@ -264,6 +266,7 @@ document.getElementById("newReviewBtn").addEventListener("click", function () {
 });
 document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
 document.getElementById("feedbackBtn").addEventListener("click", function () {
+  gtag("event", "click_feedback");
   document.getElementById("feedbackForm").reset();
   showView("feedback");
 });
@@ -324,7 +327,10 @@ document.getElementById("backBtn").addEventListener("click", function () {
   showView("library");
 });
 
-document.getElementById("randomBtn").addEventListener("click", openRandomView);
+document.getElementById("randomBtn").addEventListener("click", function () {
+  gtag("event", "click_random_book");
+  openRandomView();
+});
 document.getElementById("randomBackBtn").addEventListener("click", function () { showView("library"); });
 dom.randomDrawBtn.addEventListener("click", drawRandomBook);
 dom.randomGoBtn.addEventListener("click", function () {
@@ -359,6 +365,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
     }
   })
     .then(function (data) {
+      gtag("event", "complete_review", { book_id: data.book.id });
       renderAuthBox();
       state.books.unshift(normalizeBook(data.book));
       showView("library");
@@ -409,6 +416,7 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
 
   api("/api/books/" + state.currentId + "/comments", { method: "POST", body: { text: text, rating: state.commentRating, name: nickname } })
     .then(function () {
+      gtag("event", "complete_review", { book_id: state.currentId });
       input.value = "";
       state.commentRating = 0;
       renderStars(dom.cStars, 0, true, selectCommentRating);
