@@ -383,6 +383,7 @@ export function renderDetail() {
       likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
       likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
       likeBtn.addEventListener("click", function () {
+        gtag("event", "click_like");
         if (!myUid()) return;
         api("/api/comments/" + c.id + "/like", { method: "POST" })
           .then(function () { refreshComments(); })
