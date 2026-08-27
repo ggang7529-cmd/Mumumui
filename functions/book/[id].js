@@ -23,7 +23,7 @@ export async function onRequestGet(context) {
   var book = await env.DB.prepare("SELECT id, title, author, cover FROM books WHERE id = ?1").bind(id).first();
   if (!book) return new Response(html, { status: 404, headers: { "Content-Type": "text/html; charset=UTF-8" } });
 
-  var title = escapeHtml(book.title) + " - 책갈피";
+  var title = escapeHtml(book.title) + " - 리뷰 및 별점 | 책갈피";
   var desc = escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
   var pageUrl = escapeHtml(reqUrl.toString());
 
