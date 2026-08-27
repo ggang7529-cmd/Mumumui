@@ -1,11 +1,15 @@
 import { getAnonUid } from "../../../_lib/identity.js";
 import { json } from "../../../_lib/db.js";
+import { checkRateLimit } from "../../../_lib/rateLimit.js";
 
 export async function onRequestPost(context) {
   var env = context.env;
   var id = context.params.id;
   var uid = getAnonUid(context.request);
   if (!uid) return json({ error: "권한이 없어요." }, { status: 401 });
+
+  var rateOk = await checkRateLimit(env, context.request, "comment-like", 30, 60000);
+  if (!rateOk) return json({ error: "너무 많이 시도했어요. 잠시 후 다시 시도해주세요." }, { status: 429 });
 
   var comment = await env.DB.prepare("SELECT id FROM comments WHERE id = ?1").bind(id).first();
   if (!comment) return json({ error: "존재하지 않는 댓글이에요." }, { status: 404 });
