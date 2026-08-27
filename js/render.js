@@ -445,21 +445,36 @@ export function renderDetail() {
       (repliesByParent[c.id] || []).forEach(function (r) {
         var rItem = document.createElement("li");
 
+        var rAuthor = document.createElement("span");
+        rAuthor.className = "c-reply-author";
+        rAuthor.textContent = r.authorName || "익명";
+
         var rText = document.createElement("span");
         rText.className = "c-reply-text";
         rText.textContent = r.text;
         rText.title = r.text;
 
-        var rAuthor = document.createElement("span");
-        rAuthor.className = "c-reply-author";
-        rAuthor.textContent = r.authorName || "익명";
+        var rLikeBtn = document.createElement("button");
+        rLikeBtn.type = "button";
+        rLikeBtn.className = "c-reply-like" + (r.likedByMe ? " liked" : "");
+        rLikeBtn.textContent = "♥ " + r.likes;
+        rLikeBtn.setAttribute("aria-pressed", r.likedByMe ? "true" : "false");
+        rLikeBtn.setAttribute("aria-label", "좋아요 " + r.likes + "개");
+        rLikeBtn.addEventListener("click", function () {
+          gtag("event", "click_like");
+          if (!myUid()) return;
+          api("/api/comments/" + r.id + "/like", { method: "POST" })
+            .then(function () { refreshComments(); })
+            .catch(function (e) { alert(e.message); });
+        });
 
         var rDate = document.createElement("span");
         rDate.className = "c-reply-date";
         rDate.textContent = formatDate(r.createdAt);
 
-        rItem.appendChild(rText);
         rItem.appendChild(rAuthor);
+        rItem.appendChild(rText);
+        rItem.appendChild(rLikeBtn);
         rItem.appendChild(rDate);
 
         if (myUid() === r.authorUid) {
