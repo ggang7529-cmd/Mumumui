@@ -1,5 +1,6 @@
 import { getAnonUid } from "../../../_lib/identity.js";
 import { json, newId } from "../../../_lib/db.js";
+import { checkRateLimit } from "../../../_lib/rateLimit.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -21,6 +22,9 @@ export async function onRequestPost(context) {
   var bookId = context.params.id;
   var uid = getAnonUid(context.request);
   if (!uid) return json({ error: "닉네임을 입력해주세요." }, { status: 401 });
+
+  var rateOk = await checkRateLimit(env, context.request, "comment-create", 10, 60000);
+  if (!rateOk) return json({ error: "너무 많이 작성했어요. 잠시 후 다시 시도해주세요." }, { status: 429 });
 
   var body;
   try {
