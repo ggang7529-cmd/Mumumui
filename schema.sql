@@ -36,12 +36,10 @@ CREATE TABLE IF NOT EXISTS comments (
   author_uid TEXT NOT NULL,
   author_name TEXT,
   author_photo TEXT,
-  created_at INTEGER NOT NULL,
-  parent_id TEXT
+  created_at INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_book_id ON comments (book_id);
-CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments (parent_id);
 
 CREATE TABLE IF NOT EXISTS comment_likes (
   comment_id TEXT NOT NULL,

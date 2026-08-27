@@ -75,8 +75,7 @@ export function normalizeComment(row) {
   return {
     id: row.id, text: row.text, rating: row.rating,
     authorUid: row.author_uid, authorName: row.author_name, authorPhoto: row.author_photo,
-    createdAt: row.created_at, likes: row.likes, likedByMe: !!row.liked_by_me,
-    parentId: row.parent_id || null
+    createdAt: row.created_at, likes: row.likes, likedByMe: !!row.liked_by_me
   };
 }
 

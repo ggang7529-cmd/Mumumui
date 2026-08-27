@@ -1,5 +1,5 @@
 import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
-import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons, isAdminMode } from "./api.js";
+import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, renderGoogleButtons, isAdminMode } from "./api.js";
 
 var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -346,28 +346,16 @@ export function renderDetail() {
 
   var $list = document.getElementById("commentList");
   $list.innerHTML = "";
+  document.getElementById("commentCount").textContent = state.comments.length ? "(" + state.comments.length + ")" : "";
 
-  var topLevel = state.comments.filter(function (c) { return !c.parentId; });
-  var repliesByParent = {};
-  state.comments.forEach(function (c) {
-    if (!c.parentId) return;
-    if (!repliesByParent[c.parentId]) repliesByParent[c.parentId] = [];
-    repliesByParent[c.parentId].push(c);
-  });
-  Object.keys(repliesByParent).forEach(function (pid) {
-    repliesByParent[pid].sort(function (a, b) { return a.createdAt - b.createdAt; });
-  });
-
-  document.getElementById("commentCount").textContent = topLevel.length ? "(" + topLevel.length + ")" : "";
-
-  if (topLevel.length === 0) {
+  if (state.comments.length === 0) {
     var li = document.createElement("li");
     li.style.color = "var(--ink-faint)";
     li.style.fontSize = "0.88rem";
     li.textContent = "아직 댓글이 없어요. 별점과 함께 첫 한 줄을 남겨보세요.";
     $list.appendChild(li);
   } else {
-    var sortedComments = topLevel.slice().sort(function (a, b) { return b.likes - a.likes; });
+    var sortedComments = state.comments.slice().sort(function (a, b) { return b.likes - a.likes; });
 
     sortedComments.forEach(function (c) {
       var item = document.createElement("li");
@@ -425,110 +413,6 @@ export function renderDetail() {
         });
         item.appendChild(delBtn);
       }
-
-      var replyBtn = document.createElement("button");
-      replyBtn.type = "button";
-      replyBtn.className = "c-reply-btn";
-      replyBtn.textContent = "답글";
-      item.appendChild(replyBtn);
-
-      var repliesList = document.createElement("ul");
-      repliesList.className = "c-replies";
-      (repliesByParent[c.id] || []).forEach(function (r) {
-        var rItem = document.createElement("li");
-
-        var rText = document.createElement("span");
-        rText.className = "c-reply-text";
-        rText.textContent = r.text;
-        rText.title = r.text;
-
-        var rAuthor = document.createElement("span");
-        rAuthor.className = "c-reply-author";
-        rAuthor.textContent = r.authorName || "익명";
-
-        var rDate = document.createElement("span");
-        rDate.className = "c-reply-date";
-        rDate.textContent = formatDate(r.createdAt);
-
-        rItem.appendChild(rText);
-        rItem.appendChild(rAuthor);
-        rItem.appendChild(rDate);
-
-        if (myUid() === r.authorUid) {
-          var rDelBtn = document.createElement("button");
-          rDelBtn.type = "button";
-          rDelBtn.className = "c-reply-del";
-          rDelBtn.textContent = "×";
-          rDelBtn.setAttribute("aria-label", "답글 삭제");
-          rDelBtn.addEventListener("click", function () {
-            api("/api/comments/" + r.id, { method: "DELETE" })
-              .then(function () { refreshComments(); })
-              .catch(function (e) { alert(e.message); });
-          });
-          rItem.appendChild(rDelBtn);
-        }
-
-        repliesList.appendChild(rItem);
-      });
-      if (repliesList.children.length) item.appendChild(repliesList);
-
-      var replyForm = document.createElement("div");
-      replyForm.className = "c-reply-form";
-      replyForm.hidden = true;
-
-      var replyNameInput = null;
-      if (AUTH_MODE === "nickname") {
-        replyNameInput = document.createElement("input");
-        replyNameInput.type = "text";
-        replyNameInput.className = "c-reply-name";
-        replyNameInput.placeholder = "닉네임";
-        replyNameInput.maxLength = 20;
-        replyNameInput.value = getSavedNickname();
-        replyForm.appendChild(replyNameInput);
-      }
-
-      var replyTextInput = document.createElement("input");
-      replyTextInput.type = "text";
-      replyTextInput.className = "c-reply-text-input";
-      replyTextInput.placeholder = "답글을 남겨보세요";
-      replyTextInput.maxLength = 60;
-      replyForm.appendChild(replyTextInput);
-
-      var replySubmitBtn = document.createElement("button");
-      replySubmitBtn.type = "button";
-      replySubmitBtn.textContent = "등록";
-      replyForm.appendChild(replySubmitBtn);
-
-      replyBtn.addEventListener("click", function () {
-        replyForm.hidden = !replyForm.hidden;
-        if (!replyForm.hidden) replyTextInput.focus();
-      });
-
-      replySubmitBtn.addEventListener("click", function () {
-        if (AUTH_MODE !== "nickname" && !state.currentUser) { alert("로그인 후 등록할 수 있어요."); return; }
-
-        var name = "";
-        if (AUTH_MODE === "nickname") {
-          name = replyNameInput.value.trim().slice(0, 20);
-          if (!name) { alert("닉네임을 입력해주세요."); return; }
-        }
-
-        var text = replyTextInput.value.trim().slice(0, 60);
-        if (!text) return;
-
-        if (AUTH_MODE === "nickname") saveNickname(name);
-
-        api("/api/books/" + state.currentId + "/comments", { method: "POST", body: { text: text, parentId: c.id, name: name } })
-          .then(function () {
-            gtag("event", "post_reply");
-            replyTextInput.value = "";
-            replyForm.hidden = true;
-            refreshComments();
-          })
-          .catch(function (e) { alert(e.message); });
-      });
-
-      item.appendChild(replyForm);
 
       $list.appendChild(item);
     });
