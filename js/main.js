@@ -107,7 +107,7 @@ export function showView(name) {
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
-  dom.homeBtn.hidden = name !== "detail";
+  dom.homeBtn.hidden = name !== "detail" && name !== "random";
   if (name === "library") {
     stopDetailPolling(); startLibraryPolling();
     // /book/:id로 바로 들어왔다가 돌아오는 경우처럼, 책 목록이 로딩된 뒤로 한 번도
