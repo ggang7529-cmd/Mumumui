@@ -32,38 +32,41 @@
 </head>
 <body>
 <div class="wrap">
-  <header class="site-header">
-    <div class="brand">
-      <span class="ribbon" aria-hidden="true"></span>
-      <div>
+  <div class="sticky-header" id="stickyHeader">
+    <header class="site-header">
+      <div class="brand">
+        <span class="ribbon" aria-hidden="true"></span>
         <h1>책갈피</h1>
-        <p class="tagline">읽은 책마다 별점과 한 줄 감상을 남겨보세요</p>
-        <p class="tagline-note">닉네임만 입력하면 누구나 남길 수 있고, 남긴 기록은 모두에게 공유돼요.</p>
+      </div>
+      <div class="header-actions">
+        <div class="auth-box" id="authBox"></div>
+        <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
+        <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
+        <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
+        <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
+      </div>
+    </header>
+    <div class="library-toolbar" id="libraryToolbar">
+      <p class="library-meta" id="countLabel"></p>
+      <div class="sort-tabs" id="sortTabs" role="group" aria-label="정렬 방식">
+        <button type="button" class="sort-tab active" data-sort="latest">최신순</button>
+        <button type="button" class="sort-tab" data-sort="comments">리뷰순</button>
+        <button type="button" class="sort-tab" data-sort="rating">별점순</button>
+        <button type="button" class="sort-tab" data-sort="title">가나다순</button>
+      </div>
+      <div class="search-box">
+        <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
       </div>
     </div>
-    <div class="header-actions">
-      <div class="auth-box" id="authBox"></div>
-      <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
-      <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
-      <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
-      <button class="btn-primary" id="newReviewBtn" type="button">+ 책 기록하기</button>
-    </div>
-  </header>
+  </div>
+
+  <div class="header-intro">
+    <p class="tagline">읽은 책마다 별점과 한 줄 감상을 남겨보세요</p>
+    <p class="tagline-note">닉네임만 입력하면 누구나 남길 수 있고, 남긴 기록은 모두에게 공유돼요.</p>
+  </div>
 
   <main>
     <section id="libraryView">
-      <div class="library-toolbar">
-        <p class="library-meta" id="countLabel"></p>
-        <div class="sort-tabs" id="sortTabs" role="group" aria-label="정렬 방식">
-          <button type="button" class="sort-tab active" data-sort="latest">최신순</button>
-          <button type="button" class="sort-tab" data-sort="comments">리뷰순</button>
-          <button type="button" class="sort-tab" data-sort="rating">별점순</button>
-          <button type="button" class="sort-tab" data-sort="title">가나다순</button>
-        </div>
-        <div class="search-box">
-          <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
-        </div>
-      </div>
       <div class="shelf" id="shelfGrid"></div>
     </section>
 

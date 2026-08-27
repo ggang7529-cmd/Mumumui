@@ -63,26 +63,33 @@
 
   /* header */
 
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+
   .site-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 2.25rem;
+    gap: 1rem;
+    padding: 0.55rem 0;
   }
 
   @media (max-width: 640px) {
     .site-header {
       flex-direction: column;
       align-items: stretch;
-      gap: 1.1rem;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
     }
 
     .header-actions {
       flex-wrap: wrap;
-      row-gap: 0.6rem;
+      row-gap: 0.5rem;
     }
 
     .header-actions .btn-accent-outline,
@@ -90,8 +97,8 @@
     .header-actions .btn-primary {
       flex: 1 1 auto;
       min-width: 0;
-      padding: 0.55rem 0.6rem;
-      font-size: 0.85rem;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.82rem;
       text-align: center;
     }
 
@@ -102,29 +109,32 @@
 
   .brand {
     display: flex;
-    align-items: flex-start;
-    gap: 0.9rem;
+    align-items: center;
+    gap: 0.6rem;
   }
 
   .ribbon {
-    width: 10px;
-    height: 52px;
+    width: 8px;
+    height: 28px;
     flex: none;
     background: var(--accent);
     clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
-    margin-top: 2px;
   }
 
   .brand h1 {
     margin: 0;
     font-family: "Gowun Batang", "Malgun Gothic", serif;
     font-weight: 700;
-    font-size: clamp(1.9rem, 4vw, 2.4rem);
+    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
     letter-spacing: 0.02em;
   }
 
+  .header-intro {
+    margin: 1.1rem 0 1.75rem;
+  }
+
   .tagline {
-    margin: 0.3rem 0 0;
+    margin: 0;
     color: var(--ink-soft);
     font-size: 0.92rem;
   }
@@ -240,7 +250,36 @@
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
-    margin-bottom: 1.1rem;
+    padding: 0.5rem 0 0.65rem;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 640px) {
+    .library-toolbar {
+      padding: 0.45rem 0 0.55rem;
+      gap: 0.5rem;
+    }
+
+    .sort-tabs {
+      flex: 1 1 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.1rem;
+    }
+
+    .sort-tab {
+      flex: none;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+    }
+
+    .search-box {
+      flex: 1 1 100%;
+    }
+
+    .search-box input[type="search"] {
+      width: 100%;
+    }
   }
 
   .library-meta {

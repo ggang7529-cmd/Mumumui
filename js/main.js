@@ -44,6 +44,7 @@ export var dom = {
   countLabel: document.getElementById("countLabel"),
   searchInput: document.getElementById("searchInput"),
   libraryView: document.getElementById("libraryView"),
+  libraryToolbar: document.getElementById("libraryToolbar"),
   formView: document.getElementById("formView"),
   detailView: document.getElementById("detailView"),
   randomView: document.getElementById("randomView"),
@@ -99,6 +100,7 @@ function startDetailPolling() {
 export function showView(name) {
   state.view = name;
   dom.libraryView.hidden = name !== "library";
+  dom.libraryToolbar.hidden = name !== "library";
   dom.formView.hidden = name !== "form";
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
