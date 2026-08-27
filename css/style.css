@@ -823,8 +823,6 @@
   #commentList .c-author {
     order: 1;
     flex: none;
-    color: var(--ink-faint);
-    font-size: 0.78rem;
   }
 
   #commentList .c-rating {
@@ -833,6 +831,7 @@
     color: var(--accent);
     font-size: 0.78rem;
     letter-spacing: 0.04em;
+    margin-right: 0.3rem;
   }
 
   #commentList .c-text {
@@ -840,6 +839,34 @@
     flex: 1 1 220px;
     min-width: 0;
     word-break: break-word;
+  }
+
+  /* 닉네임 아바타(원형 이니셜) + 닉네임 이름 묶음. 원댓글/답글 공통. */
+  #commentList .c-author,
+  #commentList .c-reply-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  #commentList .c-avatar {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  #commentList .c-author .c-author-name {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.82rem;
   }
 
   #commentList .c-like {
@@ -917,7 +944,9 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.3rem 0.7rem;
+    /* 좋아요/날짜/삭제 버튼이 원댓글 줄과 세로로 맞도록 열 간격(column-gap)을
+       원댓글(#commentList li)과 동일한 1rem으로 맞춘다. */
+    gap: 0.3rem 1rem;
     padding: 0.3rem 0;
     font-size: 0.85rem;
   }
@@ -930,21 +959,44 @@
 
   #commentList .c-reply-author {
     flex: none;
-    color: var(--ink-faint);
-    font-size: 0.75rem;
+    margin-right: 0.3rem;
+  }
+
+  #commentList .c-reply-author .c-avatar {
+    width: 16px;
+    height: 16px;
+    font-size: 0.58rem;
+  }
+
+  #commentList .c-reply-author .c-author-name {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.78rem;
+  }
+
+  /* 원댓글 줄의 좋아요 다음에는 "답글" 버튼이 있지만 답글 줄에는 없다. 좋아요 버튼끼리
+     세로로 줄이 맞도록, 같은 위치에 보이지 않는 같은 너비의 자리표시자를 둔다. */
+  #commentList .c-reply-btn-spacer {
+    flex: none;
+    visibility: hidden;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.78rem;
   }
 
   #commentList .c-reply-like {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.3rem;
     background: none;
     border: 1px solid var(--line);
     border-radius: 999px;
-    padding: 0.1rem 0.5rem;
+    padding: 0.15rem 0.6rem;
     font-family: inherit;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: var(--ink-faint);
     cursor: pointer;
     font-variant-numeric: tabular-nums;
@@ -961,7 +1013,7 @@
   #commentList .c-reply-date {
     flex: none;
     color: var(--ink-faint);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
   }
 
@@ -1027,10 +1079,17 @@
 
     #commentList .c-author {
       order: 2;
+    }
+
+    #commentList .c-author .c-author-name {
       max-width: 5.5em;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    #commentList .c-reply-btn-spacer {
+      display: none;
     }
 
     #commentList .c-rating {

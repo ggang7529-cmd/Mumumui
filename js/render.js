@@ -9,6 +9,36 @@ export function coverFor(title) {
   return COVERS[hash % COVERS.length];
 }
 
+// 닉네임 문자열을 해시해 COVERS 팔레트에서 색을 골라준다 — 같은 닉네임은 항상 같은
+// 아바타 색으로 보이게 하기 위함. 책 표지 배색과 같은 팔레트를 재사용해 톤을 통일한다.
+function avatarColor(name) {
+  var str = name || "";
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  return COVERS[hash % COVERS.length];
+}
+
+// 댓글/답글 작성자 영역(아바타 원 + 닉네임)을 공통으로 만든다.
+function buildAuthorChip(name, className) {
+  var display = (name || "").trim() || "익명";
+  var chip = document.createElement("span");
+  chip.className = className;
+
+  var avatar = document.createElement("span");
+  avatar.className = "c-avatar";
+  avatar.textContent = display.charAt(0).toUpperCase();
+  avatar.style.background = avatarColor(display);
+  avatar.setAttribute("aria-hidden", "true");
+
+  var nameSpan = document.createElement("span");
+  nameSpan.className = "c-author-name";
+  nameSpan.textContent = display;
+
+  chip.appendChild(avatar);
+  chip.appendChild(nameSpan);
+  return chip;
+}
+
 // 카카오 도서 검색이 주는 썸네일은 표지가 화면에 표시되는 크기(최대 240px)보다 작은
 // 해상도(보통 130x200)라 확대돼서 흐릿하게 보인다. 썸네일 URL은 카카오의 argon 리사이징
 // 프록시(/WxH_품질_모드/ 형태)를 거치므로, 그 크기 구간만 더 크게 바꿔서 같은 원본 이미지를
@@ -384,9 +414,7 @@ export function renderDetail() {
       textSpan.textContent = c.text;
       textSpan.title = c.text;
 
-      var authorSpan = document.createElement("span");
-      authorSpan.className = "c-author";
-      authorSpan.textContent = c.authorName || "익명";
+      var authorSpan = buildAuthorChip(c.authorName, "c-author");
 
       var ratingSpan = document.createElement("span");
       ratingSpan.className = "c-rating";
@@ -445,9 +473,7 @@ export function renderDetail() {
       (repliesByParent[c.id] || []).forEach(function (r) {
         var rItem = document.createElement("li");
 
-        var rAuthor = document.createElement("span");
-        rAuthor.className = "c-reply-author";
-        rAuthor.textContent = r.authorName || "익명";
+        var rAuthor = buildAuthorChip(r.authorName, "c-reply-author");
 
         var rText = document.createElement("span");
         rText.className = "c-reply-text";
@@ -468,6 +494,14 @@ export function renderDetail() {
             .catch(function (e) { alert(e.message); });
         });
 
+        // 원댓글 줄은 좋아요 다음에 "답글" 버튼이 오지만 답글 줄에는 그게 없다. 좋아요
+        // 버튼끼리 세로로 줄이 맞도록, 보이지 않지만 같은 너비를 차지하는 자리표시자를
+        // 같은 위치에 넣어 뒤따르는 요소(날짜/삭제)의 폭을 원댓글과 맞춘다.
+        var rReplyBtnSpacer = document.createElement("span");
+        rReplyBtnSpacer.className = "c-reply-btn-spacer";
+        rReplyBtnSpacer.textContent = "답글";
+        rReplyBtnSpacer.setAttribute("aria-hidden", "true");
+
         var rDate = document.createElement("span");
         rDate.className = "c-reply-date";
         rDate.textContent = formatDate(r.createdAt);
@@ -475,6 +509,7 @@ export function renderDetail() {
         rItem.appendChild(rAuthor);
         rItem.appendChild(rText);
         rItem.appendChild(rLikeBtn);
+        rItem.appendChild(rReplyBtnSpacer);
         rItem.appendChild(rDate);
 
         if (myUid() === r.authorUid) {
