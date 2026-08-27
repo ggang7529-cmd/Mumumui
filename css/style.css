@@ -82,6 +82,21 @@
 
     .header-actions {
       flex-wrap: wrap;
+      row-gap: 0.6rem;
+    }
+
+    .header-actions .btn-accent-outline,
+    .header-actions .btn-random,
+    .header-actions .btn-primary {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0.55rem 0.6rem;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .header-actions .auth-box:empty {
+      display: none;
     }
   }
 
@@ -361,6 +376,35 @@
     padding: 1.5rem 0;
   }
 
+  @media (max-width: 640px) {
+    .wrap {
+      padding: 1.75rem 1rem 3.5rem;
+    }
+
+    .shelf {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .b-overlay {
+      padding: 0.6rem 0.6rem 0.55rem;
+    }
+
+    .book-card .b-title {
+      font-size: 0.92rem;
+      margin: 0 0 0.25rem;
+    }
+
+    .book-card .b-author {
+      font-size: 0.72rem;
+      margin: 0 0 0.4rem;
+    }
+
+    .book-card .b-stars {
+      font-size: 0.68rem;
+    }
+  }
+
   /* form */
 
   .panel {
@@ -411,6 +455,7 @@
 
   .book-search-row input {
     flex: 1;
+    min-width: 0;
     font-family: inherit;
     font-size: 1rem;
     color: var(--ink);
@@ -626,6 +671,29 @@
     min-width: 200px;
   }
 
+  @media (max-width: 640px) {
+    .detail-top {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1rem;
+    }
+
+    .detail-cover {
+      width: clamp(180px, 55vw, 260px);
+    }
+
+    .detail-card header {
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .rating-line {
+      justify-content: center;
+    }
+  }
+
   .detail-card h2 {
     font-family: "Gowun Batang", serif;
     font-size: clamp(1.7rem, 3.2vw, 2.3rem);
@@ -668,11 +736,11 @@
     border: 1px solid var(--line);
     color: var(--ink-faint);
     border-radius: 3px;
-    padding: 0.5rem 0.9rem;
+    padding: 0.35rem 0.7rem;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     cursor: pointer;
-    margin-top: 0.5rem;
+    margin-top: 2rem;
   }
 
   .btn-ghost-danger:hover { border-color: var(--accent); color: var(--accent); }
@@ -702,35 +770,41 @@
 
   #commentList li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     flex-wrap: wrap;
-    justify-content: space-between;
     gap: 0.4rem 1rem;
-    padding: 0.6rem 0;
+    padding: 0.7rem 0;
     border-bottom: 1px solid var(--line);
     font-size: 0.95rem;
   }
 
-  #commentList .c-text {
-    flex: 1 1 100%;
-    min-width: 0;
-    word-break: break-word;
+  /* 데스크톱 기본값: 닉네임+별점(왼쪽) · 리뷰 텍스트(가운데, 넓게) · 좋아요+답글+날짜(오른쪽)를
+     한 줄에 배치한다. order로만 시각 순서를 잡아서, 모바일 미디어쿼리에서 순서만 다시
+     바꾸면 되고 마크업(render.js)은 건드릴 필요가 없다. */
+  #commentList .c-author {
+    order: 1;
+    flex: none;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
   }
 
   #commentList .c-rating {
+    order: 2;
     flex: none;
     color: var(--accent);
     font-size: 0.78rem;
     letter-spacing: 0.04em;
   }
 
-  #commentList .c-author {
-    flex: none;
-    color: var(--ink-faint);
-    font-size: 0.78rem;
+  #commentList .c-text {
+    order: 3;
+    flex: 1 1 220px;
+    min-width: 0;
+    word-break: break-word;
   }
 
   #commentList .c-like {
+    order: 4;
     flex: none;
     display: flex;
     align-items: center;
@@ -754,26 +828,8 @@
     border-color: var(--accent);
   }
 
-  #commentList .c-date {
-    flex: none;
-    color: var(--ink-faint);
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-  }
-
-  #commentList .c-del {
-    flex: none;
-    background: none;
-    border: none;
-    color: var(--ink-faint);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0 0.2rem;
-  }
-
-  #commentList .c-del:hover { color: var(--accent); }
-
   #commentList .c-reply-btn {
+    order: 5;
     flex: none;
     background: none;
     border: 1px solid var(--line);
@@ -788,7 +844,29 @@
 
   #commentList .c-reply-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+  #commentList .c-date {
+    order: 6;
+    flex: none;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #commentList .c-del {
+    order: 7;
+    flex: none;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 0.2rem;
+  }
+
+  #commentList .c-del:hover { color: var(--accent); }
+
   #commentList .c-replies {
+    order: 8;
     flex: 1 1 100%;
     list-style: none;
     margin: 0.3rem 0 0;
@@ -837,6 +915,7 @@
   #commentList .c-reply-del:hover { color: var(--accent); }
 
   #commentList .c-reply-form {
+    order: 9;
     flex: 1 1 100%;
     display: flex;
     gap: 0.5rem;
@@ -876,6 +955,53 @@
 
   #commentList .c-reply-form button:hover { background: var(--accent-soft); }
 
+  /* 모바일: 1번째 줄 = 리뷰 텍스트, 2번째 줄 = 닉네임+별점(왼쪽) / 좋아요+답글(오른쪽), 날짜는 생략 */
+  @media (max-width: 640px) {
+    #commentList .c-text {
+      order: 1;
+      flex: 1 1 100%;
+    }
+
+    #commentList .c-author {
+      order: 2;
+      max-width: 5.5em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #commentList .c-rating {
+      order: 3;
+    }
+
+    #commentList .c-like {
+      order: 4;
+      margin-left: auto;
+    }
+
+    #commentList .c-reply-btn {
+      order: 5;
+    }
+
+    #commentList .c-date {
+      display: none;
+    }
+
+    #commentList .c-del {
+      order: 6;
+    }
+
+    #commentList .c-reply-form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    #commentList .c-reply-name {
+      flex: none;
+      width: 100%;
+    }
+  }
+
   #commentForm {
     display: flex;
     flex-direction: column;
@@ -898,6 +1024,7 @@
 
   #commentInput {
     flex: 1;
+    min-width: 0;
     font-family: inherit;
     font-size: 0.95rem;
     color: var(--ink);
@@ -908,6 +1035,8 @@
   }
 
   .comment-input-row button {
+    flex: none;
+    white-space: nowrap;
     background: var(--accent);
     color: var(--paper-raised);
     border: none;
