@@ -1,8 +1,13 @@
 import { verifyGoogleIdToken, createSessionCookie } from "../../_lib/session.js";
 import { json } from "../../_lib/db.js";
+import { checkRateLimit } from "../../_lib/rateLimit.js";
 
 export async function onRequestPost(context) {
   var env = context.env;
+
+  var rateOk = await checkRateLimit(env, context.request, "auth-google", 10, 60000);
+  if (!rateOk) return json({ error: "너무 많이 시도했어요. 잠시 후 다시 시도해주세요." }, { status: 429 });
+
   var body;
   try {
     body = await context.request.json();
