@@ -12,6 +12,10 @@ function upscaleCover(url) {
   return url.replace(/\/\d{2,4}x\d{2,4}_\d+_[a-z]+\//, "/400x600_95_c/");
 }
 
+function jsonLdScript(obj) {
+  return '<script type="application/ld+json">' + JSON.stringify(obj).replace(/</g, "\\u003c") + "</script>\n";
+}
+
 export async function onRequestGet(context) {
   var env = context.env;
   var id = context.params.id;
@@ -20,7 +24,11 @@ export async function onRequestGet(context) {
   var indexRes = await env.ASSETS.fetch(new URL("/", reqUrl));
   var html = await indexRes.text();
 
-  var book = await env.DB.prepare("SELECT id, title, author, cover FROM books WHERE id = ?1").bind(id).first();
+  var book = await env.DB.prepare(
+    "SELECT id, title, author, cover, text, rating_sum, rating_count, owner_name FROM books WHERE id = ?1"
+  )
+    .bind(id)
+    .first();
   if (!book) return new Response(html, { status: 404, headers: { "Content-Type": "text/html; charset=UTF-8" } });
 
   var title = escapeHtml(book.title) + " - 리뷰 및 별점 | 책갈피";
@@ -34,6 +42,40 @@ export async function onRequestGet(context) {
     (book.cover ? '<meta property="og:image" content="' + escapeHtml(upscaleCover(book.cover)) + '">\n' : "") +
     '<meta property="og:url" content="' + pageUrl + '">\n' +
     '<meta name="twitter:card" content="summary_large_image">\n';
+
+  var jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    name: book.title,
+    author: { "@type": "Person", name: book.author },
+  };
+  if (book.cover) jsonLd.image = upscaleCover(book.cover);
+  if (book.rating_count > 0) {
+    jsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: Math.round((book.rating_sum / book.rating_count) * 10) / 10,
+      reviewCount: book.rating_count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+  if (book.text) {
+    jsonLd.review = {
+      "@type": "Review",
+      reviewBody: book.text,
+      author: { "@type": "Person", name: book.owner_name || "책갈피 사용자" },
+      reviewRating:
+        book.rating_count > 0
+          ? {
+              "@type": "Rating",
+              ratingValue: Math.round((book.rating_sum / book.rating_count) * 10) / 10,
+              bestRating: 5,
+              worstRating: 1,
+            }
+          : undefined,
+    };
+  }
+  metaTags += jsonLdScript(jsonLd);
 
   html = html
     .replace("<title>책갈피</title>", "<title>" + title + "</title>" + metaTags)
