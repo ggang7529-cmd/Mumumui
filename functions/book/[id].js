@@ -35,7 +35,21 @@ export async function onRequestGet(context) {
   var desc = escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
   var pageUrl = escapeHtml(reqUrl.toString());
 
-  var metaTags = "\n" +
+  // 홈(index.html)에는 사이트 기본 og 태그가 정적으로 박혀 있다. 여기서 metaTags를
+  // <title> 뒤에 그냥 덧붙이면 og:title/description/image/type/url이 중복돼서 크롤러가
+  // 어느 쪽을 쓸지 보장할 수 없다. 그래서 아래 staticOgBlock을 통째로 책 전용 태그로
+  // 치환한다 (og:image는 책 표지가 있을 때만 정적 기본 이미지를 대체).
+  var staticOgBlock =
+    '<meta property="og:title" content="책갈피 - 읽은 책마다 별점과 한 줄 감상을 남겨보세요">\n' +
+    '<meta property="og:description" content="닉네임만 입력하면 누구나 참여할 수 있는 책 리뷰 커뮤니티. 읽은 책을 등록하고 별점과 한 줄 감상을 남겨보세요.">\n' +
+    '<meta property="og:image" content="https://galpi.pages.dev/og-image.png">\n' +
+    '<meta property="og:image:width" content="1200">\n' +
+    '<meta property="og:image:height" content="630">\n' +
+    '<meta property="og:type" content="website">\n' +
+    '<meta property="og:url" content="https://galpi.pages.dev">\n' +
+    '<meta name="twitter:card" content="summary_large_image">';
+
+  var metaTags =
     '<meta property="og:type" content="article">\n' +
     '<meta property="og:title" content="' + title + '">\n' +
     '<meta property="og:description" content="' + desc + '">\n' +
@@ -78,11 +92,12 @@ export async function onRequestGet(context) {
   metaTags += jsonLdScript(jsonLd);
 
   html = html
-    .replace("<title>책갈피</title>", "<title>" + title + "</title>" + metaTags)
+    .replace("<title>책갈피</title>", "<title>" + title + "</title>")
     .replace(
       '<meta name="description" content="읽은 책마다 별점과 한 줄 감상을 남겨두는 개인 서재">',
       '<meta name="description" content="' + desc + '">'
-    );
+    )
+    .replace(staticOgBlock, metaTags);
 
   return new Response(html, { headers: { "Content-Type": "text/html; charset=UTF-8" } });
 }
