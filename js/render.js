@@ -17,13 +17,21 @@ function buildAuthorChip(name, className) {
   return span;
 }
 
-// 카카오 도서 검색이 주는 썸네일은 표지가 화면에 표시되는 크기(최대 240px)보다 작은
-// 해상도(보통 130x200)라 확대돼서 흐릿하게 보인다. 썸네일 URL은 카카오의 argon 리사이징
-// 프록시(/WxH_품질_모드/ 형태)를 거치므로, 그 크기 구간만 더 크게 바꿔서 같은 원본 이미지를
-// 더 선명한 해상도로 요청한다. 패턴이 안 맞는 URL(다른 출처 등)은 그대로 둔다.
+// 카카오 도서 검색이 주는 썸네일은 실제로
+// https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=<원본 이미지 URL>
+// 형태로, 120x174짜리로 축소된 썸네일 프록시 URL이다(더 큰 사이즈를 요청해도 403으로
+// 거부돼서 프록시 쪽에서 확대는 불가능). 그런데 fname 파라미터 안에 원본 이미지(보통
+// 400px대 폭)가 그대로 들어있으므로, 그 원본 URL을 꺼내서 프록시를 건너뛰고 직접 쓰면
+// 훨씬 선명하다. 패턴이 안 맞는 URL(다른 출처 등)은 그대로 둔다.
 export function upscaleCover(url) {
   if (!url) return url;
-  return url.replace(/\/\d{2,4}x\d{2,4}_\d+_[a-z]+\//, "/400x600_95_c/");
+  var match = url.match(/^https?:\/\/[^/]*kakaocdn\.net\/thumb\/[^/]+\/\?fname=(.+)$/);
+  if (!match) return url;
+  try {
+    return decodeURIComponent(match[1]).replace(/^http:\/\//, "https://");
+  } catch (e) {
+    return url;
+  }
 }
 
 export function formatDate(ms) {

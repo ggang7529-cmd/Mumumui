@@ -4,12 +4,20 @@ function escapeHtml(s) {
   });
 }
 
-// 카카오 도서검색 썸네일은 작아서(보통 130x200) 카톡 공유 미리보기에도 그대로 쓰면 흐릿하다.
-// js/render.js의 upscaleCover()와 같은 방식으로 카카오 argon 리사이징 프록시 URL의 크기
-// 구간만 더 크게 바꿔서 요청한다. 패턴이 안 맞으면 원본 그대로 둔다.
+// 카카오 도서검색 썸네일(120x174짜리 kakaocdn 썸네일 프록시 URL)은 작아서 카톡 공유
+// 미리보기에도 그대로 쓰면 흐릿하다. js/render.js의 upscaleCover()와 같은 방식으로,
+// 프록시 URL의 fname 파라미터에 들어있는 원본 이미지 URL을 꺼내서 그대로 쓴다(프록시는
+// 확대 요청을 403으로 거부하므로 원본을 직접 쓰는 것만 유효하다). 패턴이 안 맞으면
+// 원본 그대로 둔다.
 function upscaleCover(url) {
   if (!url) return url;
-  return url.replace(/\/\d{2,4}x\d{2,4}_\d+_[a-z]+\//, "/400x600_95_c/");
+  var match = url.match(/^https?:\/\/[^/]*kakaocdn\.net\/thumb\/[^/]+\/\?fname=(.+)$/);
+  if (!match) return url;
+  try {
+    return decodeURIComponent(match[1]).replace(/^http:\/\//, "https://");
+  } catch (e) {
+    return url;
+  }
 }
 
 function jsonLdScript(obj) {
