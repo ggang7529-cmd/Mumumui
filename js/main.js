@@ -78,7 +78,7 @@ export var dom = {
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
 var RANDOM_STREAK_WINDOW_MS = 10000;
-var RANDOM_STREAK_THRESHOLD = 5;
+var RANDOM_STREAK_THRESHOLD = 3;
 var RANDOM_STREAK_MESSAGES = [
   "이 정도면 운명이에요 🍀",
   "그만 뽑고 그냥 읽어보세요 📖",
