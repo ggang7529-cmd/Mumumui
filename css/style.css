@@ -1185,15 +1185,19 @@
     display: flex;
     justify-content: center;
     padding: 1.75rem 0 0.5rem;
+    perspective: 1200px;
   }
 
   .random-card {
+    position: relative;
     width: clamp(220px, 40vw, 320px);
     max-width: 80vw;
     border-radius: 8px;
     overflow: hidden;
     background: var(--paper-soft);
     box-shadow: 0 8px 22px var(--shadow);
+    transform-origin: left center;
+    backface-visibility: hidden;
   }
 
   .random-card-cover {
@@ -1219,7 +1223,46 @@
     100% { transform: translateY(0) rotate(0.6deg); }
   }
 
+  /* 뽑기 결과가 확정되는 순간, 책장이 왼쪽 책등을 축으로 휙 펼쳐지는 느낌의 트랜지션.
+     transform(rotateY)/opacity만 애니메이션해서 모바일에서도 레이아웃 재계산 없이
+     가볍게 돌아간다. */
+  .random-card.page-in {
+    animation: randomPageIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .random-card.page-in::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 60%);
+    animation: randomPageFold 0.5s ease-out both;
+    pointer-events: none;
+  }
+
+  @keyframes randomPageIn {
+    0% { transform: rotateY(-100deg); opacity: 0; }
+    55% { opacity: 1; }
+    100% { transform: rotateY(0deg); opacity: 1; }
+  }
+
+  @keyframes randomPageFold {
+    0% { opacity: 0.9; }
+    100% { opacity: 0; }
+  }
+
   .random-info { margin-top: 0.75rem; }
+
+  /* 카드가 펼쳐지는 애니메이션을 뒤따라, 결과 정보도 살짝 뜸을 두고 떠오르듯 나타난다. */
+  .random-info:not([hidden]) {
+    animation: randomInfoIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation-delay: 0.12s;
+  }
+
+  @keyframes randomInfoIn {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
 
   .random-info h3 {
     font-family: "Gowun Batang", serif;

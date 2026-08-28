@@ -158,7 +158,7 @@ function openRandomView() {
   dom.randomInfo.hidden = true;
   dom.randomGoBtn.hidden = true;
   dom.randomDrawBtn.disabled = false;
-  dom.randomCard.classList.remove("spinning");
+  dom.randomCard.classList.remove("spinning", "page-in");
   dom.randomCardCover.innerHTML = "";
   dom.randomCardCover.style.removeProperty("--cover");
   showView("random");
@@ -175,6 +175,10 @@ function drawRandomBook() {
   dom.randomDrawBtn.disabled = true;
   dom.randomInfo.hidden = true;
   dom.randomGoBtn.hidden = true;
+  // 이전 뽑기의 펼침 애니메이션이 아직 재생 중이었다면 정리하고(리플로우로 강제 리셋),
+  // 다시 눌렀을 때 흔들림 애니메이션부터 자연스럽게 새로 시작하게 한다.
+  dom.randomCard.classList.remove("page-in");
+  void dom.randomCard.offsetWidth;
   dom.randomCard.classList.add("spinning");
 
   var pool = state.books;
@@ -196,6 +200,10 @@ function drawRandomBook() {
     if (progress >= 1) {
       renderRandomCard(target);
       dom.randomCard.classList.remove("spinning");
+      // 클래스를 뗐다 붙이며 리플로우를 강제해서, 결과가 확정될 때마다 책장이 펼쳐지는
+      // 애니메이션이 매번 처음부터 다시 재생되게 한다.
+      void dom.randomCard.offsetWidth;
+      dom.randomCard.classList.add("page-in");
       state.randomSpinning = false;
       dom.randomDrawBtn.disabled = false;
       finishRandomDraw(target);
