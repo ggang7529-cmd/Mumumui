@@ -11,6 +11,8 @@
     --accent2-soft: #578179;
     --line: rgba(36, 31, 28, 0.14);
     --shadow: rgba(36, 31, 28, 0.16);
+    --logo-front: #7A2E3F;
+    --logo-back: #C88E92;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -27,6 +29,8 @@
       --accent2-soft: #97CBC0;
       --line: rgba(237, 230, 218, 0.16);
       --shadow: rgba(0, 0, 0, 0.4);
+      --logo-front: #E8B9BB;
+      --logo-back: #C0707C;
     }
   }
 
@@ -43,6 +47,8 @@
     --accent2-soft: #97CBC0;
     --line: rgba(237, 230, 218, 0.16);
     --shadow: rgba(0, 0, 0, 0.4);
+    --logo-front: #E8B9BB;
+    --logo-back: #C0707C;
   }
 
   * { box-sizing: border-box; }
@@ -113,12 +119,28 @@
     gap: 0.6rem;
   }
 
-  .ribbon {
-    width: 8px;
-    height: 28px;
+  .logo-symbol {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
     flex: none;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+  }
+
+  .logo-bar {
+    width: 5px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .logo-bar--front {
+    height: 28px;
+    background: var(--logo-front);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+  }
+
+  .logo-bar--back {
+    height: 22px;
+    background: var(--logo-back);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
   }
 
   .brand h1 {
