@@ -81,7 +81,7 @@ var RANDOM_STREAK_WINDOW_MS = 10000;
 var RANDOM_STREAK_THRESHOLD = 3;
 var RANDOM_STREAK_MESSAGES = [
   "이 정도면 운명이에요 🍀",
-  "그만 뽑고 그냥 읽어보세요 📖",
+  "오늘의 책은 이미 정해져 있을지도요 📖",
   "책 고르기 어려우시죠? 😅"
 ];
 
