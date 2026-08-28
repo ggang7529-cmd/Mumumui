@@ -68,6 +68,13 @@ export async function onRequestPost(context) {
         "UPDATE books SET rating_sum = rating_sum + ?1, rating_count = rating_count + 1, comment_count = comment_count + 1, updated_at = ?3 WHERE id = ?2"
       ).bind(rating, bookId, now)
     );
+  } else {
+    // 답글은 rating_sum/comment_count(리뷰순 정렬 기준)에는 반영하지 않지만, 홈 화면 NEW
+    // 배지와 기본 정렬(최신순)은 updated_at 하나만 보므로 답글이 달려도 갱신해줘야
+    // 책 등록 때와 마찬가지로 새 활동으로 보인다.
+    statements.push(
+      env.DB.prepare("UPDATE books SET updated_at = ?2 WHERE id = ?1").bind(bookId, now)
+    );
   }
   await env.DB.batch(statements);
 
