@@ -345,6 +345,18 @@ export function renderDetail() {
     $detailCover.appendChild(coverImg);
   }
 
+  // 상세 페이지에 처음 진입한 순간에만(카드 클릭/딥링크 등) 표지 펼침 연출을 재생한다.
+  // 8초 폴링으로 renderDetail이 다시 불릴 때는 이 플래그가 꺼져 있어 재생되지 않는다.
+  if (state.detailCoverAnimatePending) {
+    state.detailCoverAnimatePending = false;
+    var $detailHeaderInfo = document.getElementById("detailHeaderInfo");
+    $detailCover.classList.remove("cover-in");
+    $detailHeaderInfo.classList.remove("info-in");
+    void $detailCover.offsetWidth;
+    $detailCover.classList.add("cover-in");
+    $detailHeaderInfo.classList.add("info-in");
+  }
+
   document.getElementById("deleteBtn").hidden = !isAdminMode();
 
   var $commentForm = document.getElementById("commentForm");

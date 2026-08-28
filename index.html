@@ -133,7 +133,7 @@
       <div class="panel detail-card">
         <div class="detail-top">
           <div class="detail-cover" id="detailCover"></div>
-          <header>
+          <header id="detailHeaderInfo">
             <h2 id="detailTitle"></h2>
             <p class="detail-author" id="detailAuthor"></p>
             <div class="rating-line">
@@ -181,6 +181,7 @@
         <div class="form-actions random-actions random-draw-actions">
           <button type="button" class="btn-primary" id="randomDrawBtn">책 뽑기</button>
         </div>
+        <p class="random-streak-msg" id="randomStreakMsg" hidden></p>
         <div class="random-stage">
           <div class="random-card" id="randomCard">
             <div class="random-card-cover" id="randomCardCover"></div>
@@ -223,6 +224,16 @@
       </div>
     </section>
   </main>
+</div>
+
+<div class="milestone-overlay" id="milestoneOverlay" hidden aria-live="polite">
+  <div class="milestone-modal">
+    <div class="milestone-confetti" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <p class="milestone-message" id="milestoneMessage"></p>
+  </div>
 </div>
 
 <script type="module" src="js/main.js"></script>

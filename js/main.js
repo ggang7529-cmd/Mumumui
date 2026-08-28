@@ -38,7 +38,13 @@ export var state = {
   randomSpinning: false,
   // 8초 폴링(refreshComments)이 댓글 목록을 통째로 다시 그리기 때문에, 답글 입력 중이던
   // 내용을 잃지 않도록 열려 있는 답글창의 임시 입력값을 부모 댓글 id별로 기억해둔다.
-  openReplies: {}
+  openReplies: {},
+  // "책 뽑기" 연속 클릭 이스터에그: 최근 클릭 시각들을 기억해 짧은 시간 안에 여러 번
+  // 눌렀는지 판단한다 (trackRandomStreak 참고).
+  randomClickTimestamps: [],
+  // 상세 페이지에 막 진입했을 때만 표지 펼침 애니메이션을 재생하기 위한 1회성 플래그
+  // (renderDetail이 폴링으로 반복 호출될 때는 재생하지 않아야 하므로 필요).
+  detailCoverAnimatePending: false
 };
 
 // 여러 파일에서 공유하는 DOM 참조.
@@ -64,8 +70,24 @@ export var dom = {
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
   randomGoBtn: document.getElementById("randomGoBtn"),
-  homeBtn: document.getElementById("homeBtn")
+  homeBtn: document.getElementById("homeBtn"),
+  randomStreakMsg: document.getElementById("randomStreakMsg"),
+  milestoneOverlay: document.getElementById("milestoneOverlay"),
+  milestoneMessage: document.getElementById("milestoneMessage")
 };
+
+// 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
+var RANDOM_STREAK_WINDOW_MS = 10000;
+var RANDOM_STREAK_THRESHOLD = 5;
+var RANDOM_STREAK_MESSAGES = [
+  "이 정도면 운명이에요 🍀",
+  "그만 뽑고 그냥 읽어보세요 📖",
+  "책 고르기 어려우시죠? 😅"
+];
+
+// 등록 마일스톤 축하 연출 기준. 테스트할 때는 이 값을 3처럼 작게 잠깐 바꿔서 확인하고
+// 확인이 끝나면 반드시 50으로 되돌려두세요 (커밋 전에요!).
+var MILESTONE_STEP = 50;
 
 function renderAdminToggle() {
   if (state.view === "detail") renderDetail();
@@ -144,6 +166,7 @@ export function openDetail(id) {
   state.comments = [];
   state.commentRating = 0;
   state.openReplies = {};
+  state.detailCoverAnimatePending = true;
   renderStars(dom.cStars, 0, true, selectCommentRating);
   if (AUTH_MODE === "nickname") document.getElementById("cNickname").value = getSavedNickname();
   renderDetail();
@@ -155,6 +178,10 @@ export function openDetail(id) {
 function openRandomView() {
   state.randomPickedId = null;
   state.randomSpinning = false;
+  state.randomClickTimestamps = [];
+  clearTimeout(randomStreakHideTimer);
+  dom.randomStreakMsg.classList.remove("show");
+  dom.randomStreakMsg.hidden = true;
   dom.randomInfo.hidden = true;
   dom.randomGoBtn.hidden = true;
   dom.randomDrawBtn.disabled = false;
@@ -163,6 +190,54 @@ function openRandomView() {
   dom.randomCardCover.style.removeProperty("--cover");
   showView("random");
 }
+
+// "책 뽑기"를 짧은 시간 안에 여러 번 누르면 재치있는 문구를 잠깐 보여주는 이스터에그.
+var randomStreakHideTimer = null;
+
+function trackRandomStreak() {
+  var now = Date.now();
+  state.randomClickTimestamps = state.randomClickTimestamps.filter(function (t) {
+    return now - t < RANDOM_STREAK_WINDOW_MS;
+  });
+  state.randomClickTimestamps.push(now);
+  if (state.randomClickTimestamps.length >= RANDOM_STREAK_THRESHOLD) {
+    state.randomClickTimestamps = [];
+    showRandomStreakMsg();
+  }
+}
+
+function showRandomStreakMsg() {
+  clearTimeout(randomStreakHideTimer);
+  var msg = RANDOM_STREAK_MESSAGES[Math.floor(Math.random() * RANDOM_STREAK_MESSAGES.length)];
+  dom.randomStreakMsg.textContent = msg;
+  dom.randomStreakMsg.hidden = false;
+  void dom.randomStreakMsg.offsetWidth;
+  dom.randomStreakMsg.classList.add("show");
+  randomStreakHideTimer = setTimeout(function () {
+    dom.randomStreakMsg.classList.remove("show");
+    setTimeout(function () { dom.randomStreakMsg.hidden = true; }, 260);
+  }, 1600);
+}
+
+// 등록 권수가 50의 배수에 도달했을 때 보여주는 축하 연출.
+var milestoneHideTimer = null;
+
+function showMilestoneCelebration(count) {
+  clearTimeout(milestoneHideTimer);
+  dom.milestoneMessage.textContent = count + "번째 기록을 남겨주셨어요! 🎉";
+  dom.milestoneOverlay.hidden = false;
+  void dom.milestoneOverlay.offsetWidth;
+  dom.milestoneOverlay.classList.add("show");
+  milestoneHideTimer = setTimeout(hideMilestoneCelebration, 2200);
+}
+
+function hideMilestoneCelebration() {
+  clearTimeout(milestoneHideTimer);
+  dom.milestoneOverlay.classList.remove("show");
+  setTimeout(function () { dom.milestoneOverlay.hidden = true; }, 260);
+}
+
+dom.milestoneOverlay.addEventListener("click", hideMilestoneCelebration);
 
 function drawRandomBook() {
   if (state.randomSpinning) return;
@@ -344,7 +419,10 @@ document.getElementById("randomBtn").addEventListener("click", function () {
   openRandomView();
 });
 document.getElementById("randomBackBtn").addEventListener("click", function () { showView("library"); });
-dom.randomDrawBtn.addEventListener("click", drawRandomBook);
+dom.randomDrawBtn.addEventListener("click", function () {
+  trackRandomStreak();
+  drawRandomBook();
+});
 dom.randomGoBtn.addEventListener("click", function () {
   if (state.randomPickedId) openDetail(state.randomPickedId);
 });
@@ -380,8 +458,10 @@ dom.reviewForm.addEventListener("submit", function (e) {
       gtag("event", "complete_review", { book_id: data.book.id });
       renderAuthBox();
       state.books.unshift(normalizeBook(data.book));
+      var totalCount = state.books.length;
       showView("library");
       renderLibrary();
+      if (totalCount > 0 && totalCount % MILESTONE_STEP === 0) showMilestoneCelebration(totalCount);
     })
     .catch(function (e) {
       alert(e.message);
