@@ -410,15 +410,11 @@ document.getElementById("feedbackForm").addEventListener("submit", function (e) 
     .catch(function (e) { alert(e.message); })
     .finally(function () { submitBtn.disabled = false; });
 });
-document.getElementById("backBtn").addEventListener("click", function () {
-  showView("library");
-});
 
 document.getElementById("randomBtn").addEventListener("click", function () {
   gtag("event", "click_random_book");
   openRandomView();
 });
-document.getElementById("randomBackBtn").addEventListener("click", function () { showView("library"); });
 dom.randomDrawBtn.addEventListener("click", function () {
   trackRandomStreak();
   drawRandomBook();

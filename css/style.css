@@ -684,19 +684,6 @@
 
   /* detail */
 
-  .back-btn {
-    background: none;
-    border: none;
-    color: var(--ink-soft);
-    font-family: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 0.3rem 0;
-    margin-bottom: 1.25rem;
-  }
-
-  .back-btn:hover { color: var(--accent); }
-
   .detail-top {
     display: flex;
     align-items: center;
