@@ -117,28 +117,29 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
   }
 
   .logo-symbol {
     display: flex;
     align-items: flex-start;
-    gap: 2px;
+    gap: 0.11em;
     flex: none;
   }
 
   .logo-bar {
-    width: 5px;
-    border-radius: 2px 2px 0 0;
+    width: 0.28em;
+    border-radius: 0.1em 0.1em 0 0;
   }
 
   .logo-bar--front {
-    height: 28px;
+    height: 1.5em;
     background: var(--logo-front);
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
   }
 
   .logo-bar--back {
-    height: 22px;
+    height: 1.15em;
     background: var(--logo-back);
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
   }
@@ -147,8 +148,20 @@
     margin: 0;
     font-family: "Gowun Batang", "Malgun Gothic", serif;
     font-weight: 700;
-    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+    font-size: 1em;
     letter-spacing: 0.02em;
+  }
+
+  /* PC(넓은 화면)에서만 로고 텍스트/심볼을 키운다. 모바일은 위 기본값을 그대로 유지. */
+  @media (min-width: 641px) {
+    .brand {
+      gap: 0.75rem;
+      font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    }
+
+    .brand h1 {
+      font-weight: 800;
+    }
   }
 
   .header-intro {
