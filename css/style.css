@@ -265,29 +265,35 @@
 
   /* notifications */
 
-  .notif-box { position: relative; }
+  .notif-box { position: relative; display: flex; align-items: center; }
 
   .notif-bell {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     background: none;
     border: none;
-    font-size: 1.1rem;
-    line-height: 1;
+    color: var(--ink-soft);
     cursor: pointer;
-    padding: 0.35rem;
     border-radius: 50%;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
-  .notif-bell:hover { background: var(--paper-soft); }
+  .notif-bell svg { width: 17px; height: 17px; }
+
+  .notif-bell:hover { background: var(--paper-soft); color: var(--ink); }
 
   .notif-dot {
     position: absolute;
-    top: 1px;
-    right: 1px;
-    width: 9px;
-    height: 9px;
+    top: 3px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: #e5484d;
+    background: var(--accent);
     border: 2px solid var(--paper-raised);
   }
 
@@ -308,9 +314,10 @@
   .notif-title {
     margin: 0;
     padding: 0.15rem 0.9rem 0.5rem;
-    font-size: 0.82rem;
+    font-family: "Gowun Batang", serif;
+    font-size: 0.92rem;
     font-weight: 700;
-    color: var(--ink-soft);
+    color: var(--ink);
     border-bottom: 1px solid var(--line);
   }
 
