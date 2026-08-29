@@ -1,5 +1,5 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom } from "./main.js";
-import { renderBookResults, renderAuthBox, renderLibrary, renderDetail } from "./render.js";
+import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge } from "./render.js";
 
 export function googleConfigured() {
   return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -8,6 +8,7 @@ export function googleConfigured() {
 var ANON_ID_KEY = "chaekgalpi_anon_id";
 var NICKNAME_KEY = "chaekgalpi_nickname";
 var ADMIN_KEY_STORAGE = "chaekgalpi_admin_key";
+var NOTIF_SEEN_KEY = "chaekgalpi_notif_seen";
 
 export function getAnonId() {
   try {
@@ -60,6 +61,16 @@ export function verifyAdminKey(key) {
       });
     })
     .catch(function () { return { ok: false, error: "요청이 실패했어요." }; });
+}
+
+// 책별로 "마지막으로 확인한 활동 시각(updated_at)"을 기억해서, 그 이후에 갱신된 책만
+// 안 읽은 알림으로 취급한다. 계정이 없으니 이것도 로컬스토리지에만 저장된다.
+export function getNotifSeenMap() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_SEEN_KEY) || "{}"); } catch (e) { return {}; }
+}
+
+export function saveNotifSeenMap(map) {
+  try { localStorage.setItem(NOTIF_SEEN_KEY, JSON.stringify(map)); } catch (e) {}
 }
 
 export function normalizeBook(row) {
@@ -130,6 +141,31 @@ export function refreshComments() {
   return api("/api/books/" + state.currentId + "/comments").then(function (data) {
     state.comments = (data.comments || []).map(normalizeComment);
     if (state.view === "detail") renderDetail();
+  }).catch(function () {});
+}
+
+export function refreshNotifications() {
+  var uid = myUid();
+  if (!uid) { state.notifications = []; renderNotifBadge(); return Promise.resolve(); }
+
+  return api("/api/notifications").then(function (data) {
+    var seen = getNotifSeenMap();
+    var changed = false;
+
+    var unread = (data.notifications || []).filter(function (n) {
+      if (seen[n.bookId] === undefined) {
+        // 이 기능이 배포되기 전부터 있던 남의 댓글까지 한꺼번에 알림으로 뜨지 않도록,
+        // 처음 보는 책은 지금 시점을 기준선으로 저장만 해두고 알림으로는 띄우지 않는다.
+        seen[n.bookId] = n.updatedAt;
+        changed = true;
+        return false;
+      }
+      return n.updatedAt > seen[n.bookId];
+    });
+
+    if (changed) saveNotifSeenMap(seen);
+    state.notifications = unread;
+    renderNotifBadge();
   }).catch(function () {});
 }
 

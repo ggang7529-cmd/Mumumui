@@ -1,5 +1,8 @@
 import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
-import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons, isAdminMode, getAdminKey } from "./api.js";
+import {
+  googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons,
+  isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
+} from "./api.js";
 
 var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -624,4 +627,68 @@ export function renderRandomCard(b) {
     img.alt = "";
     dom.randomCardCover.appendChild(img);
   }
+}
+
+// 알림: 내가 등록한 책에 남이 새로 남긴 리뷰/답글. api.js의 refreshNotifications가
+// state.notifications를 채우고 이 함수를 부르면, 배지 점과(열려 있다면) 드롭다운 목록을
+// 함께 갱신한다.
+export function renderNotifBadge() {
+  var $badge = document.getElementById("notifBadge");
+  if ($badge) $badge.hidden = state.notifications.length === 0;
+  renderNotifDropdown();
+}
+
+export function renderNotifDropdown() {
+  var $list = document.getElementById("notifList");
+  var $empty = document.getElementById("notifEmpty");
+  if (!$list || !$empty) return;
+
+  $list.innerHTML = "";
+  $empty.hidden = state.notifications.length > 0;
+
+  state.notifications.forEach(function (n) {
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "notif-item";
+    btn.textContent = n.title + "에 새 리뷰가 달렸어요";
+    btn.addEventListener("click", function () {
+      markNotificationRead(n.bookId, n.updatedAt);
+      closeNotifDropdown();
+      openDetail(n.bookId);
+    });
+    li.appendChild(btn);
+    $list.appendChild(li);
+  });
+}
+
+function markNotificationRead(bookId, updatedAt) {
+  var seen = getNotifSeenMap();
+  seen[bookId] = updatedAt;
+  saveNotifSeenMap(seen);
+  state.notifications = state.notifications.filter(function (n) { return n.bookId !== bookId; });
+  renderNotifBadge();
+}
+
+export function openNotifDropdown() {
+  var $dd = document.getElementById("notifDropdown");
+  var $btn = document.getElementById("notifBtn");
+  if (!$dd) return;
+  renderNotifDropdown();
+  $dd.hidden = false;
+  if ($btn) $btn.setAttribute("aria-expanded", "true");
+}
+
+export function closeNotifDropdown() {
+  var $dd = document.getElementById("notifDropdown");
+  var $btn = document.getElementById("notifBtn");
+  if (!$dd) return;
+  $dd.hidden = true;
+  if ($btn) $btn.setAttribute("aria-expanded", "false");
+}
+
+export function toggleNotifDropdown() {
+  var $dd = document.getElementById("notifDropdown");
+  if (!$dd) return;
+  if ($dd.hidden) openNotifDropdown(); else closeNotifDropdown();
 }

@@ -1,11 +1,12 @@
 import {
-  googleConfigured, api, refreshBooks, refreshComments,
+  googleConfigured, api, refreshBooks, refreshComments, refreshNotifications,
   getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
-  clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate
+  clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
+  toggleNotifDropdown, closeNotifDropdown
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -36,6 +37,8 @@ export var state = {
   sortMode: "latest",
   randomPickedId: null,
   randomSpinning: false,
+  // 내가 등록한 책에 남이 새로 남긴 리뷰/답글 중 아직 확인하지 않은 것들 (refreshNotifications 참고).
+  notifications: [],
   // 8초 폴링(refreshComments)이 댓글 목록을 통째로 다시 그리기 때문에, 답글 입력 중이던
   // 내용을 잃지 않도록 열려 있는 답글창의 임시 입력값을 부모 댓글 id별로 기억해둔다.
   openReplies: {},
@@ -109,7 +112,7 @@ function stopLibraryPolling() {
 
 function startLibraryPolling() {
   stopLibraryPolling();
-  state.libraryPollTimer = setInterval(refreshBooks, 20000);
+  state.libraryPollTimer = setInterval(function () { refreshBooks(); refreshNotifications(); }, 20000);
 }
 
 function stopDetailPolling() {
@@ -118,7 +121,7 @@ function stopDetailPolling() {
 
 function startDetailPolling() {
   stopDetailPolling();
-  state.detailPollTimer = setInterval(function () { refreshBooks(); refreshComments(); }, 8000);
+  state.detailPollTimer = setInterval(function () { refreshBooks(); refreshComments(); refreshNotifications(); }, 8000);
 }
 
 export function showView(name) {
@@ -360,6 +363,15 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
 
+document.getElementById("notifBtn").addEventListener("click", function (e) {
+  e.stopPropagation();
+  toggleNotifDropdown();
+});
+document.addEventListener("click", function (e) {
+  var $dd = document.getElementById("notifDropdown");
+  if ($dd && !$dd.hidden && !$dd.contains(e.target) && e.target.id !== "notifBtn") closeNotifDropdown();
+});
+
 // Ctrl+Shift+A (Mac: Cmd+Shift+A) — 화면에 아무 흔적도 남기지 않는 숨겨진 관리자 모드 전환 단축키.
 document.addEventListener("keydown", function (e) {
   if (!e.shiftKey || e.key.toLowerCase() !== "a" || !(e.ctrlKey || e.metaKey)) return;
@@ -543,3 +555,4 @@ if (initialBookId) openDetail(initialBookId);
 else showView("library");
 
 refreshBooks();
+refreshNotifications();

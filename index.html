@@ -53,6 +53,16 @@
       </div>
       <div class="header-actions">
         <div class="auth-box" id="authBox"></div>
+        <div class="notif-box">
+          <button class="notif-bell" id="notifBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="알림">
+            🔔<span class="notif-dot" id="notifBadge" hidden></span>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown" hidden>
+            <p class="notif-title">알림</p>
+            <p class="notif-empty" id="notifEmpty">새 알림이 없어요.</p>
+            <ul class="notif-list" id="notifList"></ul>
+          </div>
+        </div>
         <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
         <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
         <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
