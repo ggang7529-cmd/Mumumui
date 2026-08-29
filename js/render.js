@@ -629,9 +629,9 @@ export function renderRandomCard(b) {
   }
 }
 
-// 알림: 내가 등록한 책에 남이 새로 남긴 리뷰/답글. api.js의 refreshNotifications가
-// state.notifications를 채우고 이 함수를 부르면, 배지 점과(열려 있다면) 드롭다운 목록을
-// 함께 갱신한다.
+// 알림: 내가 등록한 책에 남이 새로 남긴 리뷰/답글 + 내 리뷰(또는 답글)에 남이 새로 남긴
+// 답글·좋아요. api.js의 refreshNotifications가 state.notifications를 채우고 이 함수를
+// 부르면, 배지 점과(열려 있다면) 드롭다운 목록을 함께 갱신한다.
 export function renderNotifBadge() {
   var $badge = document.getElementById("notifBadge");
   if ($badge) $badge.hidden = state.notifications.length === 0;
@@ -651,9 +651,9 @@ export function renderNotifDropdown() {
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "notif-item";
-    btn.textContent = n.title + "에 새 리뷰가 달렸어요";
+    btn.textContent = n.text;
     btn.addEventListener("click", function () {
-      markNotificationRead(n.bookId, n.updatedAt);
+      markNotificationRead(n.key, n.metric);
       closeNotifDropdown();
       openDetail(n.bookId);
     });
@@ -662,11 +662,11 @@ export function renderNotifDropdown() {
   });
 }
 
-function markNotificationRead(bookId, updatedAt) {
+function markNotificationRead(key, metric) {
   var seen = getNotifSeenMap();
-  seen[bookId] = updatedAt;
+  seen[key] = metric;
   saveNotifSeenMap(seen);
-  state.notifications = state.notifications.filter(function (n) { return n.bookId !== bookId; });
+  state.notifications = state.notifications.filter(function (n) { return n.key !== key; });
   renderNotifBadge();
 }
 

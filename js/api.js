@@ -152,15 +152,17 @@ export function refreshNotifications() {
     var seen = getNotifSeenMap();
     var changed = false;
 
+    // 항목마다 metric의 의미가 다르다(새 리뷰/답글은 시각, 좋아요는 개수) — 여기서는
+    // "이전에 본 값보다 커졌는지"만 보면 되므로 종류를 몰라도 똑같이 비교할 수 있다.
     var unread = (data.notifications || []).filter(function (n) {
-      if (seen[n.bookId] === undefined) {
-        // 이 기능이 배포되기 전부터 있던 남의 댓글까지 한꺼번에 알림으로 뜨지 않도록,
-        // 처음 보는 책은 지금 시점을 기준선으로 저장만 해두고 알림으로는 띄우지 않는다.
-        seen[n.bookId] = n.updatedAt;
+      if (seen[n.key] === undefined) {
+        // 이 기능이 배포되기 전부터 있던 활동까지 한꺼번에 알림으로 뜨지 않도록,
+        // 처음 보는 항목은 지금 값을 기준선으로 저장만 해두고 알림으로는 띄우지 않는다.
+        seen[n.key] = n.metric;
         changed = true;
         return false;
       }
-      return n.updatedAt > seen[n.bookId];
+      return n.metric > seen[n.key];
     });
 
     if (changed) saveNotifSeenMap(seen);
