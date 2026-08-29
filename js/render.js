@@ -1,5 +1,5 @@
 import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
-import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons, isAdminMode } from "./api.js";
+import { googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons, isAdminMode, getAdminKey } from "./api.js";
 
 var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -452,14 +452,14 @@ export function renderDetail() {
       item.appendChild(likeBtn);
       item.appendChild(dateSpan);
 
-      if (myUid() === c.authorUid) {
+      if (myUid() === c.authorUid || isAdminMode()) {
         var delBtn = document.createElement("button");
         delBtn.className = "c-del";
         delBtn.type = "button";
         delBtn.textContent = "×";
         delBtn.setAttribute("aria-label", "댓글 삭제");
         delBtn.addEventListener("click", function () {
-          api("/api/comments/" + c.id, { method: "DELETE" })
+          api("/api/comments/" + c.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
             .then(function () { return Promise.all([refreshBooks(), refreshComments()]); })
             .catch(function (e) { alert(e.message); });
         });
@@ -516,14 +516,14 @@ export function renderDetail() {
         rItem.appendChild(rReplyBtnSpacer);
         rItem.appendChild(rDate);
 
-        if (myUid() === r.authorUid) {
+        if (myUid() === r.authorUid || isAdminMode()) {
           var rDelBtn = document.createElement("button");
           rDelBtn.type = "button";
           rDelBtn.className = "c-reply-del";
           rDelBtn.textContent = "×";
           rDelBtn.setAttribute("aria-label", "답글 삭제");
           rDelBtn.addEventListener("click", function () {
-            api("/api/comments/" + r.id, { method: "DELETE" })
+            api("/api/comments/" + r.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
               .then(function () { refreshComments(); })
               .catch(function (e) { alert(e.message); });
           });
