@@ -168,8 +168,24 @@
     margin: 1.1rem 0 1.75rem;
   }
 
-  .tagline {
+  .intro-headline {
     margin: 0;
+    color: var(--ink);
+    font-family: "Gowun Batang", serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    line-height: 1.3;
+  }
+
+  .intro-subtext {
+    margin: 0.3rem 0 0;
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .tagline {
+    margin: 0.75rem 0 0;
     color: var(--ink-soft);
     font-size: 0.92rem;
   }
@@ -1314,6 +1330,71 @@
     margin: 0.6rem 0 0;
     color: var(--ink-soft);
     font-size: 0.82rem;
+  }
+
+  .latest-highlight {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin: 0.85rem 0 0;
+  }
+
+  .latest-highlight-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1 1 260px;
+    min-width: 0;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .latest-highlight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px var(--shadow);
+  }
+
+  .latest-highlight-label {
+    display: inline-flex;
+    align-self: flex-start;
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .latest-highlight-book {
+    color: var(--ink);
+    font-size: 0.82rem;
+  }
+
+  .latest-highlight-book strong {
+    font-weight: 700;
+  }
+
+  .latest-highlight-stars {
+    color: var(--accent);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+
+  .latest-highlight-text {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .intro-steps {

@@ -1,5 +1,5 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom } from "./main.js";
-import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge } from "./render.js";
+import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight } from "./render.js";
 
 export function googleConfigured() {
   return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -128,6 +128,7 @@ export function refreshBooks() {
   return api("/api/books").then(function (data) {
     state.books = (data.books || []).map(normalizeBook);
     state.booksLoaded = true;
+    renderLatestHighlight();
     if (state.view === "library") renderLibrary();
     else if (state.view === "detail") renderDetail();
   }).catch(function (e) {

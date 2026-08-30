@@ -311,6 +311,64 @@ export function renderLibrary() {
   });
 }
 
+// 정렬탭의 "최신순" 목록과 별개로, 홈 상단 설명 영역에 방금 등록된 한줄평 1~2개를
+// 별도로 하이라이트해서 보여준다.
+export function renderLatestHighlight() {
+  var container = dom.latestHighlight;
+  if (!container) return;
+
+  var latest = state.books.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).slice(0, 2);
+
+  if (!state.booksLoaded || latest.length === 0) {
+    container.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = "";
+  container.hidden = false;
+
+  latest.forEach(function (r) {
+    var rating = bookRating(r);
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "latest-highlight-card";
+    card.setAttribute("aria-label", "방금 등록된 한줄평: " + r.title + ", " + r.author);
+
+    var label = document.createElement("span");
+    label.className = "latest-highlight-label";
+    label.textContent = "방금 등록됐어요";
+
+    var bookLine = document.createElement("div");
+    bookLine.className = "latest-highlight-book";
+    var titleEl = document.createElement("strong");
+    titleEl.textContent = r.title;
+    bookLine.appendChild(titleEl);
+    bookLine.appendChild(document.createTextNode(" · " + r.author));
+
+    var starsEl = document.createElement("div");
+    starsEl.className = "latest-highlight-stars";
+    var stars = "";
+    for (var i = 1; i <= 5; i++) stars += i <= (rating ? Math.round(rating.avg) : 0) ? "★" : "☆";
+    starsEl.textContent = stars;
+
+    var textEl = document.createElement("p");
+    textEl.className = "latest-highlight-text";
+    textEl.textContent = "“" + r.text + "”";
+
+    card.appendChild(label);
+    card.appendChild(bookLine);
+    card.appendChild(starsEl);
+    card.appendChild(textEl);
+
+    card.addEventListener("click", function (id) {
+      return function () { openDetail(id); };
+    }(r.id));
+
+    container.appendChild(card);
+  });
+}
+
 export function renderDetail() {
   var r = findBook(state.currentId);
   if (!r) {

@@ -6,7 +6,7 @@ import {
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
-  toggleNotifDropdown, closeNotifDropdown
+  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -76,7 +76,8 @@ export var dom = {
   homeBtn: document.getElementById("homeBtn"),
   randomStreakMsg: document.getElementById("randomStreakMsg"),
   milestoneOverlay: document.getElementById("milestoneOverlay"),
-  milestoneMessage: document.getElementById("milestoneMessage")
+  milestoneMessage: document.getElementById("milestoneMessage"),
+  latestHighlight: document.getElementById("latestHighlight")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -469,6 +470,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
       var totalCount = state.books.length;
       showView("library");
       renderLibrary();
+      renderLatestHighlight();
       if (totalCount > 0 && totalCount % MILESTONE_STEP === 0) showMilestoneCelebration(totalCount);
     })
     .catch(function (e) {
@@ -487,6 +489,7 @@ document.getElementById("deleteBtn").addEventListener("click", function () {
       state.books = state.books.filter(function (b) { return b.id !== state.currentId; });
       showView("library");
       renderLibrary();
+      renderLatestHighlight();
     })
     .catch(function (e) {
       alert(e.message);
