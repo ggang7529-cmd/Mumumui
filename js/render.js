@@ -312,12 +312,14 @@ export function renderLibrary() {
 }
 
 // 정렬탭의 "최신순" 목록과 별개로, 홈 상단 설명 영역에 방금 등록된 한줄평 1~2개를
-// 별도로 하이라이트해서 보여준다.
+// 별도로 하이라이트해서 보여준다. 책 등록 시에도 첫 리뷰가 댓글로 함께 저장되므로
+// (functions/api/books/index.js), 최신 댓글 목록 하나만 보면 "새로 등록된 책"과
+// "기존 책에 새로 달린 리뷰"가 자연히 함께 섞여 나온다.
 export function renderLatestHighlight() {
   var container = dom.latestHighlight;
   if (!container) return;
 
-  var latest = state.books.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).slice(0, 2);
+  var latest = state.recentComments.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).slice(0, 2);
 
   if (!state.booksLoaded || latest.length === 0) {
     container.hidden = true;
@@ -329,11 +331,10 @@ export function renderLatestHighlight() {
   container.hidden = false;
 
   latest.forEach(function (r) {
-    var rating = bookRating(r);
     var card = document.createElement("button");
     card.type = "button";
     card.className = "latest-highlight-card";
-    card.setAttribute("aria-label", "방금 등록된 한줄평: " + r.title + ", " + r.author);
+    card.setAttribute("aria-label", "방금 등록된 한줄평: " + r.bookTitle + ", " + r.bookAuthor);
 
     var label = document.createElement("span");
     label.className = "latest-highlight-label";
@@ -342,14 +343,14 @@ export function renderLatestHighlight() {
     var bookLine = document.createElement("div");
     bookLine.className = "latest-highlight-book";
     var titleEl = document.createElement("strong");
-    titleEl.textContent = r.title;
+    titleEl.textContent = r.bookTitle;
     bookLine.appendChild(titleEl);
-    bookLine.appendChild(document.createTextNode(" · " + r.author));
+    bookLine.appendChild(document.createTextNode(" · " + r.bookAuthor));
 
     var starsEl = document.createElement("div");
     starsEl.className = "latest-highlight-stars";
     var stars = "";
-    for (var i = 1; i <= 5; i++) stars += i <= (rating ? Math.round(rating.avg) : 0) ? "★" : "☆";
+    for (var i = 1; i <= 5; i++) stars += i <= r.rating ? "★" : "☆";
     starsEl.textContent = stars;
 
     var textEl = document.createElement("p");
@@ -363,7 +364,7 @@ export function renderLatestHighlight() {
 
     card.addEventListener("click", function (id) {
       return function () { openDetail(id); };
-    }(r.id));
+    }(r.bookId));
 
     container.appendChild(card);
   });

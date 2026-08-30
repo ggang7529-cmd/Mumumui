@@ -25,6 +25,7 @@ export var state = {
   currentUser: null,
   books: [],
   booksLoaded: false,
+  recentComments: [],
   comments: [],
   libraryPollTimer: null,
   detailPollTimer: null,
@@ -467,6 +468,10 @@ dom.reviewForm.addEventListener("submit", function (e) {
       gtag("event", "complete_review", { book_id: data.book.id });
       renderAuthBox();
       state.books.unshift(normalizeBook(data.book));
+      state.recentComments.unshift({
+        bookId: data.book.id, bookTitle: data.book.title, bookAuthor: data.book.author,
+        text: data.book.text, rating: data.book.rating_sum, createdAt: data.book.created_at
+      });
       var totalCount = state.books.length;
       showView("library");
       renderLibrary();
@@ -487,6 +492,7 @@ document.getElementById("deleteBtn").addEventListener("click", function () {
   api("/api/books/" + state.currentId, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
     .then(function () {
       state.books = state.books.filter(function (b) { return b.id !== state.currentId; });
+      state.recentComments = state.recentComments.filter(function (c) { return c.bookId !== state.currentId; });
       showView("library");
       renderLibrary();
       renderLatestHighlight();

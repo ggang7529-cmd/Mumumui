@@ -124,10 +124,21 @@ export function searchBooks(q) {
   });
 }
 
+export function normalizeRecentComment(row) {
+  return {
+    bookId: row.book_id, bookTitle: row.title, bookAuthor: row.author,
+    text: row.text, rating: row.rating, createdAt: row.created_at
+  };
+}
+
 export function refreshBooks() {
-  return api("/api/books").then(function (data) {
-    state.books = (data.books || []).map(normalizeBook);
+  return Promise.all([
+    api("/api/books"),
+    api("/api/comments/recent").catch(function () { return { comments: [] }; })
+  ]).then(function (results) {
+    state.books = (results[0].books || []).map(normalizeBook);
     state.booksLoaded = true;
+    state.recentComments = (results[1].comments || []).map(normalizeRecentComment);
     renderLatestHighlight();
     if (state.view === "library") renderLibrary();
     else if (state.view === "detail") renderDetail();
