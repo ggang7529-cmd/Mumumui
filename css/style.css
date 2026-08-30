@@ -100,25 +100,12 @@
 
     .header-actions .btn-accent-outline,
     .header-actions .btn-random,
-    .header-actions .new-review-cta {
+    .header-actions .btn-primary {
       flex: 1 1 auto;
       min-width: 0;
-    }
-
-    .header-actions .btn-accent-outline,
-    .header-actions .btn-random,
-    .header-actions .btn-primary {
       padding: 0.5rem 0.6rem;
       font-size: 0.82rem;
       text-align: center;
-    }
-
-    .new-review-cta {
-      align-items: center;
-    }
-
-    .new-review-cta .btn-primary {
-      width: 100%;
     }
 
     .header-actions .auth-box:empty {
@@ -187,17 +174,18 @@
     font-size: 0.92rem;
   }
 
-  .new-review-cta {
+  .new-review-btn {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 0.2rem;
+    align-items: center;
+    gap: 0.15rem;
+    line-height: 1.15;
   }
 
-  .new-review-hint {
-    margin: 0;
-    font-size: 0.72rem;
-    color: var(--ink-faint);
+  .new-review-btn-hint {
+    font-size: 0.68rem;
+    font-weight: 400;
+    opacity: 0.85;
     white-space: nowrap;
   }
 
