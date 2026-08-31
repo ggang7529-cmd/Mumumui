@@ -266,7 +266,7 @@ export function renderLibrary() {
       var img = document.createElement("img");
       img.className = "b-cover-img";
       img.src = upscaleCover(r.cover);
-      img.alt = "";
+      img.alt = r.title + " 표지";
       card.appendChild(img);
     }
 
@@ -403,7 +403,7 @@ export function renderDetail() {
   if (r.cover) {
     var coverImg = document.createElement("img");
     coverImg.src = upscaleCover(r.cover);
-    coverImg.alt = "";
+    coverImg.alt = r.title + " 표지";
     $detailCover.appendChild(coverImg);
   }
 
@@ -683,7 +683,7 @@ export function renderRandomCard(b) {
   if (b.cover) {
     var img = document.createElement("img");
     img.src = upscaleCover(b.cover);
-    img.alt = "";
+    img.alt = b.title + " 표지";
     dom.randomCardCover.appendChild(img);
   }
 }

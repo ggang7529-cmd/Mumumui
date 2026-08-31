@@ -114,6 +114,34 @@ export async function onRequestGet(context) {
     String(createdDate.getDate()).padStart(2, "0") + " 기록";
   var ownerName = escapeHtml(book.owner_name || "알 수 없음");
 
+  // 댓글(한줄평)은 페이지의 핵심 콘텐츠지만 부가 조회이므로, 실패해도 상세 페이지
+  // 자체(제목/평점/설명)는 그대로 나가야 한다 — 실패 시 빈 목록으로 두면
+  // js/render.js의 renderDetail()이 /api/books/:id/comments로 정상적으로 채운다.
+  var commentCountText = "";
+  var commentListHtml = "";
+  try {
+    var commentRows = await env.DB.prepare(
+      "SELECT text, rating, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL " +
+      "ORDER BY created_at DESC LIMIT 20"
+    )
+      .bind(id)
+      .all();
+    var topLevelComments = commentRows.results || [];
+    if (topLevelComments.length > 0) {
+      commentCountText = "(" + topLevelComments.length + ")";
+      commentListHtml = topLevelComments.map(function (c) {
+        var stars = "";
+        for (var i = 1; i <= 5; i++) stars += i <= c.rating ? "★" : "☆";
+        return (
+          "<li><strong>" + escapeHtml(c.author_name || "책갈피 사용자") + "</strong> " +
+          escapeHtml(stars) + " " + escapeHtml(c.text) + "</li>"
+        );
+      }).join("");
+    }
+  } catch (e) {
+    // 위에서 선언한 빈 값 그대로 둔다.
+  }
+
   html = html
     .replace("<title>책갈피</title>", "<title>" + title + "</title>")
     .replace(
@@ -143,6 +171,8 @@ export async function onRequestGet(context) {
       '<p class="meta-owner" id="detailOwner"></p>',
       '<p class="meta-owner" id="detailOwner">등록: <span class="meta-owner-name">' + ownerName + "</span></p>"
     )
+    .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
+    .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<section id="detailView" hidden>', '<section id="detailView">');
