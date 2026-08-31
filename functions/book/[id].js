@@ -119,6 +119,7 @@ export async function onRequestGet(context) {
   // js/render.js의 renderDetail()이 /api/books/:id/comments로 정상적으로 채운다.
   var commentCountText = "";
   var commentListHtml = "";
+  var ssrDebug = "";
   try {
     var commentRows = await env.DB.prepare(
       "SELECT text, rating, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL " +
@@ -127,6 +128,7 @@ export async function onRequestGet(context) {
       .bind(id)
       .all();
     var topLevelComments = commentRows.results || [];
+    ssrDebug = "ok:" + topLevelComments.length;
     if (topLevelComments.length > 0) {
       commentCountText = "(" + topLevelComments.length + ")";
       commentListHtml = topLevelComments.map(function (c) {
@@ -139,7 +141,7 @@ export async function onRequestGet(context) {
       }).join("");
     }
   } catch (e) {
-    // 위에서 선언한 빈 값 그대로 둔다.
+    ssrDebug = "err:" + escapeHtml(String(e && e.message || e));
   }
 
   html = html
@@ -176,6 +178,8 @@ export async function onRequestGet(context) {
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<section id="detailView" hidden>', '<section id="detailView">');
+
+  html = html.replace("</head>", "<!-- ssr-debug: " + ssrDebug + " -->\n</head>");
 
   return new Response(html, { headers: { "Content-Type": "text/html; charset=UTF-8" } });
 }
