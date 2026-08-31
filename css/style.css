@@ -144,7 +144,7 @@
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
   }
 
-  .brand h1 {
+  .brand-name {
     margin: 0;
     font-family: "Gowun Batang", "Malgun Gothic", serif;
     font-weight: 700;
@@ -159,7 +159,7 @@
       font-size: clamp(1.9rem, 2.6vw, 2.4rem);
     }
 
-    .brand h1 {
+    .brand-name {
       font-weight: 800;
     }
   }
