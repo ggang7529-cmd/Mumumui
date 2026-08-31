@@ -3,10 +3,7 @@ export async function onRequestGet(context) {
   var body =
     "User-agent: *\nAllow: /\n" +
     "Disallow: /api/\n" +
-    "Disallow: /schema.sql\n" +
-    "Disallow: /migrations/\n" +
-    "Disallow: /CLAUDE.md\n" +
-    "Disallow: /*.sql$\n\n" +
+    "Disallow: /CLAUDE.md\n\n" +
     "Sitemap: " + origin + "/sitemap.xml\n";
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=UTF-8" } });
 }
