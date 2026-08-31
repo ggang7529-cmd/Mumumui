@@ -7,7 +7,7 @@ function escapeHtml(s) {
 // SSR로 미리 채워 넣는 카드 개수. 검색봇용 최소 콘텐츠가 목적이라 전체 목록을 다
 // 가져올 필요는 없고, JS가 로드되면 곧바로 dom.shelf.innerHTML = "" 후 전체
 // 목록으로 다시 그려지므로 화면에는 순간적으로만 존재한다.
-var SSR_BOOK_LIMIT = 24;
+var SSR_BOOK_LIMIT = 100;
 
 var EMPTY_SHELF = '<div class="shelf" id="shelfGrid"></div>';
 
