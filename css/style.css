@@ -480,6 +480,13 @@
     padding: 0.45rem 0.9rem;
   }
 
+  /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
+  @media (max-width: 640px) {
+    .search-box input[type="search"] {
+      font-size: 16px;
+    }
+  }
+
   .shelf {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1266,6 +1273,11 @@
       flex: none;
       width: 100%;
     }
+
+    /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
+    #commentList .c-reply-form input[type="text"] {
+      font-size: 16px;
+    }
   }
 
   #commentForm {
@@ -1298,6 +1310,13 @@
     border: 1px solid var(--line);
     border-radius: 3px;
     padding: 0.55rem 0.7rem;
+  }
+
+  /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
+  @media (max-width: 640px) {
+    #commentInput {
+      font-size: 16px;
+    }
   }
 
   .comment-input-row button {
