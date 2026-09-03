@@ -308,16 +308,9 @@ export function renderLibrary() {
       starsEl.textContent = "평점 없음";
     }
 
-    // 모바일 전용 압축 별점(css/style.css에서 PC는 숨기고 모바일에서만 노출). 저자/전체
-    // 별점 텍스트는 카드에서 빼고 숫자 별점만 보여준다 — 나머지 정보는 상세 페이지에서.
-    var ratingCompactEl = document.createElement("div");
-    ratingCompactEl.className = "b-rating-compact";
-    ratingCompactEl.textContent = rating ? "★ " + rating.avg.toFixed(1) : "평점 없음";
-
     overlay.appendChild(titleEl);
     overlay.appendChild(authorEl);
     overlay.appendChild(starsEl);
-    overlay.appendChild(ratingCompactEl);
     card.appendChild(overlay);
 
     card.addEventListener("click", function (id) {
