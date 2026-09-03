@@ -48,20 +48,42 @@ async function runD1Query(sql, params) {
   return data.result[0].results;
 }
 
+// DB의 isbn 컬럼은 카카오 검색 결과를 그대로 저장한 "ISBN10 ISBN13" 공백 구분 문자열이라,
+// 그대로 target=isbn 쿼리에 넣으면 매칭이 안 된다(빈 결과). 13자리 ISBN을 우선으로 하나만 뽑아 쓴다.
+function cleanIsbn(isbn) {
+  if (!isbn) return "";
+  var parts = isbn.trim().split(/\s+/);
+  for (var i = 0; i < parts.length; i++) {
+    if (/^\d{13}$/.test(parts[i])) return parts[i];
+  }
+  return parts[parts.length - 1] || "";
+}
+
 async function fetchKakaoContents(book) {
+  var isbn = cleanIsbn(book.isbn);
   var kakaoUrl;
-  if (book.isbn) {
-    kakaoUrl = "https://dapi.kakao.com/v3/search/book?target=isbn&query=" + encodeURIComponent(book.isbn);
+  if (isbn) {
+    kakaoUrl = "https://dapi.kakao.com/v3/search/book?target=isbn&query=" + encodeURIComponent(isbn);
   } else {
-    kakaoUrl = "https://dapi.kakao.com/v3/search/book?size=1&query=" + encodeURIComponent(book.title);
+    // target=title 없이 검색하면 관련도 기준이라 엉뚱한 책이 1순위로 나올 수 있어서
+    // (예: "오리지널스" 검색 시 무관한 책이 최상단에 뜸), target=title로 좁힌다.
+    kakaoUrl = "https://dapi.kakao.com/v3/search/book?target=title&size=5&query=" + encodeURIComponent(book.title);
   }
 
   var res = await fetch(kakaoUrl, { headers: { Authorization: "KakaoAK " + KAKAO_KEY } });
   if (!res.ok) throw new Error("카카오 API 응답 오류 (" + res.status + ")");
 
   var data = await res.json();
-  var doc = (data.documents || [])[0];
-  return doc ? (doc.contents || "").trim() : "";
+  var docs = data.documents || [];
+
+  if (isbn) {
+    return docs[0] ? (docs[0].contents || "").trim() : "";
+  }
+
+  // isbn이 없는 책은 제목이 정확히 일치하는 결과만 신뢰한다(오매칭 방지).
+  var wantedTitle = book.title.trim();
+  var match = docs.find(function (d) { return d.title.trim() === wantedTitle; });
+  return match ? (match.contents || "").trim() : "";
 }
 
 async function main() {
