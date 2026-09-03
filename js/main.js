@@ -78,7 +78,8 @@ export var dom = {
   randomStreakMsg: document.getElementById("randomStreakMsg"),
   milestoneOverlay: document.getElementById("milestoneOverlay"),
   milestoneMessage: document.getElementById("milestoneMessage"),
-  latestHighlight: document.getElementById("latestHighlight")
+  latestHighlight: document.getElementById("latestHighlight"),
+  stickyHeader: document.getElementById("stickyHeader")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -558,6 +559,26 @@ function bookIdFromPath(pathname) {
   var m = pathname.match(/^\/book\/([^/]+)\/?$/);
   return m ? decodeURIComponent(m[1]) : null;
 }
+
+// 모바일에서만 의미가 있는 스크롤 방향 기반 헤더 숨김/노출 (css/style.css의
+// @media (max-width: 640px) .sticky-header.header-hidden 규칙에서만 실제로 보이므로,
+// PC 폭에서는 클래스가 붙어도 시각적으로 아무 효과가 없다 — 뷰포트 분기를 여기서 따로
+// 할 필요가 없다). 헤더 높이만큼 스크롤하기 전까지는 숨기지 않고, 위로 스크롤하면 즉시
+// 다시 보여준다.
+var lastScrollY = window.scrollY;
+var SCROLL_HIDE_DELTA = 8;
+window.addEventListener("scroll", function () {
+  var currentY = window.scrollY;
+  var delta = currentY - lastScrollY;
+  if (Math.abs(delta) < SCROLL_HIDE_DELTA) return;
+
+  if (delta > 0 && currentY > dom.stickyHeader.offsetHeight) {
+    dom.stickyHeader.classList.add("header-hidden");
+  } else {
+    dom.stickyHeader.classList.remove("header-hidden");
+  }
+  lastScrollY = currentY;
+}, { passive: true });
 
 window.addEventListener("popstate", function () {
   var id = bookIdFromPath(window.location.pathname);

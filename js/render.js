@@ -258,24 +258,34 @@ export function renderLibrary() {
     var card = document.createElement("button");
     card.type = "button";
     card.className = "book-card";
-    card.style.setProperty("--cover", coverFor(r.title));
     card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
       (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
+
+    // 표지 영역을 별도 컨테이너(.b-cover)로 감싸서, PC에서는 지금처럼 표지 위에 정보가
+    // 절대위치로 겹치고(css/style.css 기본 규칙) 모바일에서는 표지 "아래"에 다크 정보
+    // 카드로 분리되도록(같은 미디어쿼리, .b-overlay를 static으로 전환) CSS만으로 두 레이아웃을
+    // 다 표현한다. 표지 이미지가 없는 책도 색상 배경이 이 컨테이너 크기를 그대로 차지해야
+    // 하므로, img 유무와 무관하게 항상 이 컨테이너를 만든다.
+    var coverBox = document.createElement("div");
+    coverBox.className = "b-cover";
+    coverBox.style.setProperty("--cover", coverFor(r.title));
 
     if (r.cover) {
       var img = document.createElement("img");
       img.className = "b-cover-img";
       img.src = upscaleCover(r.cover);
       img.alt = r.title + " 표지";
-      card.appendChild(img);
+      coverBox.appendChild(img);
     }
 
     if (isNewBook(r)) {
       var badge = document.createElement("span");
       badge.className = "b-new-badge";
       badge.textContent = "NEW";
-      card.appendChild(badge);
+      coverBox.appendChild(badge);
     }
+
+    card.appendChild(coverBox);
 
     var overlay = document.createElement("div");
     overlay.className = "b-overlay";
@@ -298,9 +308,16 @@ export function renderLibrary() {
       starsEl.textContent = "평점 없음";
     }
 
+    // 모바일 전용 압축 별점(css/style.css에서 PC는 숨기고 모바일에서만 노출). 저자/전체
+    // 별점 텍스트는 카드에서 빼고 숫자 별점만 보여준다 — 나머지 정보는 상세 페이지에서.
+    var ratingCompactEl = document.createElement("div");
+    ratingCompactEl.className = "b-rating-compact";
+    ratingCompactEl.textContent = rating ? "★ " + rating.avg.toFixed(1) : "평점 없음";
+
     overlay.appendChild(titleEl);
     overlay.appendChild(authorEl);
     overlay.appendChild(starsEl);
+    overlay.appendChild(ratingCompactEl);
     card.appendChild(overlay);
 
     card.addEventListener("click", function (id) {

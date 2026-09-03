@@ -77,6 +77,19 @@
     border-bottom: 1px solid var(--line);
   }
 
+  /* 헤더 자동 숨김은 화면이 좁아 스크롤로 리뷰가 빨리 밀려나는 모바일에서만 의미가
+     있다. js/main.js의 스크롤 리스너는 폭과 무관하게 항상 동작하지만, transform 효과
+     자체를 이 미디어쿼리 안에 가둬서 PC에서는 클래스가 붙어도 아무 일도 없게 한다. */
+  @media (max-width: 640px) {
+    .sticky-header {
+      transition: transform 0.25s ease;
+    }
+
+    .sticky-header.header-hidden {
+      transform: translateY(-100%);
+    }
+  }
+
   .site-header {
     display: flex;
     align-items: center;
@@ -493,13 +506,22 @@
     gap: 1.1rem;
   }
 
+  /* 카드 하단 정보 영역 전용 고정 다크 톤. 사이트 전체 라이트/다크 테마 전환과 무관하게
+     항상 어둡게 유지한다(Letterboxd/왓챠피디아 카드 톤 참고) — --card-info-bg는 라이트
+     테마의 --ink와 같은 값, --card-info-ink/-accent는 기존 카드 텍스트·다크테마 accent와
+     같은 값을 그대로 재사용한 것이라 새 팔레트를 만든 게 아니다. */
+  :root {
+    --card-info-bg: #241F1C;
+    --card-info-ink: #F3EEE4;
+    --card-info-accent: #E08A90;
+  }
+
   .book-card {
     position: relative;
     display: block;
     aspect-ratio: 2 / 3;
     text-align: left;
-    background: var(--cover, var(--accent));
-    color: #F3EEE4;
+    color: var(--card-info-ink);
     border: none;
     border-radius: 4px;
     padding: 0;
@@ -515,13 +537,19 @@
     box-shadow: 0 8px 18px var(--shadow);
   }
 
-  .b-cover-img {
+  /* PC 기본: 표지가 카드 전체를 채우고 그 위에 .b-overlay가 절대위치로 겹친다(기존 동작
+     그대로). 모바일에서만 아래 미디어쿼리가 이걸 "표지 위/아래로 분리된" 레이아웃으로 바꾼다. */
+  .b-cover {
     position: absolute;
     inset: 0;
+    background: var(--cover, var(--accent));
+  }
+
+  .b-cover-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 1;
+    display: block;
   }
 
   .b-new-badge {
@@ -570,12 +598,20 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* 압축 숫자 별점은 모바일 전용이라 PC에서는 항상 숨겨둔다. */
+  .b-rating-compact {
+    display: none;
+  }
+
   .empty-note {
     color: var(--ink-faint);
     font-size: 0.9rem;
     padding: 1.5rem 0;
   }
 
+  /* 모바일 카드: 표지 위에 텍스트를 얹는 대신, 표지 아래 별도의 다크 정보 카드로 분리한다
+     (Letterboxd/왓챠피디아 방식 참고 — 표지 배경색·사진과 무관하게 항상 읽히도록). 저자·전체
+     별점 텍스트·리뷰 수는 카드에서 빼고 제목 한 줄 + 압축 숫자 별점만 남긴다. */
   @media (max-width: 640px) {
     .wrap {
       padding: 1.75rem 1rem 3.5rem;
@@ -586,22 +622,46 @@
       gap: 0.75rem;
     }
 
+    .book-card {
+      aspect-ratio: auto;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .b-cover {
+      position: static;
+      aspect-ratio: 2 / 3;
+      border-radius: 4px 4px 0 0;
+      overflow: hidden;
+    }
+
     .b-overlay {
-      padding: 0.6rem 0.6rem 0.55rem;
+      position: static;
+      background: var(--card-info-bg);
+      padding: 0.55rem 0.6rem 0.6rem;
+      border-radius: 0 0 4px 4px;
     }
 
     .book-card .b-title {
-      font-size: 0.92rem;
-      margin: 0 0 0.25rem;
+      font-size: 0.85rem;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .book-card .b-author {
-      font-size: 0.72rem;
-      margin: 0 0 0.4rem;
-    }
-
+    .book-card .b-author,
     .book-card .b-stars {
-      font-size: 0.68rem;
+      display: none;
+    }
+
+    .b-rating-compact {
+      display: block;
+      margin-top: 0.3rem;
+      color: var(--card-info-accent);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
     }
   }
 
