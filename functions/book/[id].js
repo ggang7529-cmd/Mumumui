@@ -33,14 +33,19 @@ export async function onRequestGet(context) {
   var html = await indexRes.text();
 
   var book = await env.DB.prepare(
-    "SELECT id, title, author, cover, text, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
+    "SELECT id, title, author, cover, contents, text, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
   )
     .bind(id)
     .first();
   if (!book) return new Response(html, { status: 404, headers: { "Content-Type": "text/html; charset=UTF-8" } });
 
   var title = escapeHtml(book.title) + " - 리뷰 및 별점 | 책갈피";
-  var desc = escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
+  // 책 소개(contents)가 있으면 그걸 메타 설명으로 쓰는 게 제목+저자 조합보다 검색결과에서
+  // 더 유용하다. 검색엔진 스니펫 길이 관례에 맞춰 155자 근처에서 자른다.
+  var descSource = book.contents ? book.contents.trim() : "";
+  var desc = descSource
+    ? escapeHtml(descSource.length > 155 ? descSource.slice(0, 155).trim() + "…" : descSource)
+    : escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
   // 쿼리 파라미터가 붙어도 같은 콘텐츠이므로, og:url/canonical은 쿼리 없는 정규 URL로 고정한다.
   var canonicalUrl = reqUrl.origin + "/book/" + encodeURIComponent(id);
   var pageUrl = escapeHtml(canonicalUrl);
@@ -75,6 +80,7 @@ export async function onRequestGet(context) {
     author: { "@type": "Person", name: book.author },
   };
   if (book.cover) jsonLd.image = upscaleCover(book.cover);
+  if (book.contents) jsonLd.description = book.contents;
   if (avgRating !== null) {
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
@@ -173,6 +179,14 @@ export async function onRequestGet(context) {
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
+    .replace(
+      '<p class="book-contents-text" id="bookContentsText"></p>',
+      '<p class="book-contents-text" id="bookContentsText">' + escapeHtml(book.contents || "") + "</p>"
+    )
+    .replace(
+      '<section class="book-contents" id="bookContentsSection" hidden>',
+      book.contents ? '<section class="book-contents" id="bookContentsSection">' : '<section class="book-contents" id="bookContentsSection" hidden>'
+    )
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<section id="detailView" hidden>', '<section id="detailView">');

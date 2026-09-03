@@ -370,6 +370,32 @@ export function renderLatestHighlight() {
   });
 }
 
+// 책 소개(카카오 API의 contents)를 기본 접힌 상태(PC 3줄/모바일 2줄, css/style.css 참고)로
+// 보여주고, 실제로 잘려서 넘치는 경우에만 "더 보기" 버튼을 노출한다. 렌더 시점엔 상세
+// 화면이 아직 hidden 상태라 레이아웃이 없으므로, showView가 화면을 보여준 직후(다음
+// 페인트 전) requestAnimationFrame에서 overflow 여부를 측정한다.
+function updateBookContents(r) {
+  var $section = document.getElementById("bookContentsSection");
+  var $text = document.getElementById("bookContentsText");
+  var $toggle = document.getElementById("bookContentsToggle");
+  var contents = (r.contents || "").trim();
+
+  if (!contents) {
+    $section.hidden = true;
+    return;
+  }
+
+  $section.hidden = false;
+  $text.textContent = contents;
+  $text.classList.remove("expanded");
+  $toggle.hidden = true;
+  $toggle.textContent = "더 보기";
+
+  requestAnimationFrame(function () {
+    $toggle.hidden = $text.scrollHeight <= $text.clientHeight + 1;
+  });
+}
+
 export function renderDetail() {
   var r = findBook(state.currentId);
   if (!r) {
@@ -418,6 +444,8 @@ export function renderDetail() {
     $detailCover.classList.add("cover-in");
     $detailHeaderInfo.classList.add("info-in");
   }
+
+  updateBookContents(r);
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
 

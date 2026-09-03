@@ -75,7 +75,7 @@ export function saveNotifSeenMap(map) {
 
 export function normalizeBook(row) {
   return {
-    id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, text: row.text,
+    id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, contents: row.contents || "", text: row.text,
     ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
     ownerUid: row.owner_uid, ownerName: row.owner_name, ownerPhoto: row.owner_photo,
     createdAt: row.created_at, updatedAt: row.updated_at || row.created_at

@@ -461,7 +461,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
     method: "POST",
     body: {
       title: state.selectedBook.title, author: state.selectedBook.author, cover: state.selectedBook.cover,
-      isbn: state.selectedBook.isbn, text: text, rating: state.formRating, name: nickname
+      isbn: state.selectedBook.isbn, contents: state.selectedBook.contents, text: text, rating: state.formRating, name: nickname
     }
   })
     .then(function (data) {
@@ -482,6 +482,12 @@ dom.reviewForm.addEventListener("submit", function (e) {
       alert(e.message);
       if (e.message.indexOf("이미 등록된") !== -1) clearSelectedBook();
     });
+});
+
+document.getElementById("bookContentsToggle").addEventListener("click", function () {
+  var $text = document.getElementById("bookContentsText");
+  var expanded = $text.classList.toggle("expanded");
+  this.textContent = expanded ? "접기" : "더 보기";
 });
 
 document.getElementById("deleteBtn").addEventListener("click", function () {

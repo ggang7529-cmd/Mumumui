@@ -915,7 +915,7 @@
 
   .detail-card h2 {
     font-family: "Gowun Batang", serif;
-    font-size: clamp(1.7rem, 3.2vw, 2.3rem);
+    font-size: clamp(1.7rem, 2.6vw, 2.05rem);
     margin: 0;
     text-wrap: balance;
   }
@@ -970,6 +970,56 @@
   }
 
   .btn-ghost-danger:hover { border-color: var(--accent); color: var(--accent); }
+
+  .book-contents {
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .book-contents h3 {
+    font-family: "Gowun Batang", serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .book-contents-text {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    white-space: pre-line;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .book-contents-text.expanded {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+
+  .book-contents-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 0 0;
+    cursor: pointer;
+  }
+
+  .book-contents-toggle:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .book-contents-text {
+      -webkit-line-clamp: 2;
+      font-size: 0.88rem;
+    }
+  }
 
   .comments {
     margin-top: 2.25rem;

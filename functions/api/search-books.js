@@ -30,7 +30,8 @@ export async function onRequestGet(context) {
       author: (d.authors || []).join(", "),
       publisher: d.publisher || "",
       cover: d.thumbnail || null,
-      isbn: d.isbn || ""
+      isbn: d.isbn || "",
+      contents: d.contents || ""
     };
   });
 

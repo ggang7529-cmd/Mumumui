@@ -5,7 +5,7 @@ import { checkRateLimit } from "../../_lib/rateLimit.js";
 export async function onRequestGet(context) {
   var env = context.env;
   var rows = await env.DB.prepare(
-    "SELECT id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
+    "SELECT id, title, author, cover, isbn, contents, text, rating_sum, rating_count, comment_count, " +
     "owner_uid, owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
@@ -33,6 +33,7 @@ export async function onRequestPost(context) {
   var rating = Number(body.rating);
   var cover = typeof body.cover === "string" ? body.cover : null;
   var isbn = String(body.isbn || "").trim().slice(0, 40);
+  var contents = String(body.contents || "").trim().slice(0, 2000);
 
   if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
   if (!title || !author || !text) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
@@ -51,9 +52,9 @@ export async function onRequestPost(context) {
   var now = Date.now();
   await env.DB.batch([
     env.DB.prepare(
-      "INSERT INTO books (id, title, author, cover, isbn, text, rating_sum, rating_count, comment_count, " +
-      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, 1, ?8, ?9, NULL, ?10, ?10)"
-    ).bind(id, title, author, cover, isbn || null, text, rating, uid, name, now),
+      "INSERT INTO books (id, title, author, cover, isbn, contents, text, rating_sum, rating_count, comment_count, " +
+      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, 1, ?9, ?10, NULL, ?11, ?11)"
+    ).bind(id, title, author, cover, isbn || null, contents || null, text, rating, uid, name, now),
     env.DB.prepare(
       "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)"
@@ -62,7 +63,7 @@ export async function onRequestPost(context) {
 
   return json({
     book: {
-      id: id, title: title, author: author, cover: cover, isbn: isbn || null, text: text,
+      id: id, title: title, author: author, cover: cover, isbn: isbn || null, contents: contents || null, text: text,
       rating_sum: rating, rating_count: 1, comment_count: 1,
       owner_uid: uid, owner_name: name, owner_photo: null, created_at: now, updated_at: now
     }
