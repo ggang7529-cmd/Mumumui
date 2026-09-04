@@ -36,6 +36,7 @@ export var state = {
   selectedBook: null,
   searchQuery: "",
   sortMode: "latest",
+  categoryFilter: "",
   randomPickedId: null,
   randomSpinning: false,
   // 내가 등록한 책에 남이 새로 남긴 리뷰/답글 중 아직 확인하지 않은 것들 (refreshNotifications 참고).
@@ -56,6 +57,7 @@ export var dom = {
   shelf: document.getElementById("shelfGrid"),
   countLabel: document.getElementById("countLabel"),
   searchInput: document.getElementById("searchInput"),
+  categoryFilter: document.getElementById("categoryFilter"),
   libraryView: document.getElementById("libraryView"),
   libraryToolbar: document.getElementById("libraryToolbar"),
   formView: document.getElementById("formView"),
@@ -348,6 +350,12 @@ document.querySelectorAll(".sort-tab").forEach(function (btn) {
     document.querySelectorAll(".sort-tab").forEach(function (b) { b.classList.toggle("active", b === btn); });
     renderLibrary();
   });
+});
+
+dom.categoryFilter.addEventListener("change", function (e) {
+  state.categoryFilter = e.target.value;
+  gtag("event", "filter_category", { category: state.categoryFilter || "전체" });
+  renderLibrary();
 });
 
 document.getElementById("newReviewBtn").addEventListener("click", function () {

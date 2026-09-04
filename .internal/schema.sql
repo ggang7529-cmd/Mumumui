@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS books (
   cover TEXT,
   isbn TEXT,
   contents TEXT,
+  category TEXT,
   text TEXT NOT NULL,
   rating_sum INTEGER NOT NULL,
   rating_count INTEGER NOT NULL,

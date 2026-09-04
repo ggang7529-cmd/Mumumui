@@ -447,6 +447,10 @@
     .search-box input[type="search"] {
       width: 100%;
     }
+
+    .category-filter {
+      flex: 1 1 100%;
+    }
   }
 
   .library-meta {
@@ -492,6 +496,19 @@
     border-radius: 999px;
     padding: 0.45rem 0.9rem;
   }
+
+  .category-filter {
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+  }
+
+  .category-filter:hover { border-color: var(--ink-soft); color: var(--ink); }
 
   /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
   @media (max-width: 640px) {

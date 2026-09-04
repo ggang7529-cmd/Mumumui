@@ -212,11 +212,52 @@ export function renderAuthBox() {
   }
 }
 
+// 도서관 정보나루가 주는 분류(class_nm)는 "문학 > 한국문학 > 소설"처럼 KDC 계층 전체를
+// " > "로 이어붙인 문자열이다. 필터 옵션이 지나치게 세분화되지 않도록 최상위 한 단계만
+// 잘라 쓴다.
+function genreOf(category) {
+  if (!category) return "";
+  return category.split(">")[0].trim();
+}
+
+function updateCategoryFilterOptions() {
+  var genres = [];
+  state.books.forEach(function (r) {
+    var g = genreOf(r.category);
+    if (g && genres.indexOf(g) === -1) genres.push(g);
+  });
+  genres.sort(function (a, b) { return a.localeCompare(b, "ko"); });
+
+  var current = dom.categoryFilter.value;
+  dom.categoryFilter.innerHTML = "";
+  var allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = "전체 분류";
+  dom.categoryFilter.appendChild(allOpt);
+  genres.forEach(function (g) {
+    var opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    dom.categoryFilter.appendChild(opt);
+  });
+
+  // 폴링으로 목록이 갱신되며 이 함수가 반복 호출될 때 사용자가 골라둔 필터가 풀리지
+  // 않도록 유지한다. 다만 그 분류가 더 이상 존재하지 않으면(옵션 자체가 없어짐) 전체로.
+  if (genres.indexOf(current) !== -1) dom.categoryFilter.value = current;
+  else state.categoryFilter = "";
+}
+
 export function renderLibrary() {
+  updateCategoryFilterOptions();
+
   var query = state.searchQuery.trim().toLowerCase();
   var visible = query
     ? state.books.filter(function (r) { return r.title.toLowerCase().indexOf(query) !== -1; })
     : state.books.slice();
+
+  if (state.categoryFilter) {
+    visible = visible.filter(function (r) { return genreOf(r.category) === state.categoryFilter; });
+  }
 
   if (state.sortMode === "comments") {
     visible.sort(function (a, b) { return b.commentCount - a.commentCount || b.createdAt - a.createdAt; });
@@ -231,9 +272,11 @@ export function renderLibrary() {
     visible.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
   }
 
+  var filtered = !!(query || state.categoryFilter);
+
   if (!state.booksLoaded) {
     dom.countLabel.textContent = "불러오는 중...";
-  } else if (query) {
+  } else if (filtered) {
     dom.countLabel.textContent = visible.length + "권 검색됨 (전체 " + state.books.length + "권)";
   } else {
     dom.countLabel.textContent = state.books.length ? "총 " + state.books.length + "권의 리뷰" : "";
@@ -246,10 +289,12 @@ export function renderLibrary() {
     note.className = "empty-note";
     note.textContent = "아직 기록한 책이 없어요. 위쪽 '+ 책 기록하기' 버튼으로 첫 책을 남겨보세요.";
     dom.shelf.appendChild(note);
-  } else if (query && visible.length === 0) {
+  } else if (filtered && visible.length === 0) {
     var noMatch = document.createElement("p");
     noMatch.className = "empty-note";
-    noMatch.textContent = "\"" + state.searchQuery.trim() + "\"에 해당하는 책이 없어요.";
+    noMatch.textContent = query
+      ? "\"" + state.searchQuery.trim() + "\"에 해당하는 책이 없어요."
+      : "\"" + state.categoryFilter + "\" 분류의 책이 없어요.";
     dom.shelf.appendChild(noMatch);
   }
 
