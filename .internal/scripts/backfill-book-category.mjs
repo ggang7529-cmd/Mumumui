@@ -65,6 +65,11 @@ async function fetchLibraryCategory(isbn13) {
   var res = await fetch(url);
   if (!res.ok) throw new Error("도서관 정보나루 API 응답 오류 (" + res.status + ")");
   var data = await res.json();
+  // 인증키 미활성화(vitalizationErr) 등 API 자체 에러는 "그 책이 소장 목록에 없음"과
+  // 다른 문제이므로 조용히 건너뛰지 않고 실패로 올려서 눈에 띄게 한다.
+  if (data.response && data.response.errCode) {
+    throw new Error("API 오류: " + data.response.errCode + " - " + data.response.error);
+  }
   var book = data.response && data.response.detail && data.response.detail.book;
   return (book && book.class_nm) ? book.class_nm.trim() : "";
 }
