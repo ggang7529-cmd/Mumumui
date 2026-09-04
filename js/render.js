@@ -395,8 +395,24 @@ function updateBookContents(r) {
     return;
   }
 
+  // 좋아요/댓글/알림 폴링(8~20초 간격)이 배경에서 돌 때마다 renderDetail →
+  // updateBookContents가 다시 호출된다. 같은 책의 내용이 그대로라면 사용자가 눌러둔
+  // "더 보기" 펼침 상태를 그대로 유지해야 한다 — 매 폴링마다 접힌 상태로 되돌아가면
+  // 읽는 도중 화면이 저절로 접혀버리는 버그가 된다. 다른 책으로 이동했을 때만(내용이
+  // 달라졌을 때만) 접힌 상태로 초기화한다.
+  var sameContent = !$section.hidden && $text.textContent === contents;
+  var wasExpanded = sameContent && $text.classList.contains("expanded");
+
   $section.hidden = false;
   $text.textContent = contents;
+
+  if (wasExpanded) {
+    $text.classList.add("expanded");
+    $toggle.hidden = false;
+    $toggle.textContent = "접기";
+    return;
+  }
+
   $text.classList.remove("expanded");
   $toggle.hidden = true;
   $toggle.textContent = "더 보기";
