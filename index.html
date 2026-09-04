@@ -85,11 +85,15 @@
         <button type="button" class="sort-tab" data-sort="rating">별점순</button>
         <button type="button" class="sort-tab" data-sort="title">가나다순</button>
       </div>
-      <select class="category-filter" id="categoryFilter" aria-label="분류로 거르기">
-        <option value="">전체 분류</option>
-      </select>
-      <div class="search-box">
-        <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
+      <div class="filter-row">
+        <div class="select-wrap">
+          <select class="category-filter" id="categoryFilter" aria-label="분류로 거르기">
+            <option value="">전체 분류</option>
+          </select>
+        </div>
+        <div class="search-box">
+          <input type="search" id="searchInput" placeholder="책 제목으로 검색" aria-label="책 제목으로 검색">
+        </div>
       </div>
     </div>
   </div>

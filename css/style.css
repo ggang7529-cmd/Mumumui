@@ -440,16 +440,27 @@
       font-size: 0.78rem;
     }
 
-    .search-box {
+    .filter-row {
       flex: 1 1 100%;
+      gap: 0.5rem;
+    }
+
+    .select-wrap {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .category-filter {
+      width: 100%;
+    }
+
+    .search-box {
+      flex: 1 1 0;
+      min-width: 0;
     }
 
     .search-box input[type="search"] {
       width: 100%;
-    }
-
-    .category-filter {
-      flex: 1 1 100%;
     }
   }
 
@@ -497,14 +508,49 @@
     padding: 0.45rem 0.9rem;
   }
 
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* 네이티브 <select>의 브라우저 기본 화살표 아이콘이 옆의 정렬 탭/검색창과
+     톤이 안 맞아 튀어 보여서, appearance:none으로 지우고 테마 색을 따라가는
+     CSS 화살표(::after)를 대신 그린다(currentColor를 못 쓰는 배경 이미지 방식
+     대신 실제 색상 변수를 쓰는 요소라 라이트/다크 전환에도 안전하다). */
+  .select-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid var(--ink-faint);
+    border-bottom: 1.5px solid var(--ink-faint);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+
   .category-filter {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     font-family: inherit;
     font-size: 0.82rem;
     color: var(--ink-soft);
     background: var(--paper-raised);
     border: 1px solid var(--line);
     border-radius: 999px;
-    padding: 0.4rem 0.85rem;
+    padding: 0.4rem 1.7rem 0.4rem 0.85rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     cursor: pointer;
   }
 
