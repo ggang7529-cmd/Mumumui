@@ -300,8 +300,8 @@ export function renderLibrary() {
 
   visible.forEach(function (r) {
     var rating = bookRating(r);
-    var card = document.createElement("button");
-    card.type = "button";
+    var card = document.createElement("a");
+    card.href = "/book/" + encodeURIComponent(r.id);
     card.className = "book-card";
     card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
       (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
@@ -359,7 +359,11 @@ export function renderLibrary() {
     card.appendChild(overlay);
 
     card.addEventListener("click", function (id) {
-      return function () { openDetail(id); };
+      return function (e) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openDetail(id);
+      };
     }(r.id));
 
     dom.shelf.appendChild(card);
@@ -386,8 +390,8 @@ export function renderLatestHighlight() {
   container.hidden = false;
 
   latest.forEach(function (r) {
-    var card = document.createElement("button");
-    card.type = "button";
+    var card = document.createElement("a");
+    card.href = "/book/" + encodeURIComponent(r.bookId);
     card.className = "latest-highlight-card";
     card.setAttribute("aria-label", "방금 등록된 한줄평: " + r.bookTitle + ", " + r.bookAuthor);
 
@@ -418,7 +422,11 @@ export function renderLatestHighlight() {
     card.appendChild(textEl);
 
     card.addEventListener("click", function (id) {
-      return function () { openDetail(id); };
+      return function (e) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openDetail(id);
+      };
     }(r.bookId));
 
     container.appendChild(card);
