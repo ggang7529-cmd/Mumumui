@@ -556,10 +556,17 @@
 
   .category-filter:hover { border-color: var(--ink-soft); color: var(--ink); }
 
-  /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
+  /* 모바일 iOS Safari에서 16px 미만 입력창/셀렉트는 포커스 시 자동 확대되므로 16px
+     유지한다. 분류 필터가 이 처리를 안 받아서 검색창보다 글자가 작고 위축돼
+     보였던 것도 같이 고친다. */
   @media (max-width: 640px) {
-    .search-box input[type="search"] {
+    .search-box input[type="search"],
+    .category-filter {
       font-size: 16px;
+    }
+
+    .category-filter {
+      padding: 0.45rem 2rem 0.45rem 0.9rem;
     }
   }
 
