@@ -52,37 +52,39 @@
 <div class="wrap">
   <div class="sticky-header" id="stickyHeader">
     <header class="site-header">
-      <div class="brand">
-        <span class="logo-symbol" aria-hidden="true">
-          <span class="logo-bar logo-bar--front"></span>
-          <span class="logo-bar logo-bar--back"></span>
-        </span>
-        <h1 class="brand-name">책갈피</h1>
-      </div>
-      <div class="header-actions">
-        <div class="auth-box" id="authBox"></div>
-        <div class="notif-box">
-          <button class="notif-bell" id="notifBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="알림">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <span class="notif-dot" id="notifBadge" hidden></span>
-          </button>
-          <div class="notif-dropdown" id="notifDropdown" hidden>
-            <p class="notif-title">알림</p>
-            <p class="notif-empty" id="notifEmpty">새 알림이 없어요.</p>
-            <ul class="notif-list" id="notifList"></ul>
-          </div>
+      <div class="header-row-main">
+        <div class="brand">
+          <span class="logo-symbol" aria-hidden="true">
+            <span class="logo-bar logo-bar--front"></span>
+            <span class="logo-bar logo-bar--back"></span>
+          </span>
+          <h1 class="brand-name">책갈피</h1>
         </div>
-        <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
-        <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
-        <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
-        <button class="btn-primary new-review-btn" id="newReviewBtn" type="button">
-          <span class="new-review-btn-hint">찾는 책이 없나요?</span>
-          <span class="new-review-btn-label">+ 책장에 추가하기</span>
-        </button>
+        <div class="header-actions">
+          <div class="auth-box" id="authBox"></div>
+          <div class="notif-box">
+            <button class="notif-bell" id="notifBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="알림">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span class="notif-dot" id="notifBadge" hidden></span>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown" hidden>
+              <p class="notif-title">알림</p>
+              <p class="notif-empty" id="notifEmpty">새 알림이 없어요.</p>
+              <ul class="notif-list" id="notifList"></ul>
+            </div>
+          </div>
+          <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
+          <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
+          <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
+        </div>
       </div>
+      <button class="btn-primary new-review-btn" id="newReviewBtn" type="button">
+        <span class="new-review-btn-hint">찾는 책이 없나요?</span>
+        <span class="new-review-btn-label">+ 책장에 추가하기</span>
+      </button>
     </header>
     <div class="library-toolbar" id="libraryToolbar">
       <p class="library-meta" id="countLabel"></p>
