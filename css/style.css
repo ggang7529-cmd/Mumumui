@@ -103,7 +103,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       row-gap: 0;
       column-gap: 0.5rem;
       padding: 0.5rem 0;
@@ -123,6 +123,18 @@
 
     .header-actions .auth-box:empty {
       display: none;
+    }
+
+    /* 닉네임(auth-box)·알림 벨을 오른쪽으로 붙여서 브랜드와의 사이에만 큰
+       여백이 생기게 한다. 닉네임이 저장되어 있으면 auth-box에 그 여백을
+       주고, 아직 없으면(auth-box가 비어 사라진 상태) 바로 다음 알림 벨이
+       대신 그 여백을 떠안는다. */
+    .header-actions .auth-box:not(:empty) {
+      margin-left: auto;
+    }
+
+    .header-actions .auth-box:empty + .notif-box {
+      margin-left: auto;
     }
 
     /* 폭 100%짜리 빈 아이템으로 강제 줄바꿈을 만든다 — 이 아이템은 항상
