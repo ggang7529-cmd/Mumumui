@@ -100,16 +100,46 @@
 
   @media (max-width: 640px) {
     .site-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      row-gap: 0;
+      column-gap: 0.5rem;
       padding: 0.5rem 0;
     }
 
+    /* header-actions 자체는 박스를 만들지 않고, 그 자식들(auth-box/notif-box/
+       버튼들)이 site-header의 flex 아이템으로 직접 들어와서 order로 재배치될
+       수 있게 한다. 데스크톱 폭에서는 이 규칙이 적용되지 않으므로
+       header-actions가 그대로 하나의 그룹으로 유지된다(레이아웃 그대로). */
     .header-actions {
-      flex-wrap: wrap;
-      row-gap: 0.5rem;
+      display: contents;
     }
+
+    .brand { order: 1; }
+    .header-actions .auth-box { order: 2; }
+    .header-actions .notif-box { order: 3; }
+
+    .header-actions .auth-box:empty {
+      display: none;
+    }
+
+    /* 폭 100%짜리 빈 아이템으로 강제 줄바꿈을 만든다 — 이 아이템은 항상
+       자기 혼자 한 줄을 차지하므로, order가 더 큰(20번대) 버튼들은 전부
+       다음 줄로 밀려난다. */
+    .site-header::after {
+      content: "";
+      order: 10;
+      flex-basis: 100%;
+      width: 0;
+      height: 0.5rem;
+    }
+
+    .header-actions #feedbackBtn { order: 20; }
+    .header-actions #homeBtn { order: 21; }
+    .header-actions #randomBtn { order: 22; }
+    .header-actions #newReviewBtn { order: 23; }
 
     .header-actions .btn-accent-outline,
     .header-actions .btn-random,
@@ -122,10 +152,6 @@
       padding: 0.5rem 0.6rem;
       font-size: 0.82rem;
       text-align: center;
-    }
-
-    .header-actions .auth-box:empty {
-      display: none;
     }
 
     /* 터치 타겟 확대: 애플/구글 권장 최소 크기(44px)에 맞춘다. */
