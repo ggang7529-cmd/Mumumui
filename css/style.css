@@ -112,8 +112,12 @@
     /* header-actions 자체는 박스를 만들지 않고, 그 자식들(auth-box/notif-box/
        버튼들)이 site-header의 flex 아이템으로 직접 들어와서 order로 재배치될
        수 있게 한다. 데스크톱 폭에서는 이 규칙이 적용되지 않으므로
-       header-actions가 그대로 하나의 그룹으로 유지된다(레이아웃 그대로). */
-    .header-actions {
+       header-actions가 그대로 하나의 그룹으로 유지된다(레이아웃 그대로).
+       선택자에 .site-header를 붙여 우선순위를 올린 이유: 스타일시트 뒤쪽에
+       있는 기존 ".header-actions { display:flex; ... }" 규칙과 우선순위가
+       동점이면 나중에 나온 규칙이 이겨버려서 여기서 지정한 display:contents가
+       무시되는 문제가 있었다. */
+    .site-header .header-actions {
       display: contents;
     }
 
