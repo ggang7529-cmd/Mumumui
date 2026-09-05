@@ -1,6 +1,6 @@
 {
   "name": "책갈피",
-  "short_name": "galpi",
+  "short_name": "책갈피",
   "description": "읽은 책마다 별점과 한 줄 감상을 남겨두는 개인 서재",
   "start_url": "/",
   "scope": "/",
