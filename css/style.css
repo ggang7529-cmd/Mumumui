@@ -585,12 +585,10 @@
     gap: 1.1rem;
   }
 
-  /* 카드 하단 정보 영역 전용 고정 다크 톤. 사이트 전체 라이트/다크 테마 전환과 무관하게
-     항상 어둡게 유지한다(Letterboxd/왓챠피디아 카드 톤 참고) — --card-info-bg는 라이트
-     테마의 --ink와 같은 값, --card-info-ink는 기존 카드 텍스트와 같은 값을 그대로
-     재사용한 것이라 새 팔레트를 만든 게 아니다. */
+  /* 카드 표지 위 오버레이 텍스트 전용 고정 밝은 톤. 사이트 전체 라이트/다크 테마
+     전환과 무관하게 항상 밝게 유지한다(표지 사진 위에 겹치므로 테마색을 따라가면
+     다크 모드에서 어두운 텍스트가 어두운 표지와 섞여 안 읽힘). */
   :root {
-    --card-info-bg: #241F1C;
     --card-info-ink: #F3EEE4;
   }
 
@@ -683,9 +681,9 @@
     padding: 1.5rem 0;
   }
 
-  /* 모바일 카드: 표지 위에 텍스트를 얹는 대신, 표지 아래 별도의 다크 정보 카드로 분리한다
-     (Letterboxd/왓챠피디아 방식 참고 — 표지 배경색·사진과 무관하게 항상 읽히도록). 저자는
-     카드에서 빼고 제목 한 줄 + 별 5개(채워진 만큼) + 평균/참여자 수만 남긴다. */
+  /* 모바일 카드도 PC와 동일하게 표지 위에 그라데이션 오버레이로 제목/저자/별점을
+     겹쳐 보여준다(표지 아래 별도 정보 박스로 분리했던 이전 방식은 카드가 세로로
+     길어져 한 화면에 보이는 책 수가 줄어드는 문제가 있어 되돌림). */
   @media (max-width: 640px) {
     .wrap {
       padding: 1.75rem 1rem 3.5rem;
@@ -694,43 +692,6 @@
     .shelf {
       grid-template-columns: repeat(2, 1fr);
       gap: 0.75rem;
-    }
-
-    .book-card {
-      aspect-ratio: auto;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
-
-    .b-cover {
-      position: static;
-      aspect-ratio: 2 / 3;
-      border-radius: 4px 4px 0 0;
-      overflow: hidden;
-    }
-
-    .b-overlay {
-      position: static;
-      background: var(--card-info-bg);
-      padding: 0.55rem 0.6rem 0.6rem;
-      border-radius: 0 0 4px 4px;
-    }
-
-    .book-card .b-title {
-      font-size: 0.85rem;
-      margin: 0 0 0.3rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .book-card .b-author {
-      display: none;
-    }
-
-    .book-card .b-stars {
-      font-size: 0.72rem;
     }
   }
 
