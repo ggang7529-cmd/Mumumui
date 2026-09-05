@@ -26,3 +26,8 @@ API routes live under `functions/api/`; shared helpers (session signing, Google 
 The user wants local changes pushed to GitHub automatically, without being asked each time. After making and verifying a set of edits in a turn, commit them with a descriptive message and `git push` to `origin main` — do not wait for explicit "commit and push" instructions first. Still use judgment: don't push half-finished or broken edits, and if a push would overwrite unexpected remote history, stop and check with the user rather than force-pushing.
 
 Note: this codespace's default git credentials only have access to the codespace's own origin repo, not `Mumumui`. The user ran `gh auth login` themselves (device flow, no token pasted) to get a real `repo`-scoped token stored in `~/.config/gh/hosts.yml` — that persists for the life of this codespace. The catch: the Codespaces-injected `GITHUB_TOKEN`/`GH_TOKEN` env vars take precedence over that stored gh credential, and each Bash tool call starts a fresh shell (env unset doesn't carry over between calls). So every `git push` needs `unset GITHUB_TOKEN GH_TOKEN` in the *same* command, e.g. `unset GITHUB_TOKEN GH_TOKEN && git push origin main`. If this codespace is ever rebuilt and pushes start failing with a 403 again, re-run `gh auth login` (have the user do it via a `!` command, not Claude directly — Claude's own attempts to persist a token to disk get blocked by the sandbox's safety classifier) followed by `gh auth setup-git`.
+
+### 작업 진행 방식
+
+- 어떤 파일이든 **전체 내용을 갈아엎어야 하는 수정**(대규모 리라이트, 구조 자체를 바꾸는 변경 등)이 필요하다고 판단되면, 곧바로 진행하지 말고 먼저 상황과 이유를 사용자에게 설명하고 확인을 받은 뒤에 진행한다.
+- 사용자의 요청 사항이 명확하지 않거나 여러 해석이 가능할 경우, 임의로 하나를 골라 진행하지 말고 사용자에게 질문해서 어떻게 할지 결정을 받은 뒤에 진행한다.
