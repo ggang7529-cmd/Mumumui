@@ -339,10 +339,6 @@ export function renderLibrary() {
     titleEl.className = "b-title";
     titleEl.textContent = r.title;
 
-    var authorEl = document.createElement("div");
-    authorEl.className = "b-author";
-    authorEl.textContent = r.author;
-
     var starsEl = document.createElement("div");
     starsEl.className = "b-stars";
     if (rating) {
@@ -354,7 +350,6 @@ export function renderLibrary() {
     }
 
     overlay.appendChild(titleEl);
-    overlay.appendChild(authorEl);
     overlay.appendChild(starsEl);
     card.appendChild(overlay);
 

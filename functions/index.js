@@ -16,12 +16,10 @@ function renderShelfHtml(books) {
     var rating = b.rating_count > 0 ? b.rating_sum / b.rating_count : null;
     var ratingText = rating !== null ? rating.toFixed(1) + " (" + b.rating_count + ")" : "평점 없음";
     var title = escapeHtml(b.title);
-    var author = escapeHtml(b.author);
     return (
       '<a class="book-card" style="text-decoration:none" href="/book/' + encodeURIComponent(b.id) + '">' +
       '<div class="b-overlay">' +
       '<div class="b-title">' + title + "</div>" +
-      '<div class="b-author">' + author + "</div>" +
       '<div class="b-stars">' + escapeHtml(ratingText) + "</div>" +
       "</div>" +
       "</a>"
