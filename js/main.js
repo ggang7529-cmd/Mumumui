@@ -599,4 +599,49 @@ if (initialBookId) openDetail(initialBookId);
 else showView("library");
 
 refreshBooks();
+
+// PWA 서비스워커 등록. 새 워커가 설치되고 나서(즉 배포로 파일이 바뀌어서
+// 대기 상태가 되었을 때) 안내 배너를 띄워 새로고침을 유도한다.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").then(function (registration) {
+      registration.addEventListener("updatefound", function () {
+        var installingWorker = registration.installing;
+        if (!installingWorker) return;
+        installingWorker.addEventListener("statechange", function () {
+          if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateBanner(registration.waiting);
+          }
+        });
+      });
+    }).catch(function (err) {
+      console.warn("서비스워커 등록 실패:", err);
+    });
+
+    var reloadedAfterUpdate = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (reloadedAfterUpdate) return;
+      reloadedAfterUpdate = true;
+      window.location.reload();
+    });
+  });
+}
+
+function showUpdateBanner(waitingWorker) {
+  if (document.getElementById("swUpdateBanner")) return;
+
+  var banner = document.createElement("div");
+  banner.id = "swUpdateBanner";
+  banner.className = "sw-update-banner";
+  banner.innerHTML =
+    '<span>새로운 버전이 있어요.</span>' +
+    '<button type="button" class="sw-update-banner__btn">새로고침</button>';
+
+  banner.querySelector(".sw-update-banner__btn").addEventListener("click", function () {
+    if (waitingWorker) waitingWorker.postMessage("SKIP_WAITING");
+    banner.remove();
+  });
+
+  document.body.appendChild(banner);
+}
 refreshNotifications();

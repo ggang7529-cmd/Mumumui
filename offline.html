@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>책갈피 - 오프라인</title>
+<style>
+  :root {
+    --paper: #EFEAE1;
+    --ink: #241F1C;
+    --ink-soft: #6B6058;
+    --accent: #8C2F39;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1B1815;
+      --ink: #EDE6DA;
+      --ink-soft: #A79C8E;
+      --accent: #E08A90;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Gowun Dodum", "Malgun Gothic", sans-serif;
+    text-align: center;
+    padding: 24px;
+  }
+  .card {
+    max-width: 360px;
+  }
+  h1 {
+    font-family: "Gowun Batang", "Malgun Gothic", serif;
+    font-size: 1.3rem;
+    margin: 0 0 12px;
+    color: var(--accent);
+  }
+  p {
+    margin: 0 0 20px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  button {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 10px 20px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  button:active {
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>인터넷 연결이 끊겼어요</h1>
+    <p>네트워크가 연결되면 다시 이용하실 수 있어요.<br>연결을 확인한 뒤 다시 시도해주세요.</p>
+    <button onclick="location.reload()">다시 시도</button>
+  </div>
+</body>
+</html>
