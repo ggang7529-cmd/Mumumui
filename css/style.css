@@ -114,8 +114,11 @@
     .header-actions .btn-accent-outline,
     .header-actions .btn-random,
     .header-actions .btn-primary {
+      /* min-width를 명시적으로 0으로 풀지 않는다 — 기본값(auto)이어야 라벨 안의
+         white-space: nowrap 텍스트(예: new-review-btn-hint) 폭만큼은 자동으로
+         확보되고, 그보다 좁아져야 할 때는 다음 줄로 줄바꿈되어 버튼 밖으로
+         글자가 삐져나오는 대신 자연스럽게 두 줄로 배치된다. */
       flex: 1 1 auto;
-      min-width: 0;
       padding: 0.5rem 0.6rem;
       font-size: 0.82rem;
       text-align: center;
@@ -123,6 +126,12 @@
 
     .header-actions .auth-box:empty {
       display: none;
+    }
+
+    /* 터치 타겟 확대: 애플/구글 권장 최소 크기(44px)에 맞춘다. */
+    .notif-bell {
+      width: 44px;
+      height: 44px;
     }
   }
 
@@ -732,6 +741,14 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 1.75rem;
+  }
+
+  /* 모바일에서는 .wrap 자체 여백(1rem)이 이미 있으므로 패널 내부 여백까지
+     PC와 동일하게 두면 좁은 화면에서 입력 영역이 과하게 줄어든다. */
+  @media (max-width: 640px) {
+    .panel {
+      padding: 1.25rem 1.1rem;
+    }
   }
 
   .panel h2 {
@@ -1417,6 +1434,14 @@
       order: 3;
     }
 
+    /* 터치 타겟 확대: PC 기준 패딩(0.15rem)은 손가락으로 누르기엔 너무 좁아서
+       모바일에서만 여유를 준다. */
+    #commentList .c-like,
+    #commentList .c-reply-btn,
+    #commentList .c-reply-like {
+      padding: 0.35rem 0.75rem;
+    }
+
     #commentList .c-like {
       order: 4;
       margin-left: auto;
@@ -1432,6 +1457,11 @@
 
     #commentList .c-del {
       order: 6;
+    }
+
+    #commentList .c-del,
+    #commentList .c-reply-del {
+      padding: 0.3rem 0.4rem;
     }
 
     #commentList .c-reply-form {
