@@ -664,11 +664,12 @@
   }
 
   /* 별점(★★★★☆)+평균 점수+참여자 수가 카드 폭 안에서 줄바꿈 없이 한 줄로
-     들어가야 한다. 참여자 수가 두 자리(예: 99)까지는 한 줄에 맞도록 폰트
-     크기를 잡았고, 세 자리(100+)로 넘어가면 넘치는 부분은 ...으로 잘린다
-     (아직 그 정도로 리뷰가 몰린 책이 없어 지금은 이 정도로 충분). */
+     들어가야 한다. 참여자 수 두 자리(예: 99)까지는 iPhone 기준(375px 폭
+     이상) 카드에서 한 줄에 맞지만, 그보다 좁은 안드로이드 폰(~360px)에서는
+     빠듯해 끝이 말줄임(...)으로 잘릴 수 있다 — white-space: nowrap +
+     text-overflow: ellipsis로 넘쳐도 레이아웃은 깨지지 않게만 막아둔 것. */
   .book-card .b-stars {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     letter-spacing: 0.01em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
