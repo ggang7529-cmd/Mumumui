@@ -52,7 +52,7 @@ export async function onRequestPost(context) {
   var title = String(body.title || "").trim().slice(0, 80);
   var author = String(body.author || "").trim().slice(0, 60);
   var text = String(body.text || "").trim().slice(0, 80);
-  var name = String(body.name || "").trim().slice(0, 20);
+  var name = String(body.name || "").trim().slice(0, 10);
   var rating = Number(body.rating);
   var cover = typeof body.cover === "string" ? body.cover : null;
   var isbn = String(body.isbn || "").trim().slice(0, 40);

@@ -711,7 +711,7 @@ export function renderDetail() {
         replyNameInput.type = "text";
         replyNameInput.className = "c-reply-name";
         replyNameInput.placeholder = "닉네임";
-        replyNameInput.maxLength = 20;
+        replyNameInput.maxLength = 10;
         replyNameInput.value = getSavedNickname();
         replyForm.appendChild(replyNameInput);
       }
@@ -749,7 +749,7 @@ export function renderDetail() {
 
         var name = "";
         if (AUTH_MODE === "nickname") {
-          name = replyNameInput.value.trim().slice(0, 20);
+          name = replyNameInput.value.trim().slice(0, 10);
           if (!name) { alert("닉네임을 입력해주세요."); return; }
         }
 
