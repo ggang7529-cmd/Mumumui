@@ -158,6 +158,19 @@ export function refreshComments() {
   }).catch(function () {});
 }
 
+// 헤더의 "이모지 레벨 [등급명] 닉네임" 표시(js/render.js renderAuthBox)용으로 내 현재
+// 점수를 가져와 state.myScore에 채우고 다시 그린다. 책/리뷰/답글을 새로 남길 때마다
+// 불러서, 방금 오른 점수가 곧바로 헤더에 반영되게 한다.
+export function refreshMyScore() {
+  if (AUTH_MODE !== "nickname") return Promise.resolve();
+  var nickname = getSavedNickname();
+  if (!nickname) return Promise.resolve();
+  return api("/api/nickname-score?name=" + encodeURIComponent(nickname)).then(function (data) {
+    state.myScore = data.score || 0;
+    renderAuthBox();
+  }).catch(function () {});
+}
+
 export function refreshNotifications() {
   var uid = myUid();
   if (!uid) { state.notifications = []; renderNotifBadge(); return Promise.resolve(); }
