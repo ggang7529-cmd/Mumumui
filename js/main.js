@@ -227,16 +227,21 @@ function showRandomStreakMsg() {
   }, 1600);
 }
 
-// 등록 권수가 50의 배수에 도달했을 때 보여주는 축하 연출.
+// 등록 권수가 50의 배수에 도달했을 때, 그리고 어떤 책이 galpi에 처음 등록됐을 때 보여주는
+// 짧은 축하 연출. 두 이벤트는 같은 모달/타이머를 공유한다.
 var milestoneHideTimer = null;
 
-function showMilestoneCelebration(count) {
+function showCelebrationModal(message) {
   clearTimeout(milestoneHideTimer);
-  dom.milestoneMessage.textContent = count + "번째 기록을 남겨주셨어요! 🎉";
+  dom.milestoneMessage.textContent = message;
   dom.milestoneOverlay.hidden = false;
   void dom.milestoneOverlay.offsetWidth;
   dom.milestoneOverlay.classList.add("show");
   milestoneHideTimer = setTimeout(hideMilestoneCelebration, 2200);
+}
+
+function showMilestoneCelebration(count) {
+  showCelebrationModal(count + "번째 기록을 남겨주셨어요! 🎉");
 }
 
 function hideMilestoneCelebration() {
@@ -485,7 +490,10 @@ dom.reviewForm.addEventListener("submit", function (e) {
       showView("library");
       renderLibrary();
       renderLatestHighlight();
-      if (totalCount > 0 && totalCount % MILESTONE_STEP === 0) showMilestoneCelebration(totalCount);
+      // 첫 등록자 축하와 N권째 기록 축하가 같은 순간에 겹칠 수 있는데, 같은 모달을
+      // 동시에 두 번 못 띄우니 첫 등록자 쪽을 우선한다(더 개인적인 축하라서).
+      if (data.firstRegistration) showCelebrationModal("이 책의 첫 번째 등록자예요! 🎉");
+      else if (totalCount > 0 && totalCount % MILESTONE_STEP === 0) showMilestoneCelebration(totalCount);
     })
     .catch(function (e) {
       alert(e.message);
