@@ -24,6 +24,48 @@ function jsonLdScript(obj) {
   return '<script type="application/ld+json">' + JSON.stringify(obj).replace(/</g, "\\u003c") + "</script>\n";
 }
 
+// PNG/JPEG 헤더 바이트만 보고 실제 가로/세로 픽셀을 읽어낸다. og:image:width/height를
+// 안 채우면 카카오톡/아이메시지 같은 링크 미리보기가 세로로 긴 책 표지를 기본
+// 가로형 박스에 억지로 맞추면서 옆을 잘라버린다 — 실제 비율을 알려주면 대부분
+// 그 비율에 맞는 박스로 렌더링해서 크롭을 피한다.
+function readImageDimensions(buf) {
+  if (buf.length >= 24 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    var view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    return { width: view.getUint32(16), height: view.getUint32(20) };
+  }
+  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    var i = 2;
+    while (i + 9 < buf.length) {
+      if (buf[i] !== 0xff) { i++; continue; }
+      var marker = buf[i + 1];
+      var isSofMarker = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+      if (isSofMarker) {
+        var d = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+        return { height: d.getUint16(i + 5), width: d.getUint16(i + 7) };
+      }
+      var segLen = (buf[i + 2] << 8) | buf[i + 3];
+      i += 2 + segLen;
+    }
+  }
+  return null;
+}
+
+// 표지 앞부분 32KB만 Range로 받아온다 — 대부분의 JPEG/PNG는 이 안에 크기 정보가
+// 있고, 실패하거나 못 읽어도(WEBP 등) og:image:width/height 없이 기존처럼 동작한다.
+async function fetchImageDimensions(url) {
+  try {
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 2500);
+    var res = await fetch(url, { headers: { Range: "bytes=0-32767" }, signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    var buf = new Uint8Array(await res.arrayBuffer());
+    return readImageDimensions(buf);
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function onRequestGet(context) {
   var env = context.env;
   var id = context.params.id;
@@ -65,11 +107,16 @@ export async function onRequestGet(context) {
     '<meta property="og:url" content="https://galpi.pages.dev">\n' +
     '<meta name="twitter:card" content="summary_large_image">';
 
+  var coverUrl = book.cover ? upscaleCover(book.cover) : null;
+  var coverDims = coverUrl ? await fetchImageDimensions(coverUrl) : null;
+
   var metaTags =
     '<meta property="og:type" content="article">\n' +
     '<meta property="og:title" content="' + title + '">\n' +
     '<meta property="og:description" content="' + desc + '">\n' +
-    (book.cover ? '<meta property="og:image" content="' + escapeHtml(upscaleCover(book.cover)) + '">\n' : "") +
+    (coverUrl ? '<meta property="og:image" content="' + escapeHtml(coverUrl) + '">\n' : "") +
+    (coverDims ? '<meta property="og:image:width" content="' + coverDims.width + '">\n' : "") +
+    (coverDims ? '<meta property="og:image:height" content="' + coverDims.height + '">\n' : "") +
     '<meta property="og:url" content="' + pageUrl + '">\n' +
     '<meta name="twitter:card" content="summary_large_image">\n';
 
@@ -79,7 +126,7 @@ export async function onRequestGet(context) {
     name: book.title,
     author: { "@type": "Person", name: book.author },
   };
-  if (book.cover) jsonLd.image = upscaleCover(book.cover);
+  if (coverUrl) jsonLd.image = coverUrl;
   if (book.contents) jsonLd.description = book.contents;
   if (avgRating !== null) {
     jsonLd.aggregateRating = {
