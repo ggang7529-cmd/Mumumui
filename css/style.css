@@ -182,6 +182,11 @@
     align-items: center;
     gap: 0.6rem;
     font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+    /* 등급 배지가 붙어 닉네임(.user-name)이 길어지면서 데스크톱 폭이 좁아졌을 때
+       "책갈피" 로고 텍스트 쪽이 밀려서 두 줄로 쪼개지는 문제가 있었다. 로고는 항상
+       줄어들지 않게 고정하고, 대신 닉네임 쪽(.user-chip)이 줄어들며 자체적으로
+       줄바꿈되게 한다. */
+    flex-shrink: 0;
   }
 
   .logo-symbol {
@@ -319,12 +324,17 @@
     flex: none;
   }
 
-  .auth-box { display: flex; align-items: center; }
+  .auth-box { display: flex; align-items: center; min-width: 0; }
 
   .user-chip {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* flex 아이템의 기본 min-width는 auto라서 내용(닉네임 전체)만큼의 폭을 절대
+       내주지 않는다 — 그러면 옆의 .brand가 대신 밀려서 두 줄로 쪼개진다. 0으로
+       풀어서 폭이 부족할 때 이 칩이 먼저 줄어들고, 그 안의 .user-name(줄바꿈 허용)이
+       필요하면 스스로 2줄로 넘어가게 한다. */
+    min-width: 0;
   }
 
   .user-avatar {
@@ -344,6 +354,7 @@
     font-size: 1rem;
     font-weight: 700;
     color: var(--accent);
+    min-width: 0;
   }
 
   .btn-logout {
