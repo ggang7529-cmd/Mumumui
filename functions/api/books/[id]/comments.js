@@ -42,7 +42,7 @@ export async function onRequestPost(context) {
   }
 
   var text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
-  var name = String(body.name || "").trim().slice(0, 20);
+  var name = String(body.name || "").trim().slice(0, 10);
   var parentId = body.parentId ? String(body.parentId).trim() : null;
   if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
   if (!text) return json({ error: "내용을 입력해주세요." }, { status: 400 });

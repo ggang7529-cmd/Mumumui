@@ -460,7 +460,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
 
   var nickname = "";
   if (AUTH_MODE === "nickname") {
-    nickname = document.getElementById("fNickname").value.trim().slice(0, 20);
+    nickname = document.getElementById("fNickname").value.trim().slice(0, 10);
     if (!nickname) { alert("닉네임을 입력해주세요."); return; }
   }
 
@@ -535,7 +535,7 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
 
   var nickname = "";
   if (AUTH_MODE === "nickname") {
-    nickname = document.getElementById("cNickname").value.trim().slice(0, 20);
+    nickname = document.getElementById("cNickname").value.trim().slice(0, 10);
     if (!nickname) { alert("닉네임을 입력해주세요."); return; }
   }
 
