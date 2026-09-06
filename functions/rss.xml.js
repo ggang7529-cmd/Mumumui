@@ -12,13 +12,19 @@ export async function onRequestGet(context) {
   var env = context.env;
   var origin = new URL(context.request.url).origin;
 
-  var rows = await env.DB.prepare(
-    "SELECT id, title, author, contents, text, rating_sum, rating_count, owner_name, created_at " +
-    "FROM books ORDER BY created_at DESC LIMIT ?1"
-  )
-    .bind(ITEM_LIMIT)
-    .all();
-  var books = rows.results || [];
+  var books = [];
+  try {
+    var rows = await env.DB.prepare(
+      "SELECT id, title, author, contents, text, rating_sum, rating_count, owner_name, created_at " +
+      "FROM books ORDER BY created_at DESC LIMIT ?1"
+    )
+      .bind(ITEM_LIMIT)
+      .all();
+    books = rows.results || [];
+  } catch (err) {
+    // D1 조회가 실패해도 피드 리더/크롤러에는 최소한 빈 채널이라도 유효한 XML을
+    // 돌려준다 — 에러 스택트레이스를 그대로 내려보내면 "가져올 수 없음"으로 처리된다.
+  }
 
   var items = books.map(function (b) {
     var link = origin + "/book/" + encodeURIComponent(b.id);
