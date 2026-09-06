@@ -1,9 +1,9 @@
 import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
 import {
-  googleConfigured, myUid, api, refreshBooks, refreshComments, getSavedNickname, saveNickname, renderGoogleButtons,
-  isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
+  googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
+  renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
 } from "./api.js";
-import { formatNicknameWithLevel } from "./levels.js";
+import { formatNicknameShort, formatNicknameFull } from "./levels.js";
 
 var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
 
@@ -13,12 +13,12 @@ export function coverFor(title) {
   return COVERS[hash % COVERS.length];
 }
 
-// 댓글/답글 작성자 닉네임 span을 공통으로 만든다. "이모지 [등급명] 닉네임" 형식으로
-// 활동 등급을 함께 표시한다 (예: "📚 [책벌레] 이과생").
+// 댓글/답글 작성자 닉네임 span을 공통으로 만든다. 별점·좋아요·날짜까지 같이 붙는 줄이라
+// "이모지 레벨 닉네임" 축약형으로 표시한다 (예: "📚 6 이과생").
 function buildAuthorChip(name, score, className) {
   var span = document.createElement("span");
   span.className = className;
-  span.textContent = formatNicknameWithLevel((name || "").trim(), score);
+  span.textContent = formatNicknameShort((name || "").trim(), score);
   return span;
 }
 
@@ -168,7 +168,7 @@ export function renderAuthBox() {
       savedChip.className = "user-chip";
       var savedName = document.createElement("span");
       savedName.className = "user-name";
-      savedName.textContent = nickname;
+      savedName.textContent = formatNicknameFull(nickname, state.myScore);
       savedChip.appendChild(savedName);
       $box.appendChild(savedChip);
     }
@@ -765,6 +765,7 @@ export function renderDetail() {
             replyForm.hidden = true;
             delete state.openReplies[c.id];
             refreshComments();
+            refreshMyScore();
           })
           .catch(function (e) { alert(e.message); });
       });

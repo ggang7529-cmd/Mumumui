@@ -1,5 +1,5 @@
 import {
-  googleConfigured, api, refreshBooks, refreshComments, refreshNotifications,
+  googleConfigured, api, refreshBooks, refreshComments, refreshNotifications, refreshMyScore,
   getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
@@ -23,6 +23,8 @@ export var WEB3FORMS_ACCESS_KEY = "57e4e1cb-8aea-4711-945b-886fb13cd71e";
 // 여러 파일에서 공유하는 전역 상태. 재할당(state = ...) 대신 항상 속성만 바꿔서 씁니다.
 export var state = {
   currentUser: null,
+  // 헤더의 "이모지 레벨 [등급명] 닉네임" 표시용 내 활동 점수 (api.js refreshMyScore 참고).
+  myScore: 0,
   books: [],
   booksLoaded: false,
   recentComments: [],
@@ -481,6 +483,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
     .then(function (data) {
       gtag("event", "complete_review", { book_id: data.book.id });
       renderAuthBox();
+      refreshMyScore();
       state.books.unshift(normalizeBook(data.book));
       state.recentComments.unshift({
         bookId: data.book.id, bookTitle: data.book.title, bookAuthor: data.book.author,
@@ -553,6 +556,7 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
       state.commentRating = 0;
       renderStars(dom.cStars, 0, true, selectCommentRating);
       renderAuthBox();
+      refreshMyScore();
       return Promise.all([refreshBooks(), refreshComments()]);
     })
     .catch(function (e) { alert(e.message); });
@@ -569,6 +573,7 @@ if (AUTH_MODE === "google") {
   initGoogleSignIn();
 } else {
   renderAuthBox();
+  refreshMyScore();
 }
 
 function bookIdFromPath(pathname) {

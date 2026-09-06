@@ -1,5 +1,5 @@
 import { fetchScoreMap } from "../_lib/scores.js";
-import { formatNicknameWithLevel } from "../_lib/levels.js";
+import { formatNicknameShort } from "../_lib/levels.js";
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
@@ -189,7 +189,7 @@ export async function onRequestGet(context) {
       commentListHtml = topLevelComments.map(function (c) {
         var stars = "";
         for (var i = 1; i <= 5; i++) stars += i <= c.rating ? "★" : "☆";
-        var nameWithLevel = formatNicknameWithLevel(c.author_name || "책갈피 사용자", scoreMap[c.author_name] || 0);
+        var nameWithLevel = formatNicknameShort(c.author_name || "책갈피 사용자", scoreMap[c.author_name] || 0);
         return (
           "<li><strong>" + escapeHtml(nameWithLevel) + "</strong> " +
           escapeHtml(stars) + " " + escapeHtml(c.text) + "</li>"
