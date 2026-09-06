@@ -1425,9 +1425,10 @@
 
     #commentList .c-author {
       order: 2;
-      max-width: 6.5em;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      /* 등급 배지(🔖 [등급명])가 붙으면서 닉네임보다 훨씬 길어질 수 있다. 예전처럼
+         고정 max-width로 잘라버리면 등급/닉네임이 아예 안 보일 수 있어서, 대신 부모의
+         flex-wrap에 맡겨 안 들어가면 자체 줄로 자연스럽게 넘어가게 한다. */
+      flex-basis: 100%;
       white-space: nowrap;
     }
 

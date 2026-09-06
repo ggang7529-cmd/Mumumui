@@ -92,6 +92,9 @@ export async function onRequestPost(context) {
       category: category || null, text: text,
       rating_sum: rating, rating_count: 1, comment_count: 1,
       owner_uid: uid, owner_name: name, owner_photo: null, created_at: now, updated_at: now
-    }
+    },
+    // 위에서 isbn/제목 중복 체크를 이미 통과했으므로, 여기까지 오는 모든 생성은 정의상
+    // "이 책의 첫 등록"이다. 클라이언트가 첫 등록자 축하 메시지를 띄우는 데 쓴다.
+    firstRegistration: true
   }, { status: 201 });
 }

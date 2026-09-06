@@ -1,6 +1,7 @@
 import { getAnonUid } from "../../../_lib/identity.js";
 import { json, newId } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
+import { fetchScoreMap } from "../../../_lib/scores.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -14,7 +15,14 @@ export async function onRequestGet(context) {
     "FROM comments c WHERE c.book_id = ?1 ORDER BY c.created_at ASC"
   ).bind(bookId, myUid).all();
 
-  return json({ comments: rows.results });
+  // 활동 점수/등급 표시(js/render.js buildAuthorChip)용으로 작성자 닉네임마다 현재 점수를
+  // 함께 내려준다.
+  var scoreMap = await fetchScoreMap(env);
+  var comments = (rows.results || []).map(function (c) {
+    return Object.assign({}, c, { score: scoreMap[c.author_name] || 0 });
+  });
+
+  return json({ comments: comments });
 }
 
 export async function onRequestPost(context) {
