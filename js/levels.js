@@ -4,27 +4,29 @@
 // Cloudflare Pages Functions(functions/)는 서로 다른 실행 환경이라 정적 자산을 공유 import할
 // 수 없고, 표는 자주 안 바뀌는 고정 데이터라 두 곳에 두는 편이 빌드 설정을 얹는 것보다 낫다.
 // 표를 바꿀 땐 반드시 두 파일을 함께 수정할 것.
+// 구간(min)은 전부 최초 기획안의 2배로 잡혀 있다 — 등급명/레벨 번호/이모지는 그대로 두고
+// 점수만 두 배로 늘려 달라는 요청(2026-09-06)에 따른 것.
 var LEVELS = [
   { level: 1, min: 0, emoji: "🔖", name: "책갈피 입문자" },
-  { level: 2, min: 10, emoji: "🔖", name: "표지만 구경" },
-  { level: 3, min: 20, emoji: "🔖", name: "첫 장을 넘긴 사람" },
-  { level: 4, min: 35, emoji: "🔖", name: "한 줄 감상가" },
-  { level: 5, min: 50, emoji: "📚", name: "다독가 지망생" },
-  { level: 6, min: 70, emoji: "📚", name: "책벌레" },
-  { level: 7, min: 100, emoji: "📚", name: "책장 지킴이" },
-  { level: 8, min: 140, emoji: "📚", name: "서재의 단골" },
-  { level: 9, min: 190, emoji: "📚", name: "밤샘 독서러" },
-  { level: 10, min: 250, emoji: "👻", name: "도서관 유령" },
-  { level: 11, min: 320, emoji: "👻", name: "책갈피 헌터" },
-  { level: 12, min: 400, emoji: "👻", name: "활자 중독자" },
-  { level: 13, min: 500, emoji: "👻", name: "이동식 서재" },
-  { level: 14, min: 620, emoji: "👻", name: "책갈피 큐레이터" },
-  { level: 15, min: 760, emoji: "🦉", name: "서재의 현자" },
-  { level: 16, min: 920, emoji: "🦉", name: "책갈피 장인" },
-  { level: 17, min: 1100, emoji: "🦉", name: "살아있는 도서관" },
-  { level: 18, min: 1300, emoji: "👑", name: "책갈피 마스터" },
-  { level: 19, min: 1600, emoji: "👑", name: "전설의 다독가" },
-  { level: 20, min: 2000, emoji: "👑", name: "책갈피 전설" }
+  { level: 2, min: 20, emoji: "🔖", name: "표지만 구경" },
+  { level: 3, min: 40, emoji: "🔖", name: "첫 장을 넘긴 사람" },
+  { level: 4, min: 70, emoji: "🔖", name: "한 줄 감상가" },
+  { level: 5, min: 100, emoji: "📚", name: "다독가 지망생" },
+  { level: 6, min: 140, emoji: "📚", name: "책벌레" },
+  { level: 7, min: 200, emoji: "📚", name: "책장 지킴이" },
+  { level: 8, min: 280, emoji: "📚", name: "서재의 단골" },
+  { level: 9, min: 380, emoji: "📚", name: "밤샘 독서러" },
+  { level: 10, min: 500, emoji: "👻", name: "도서관 유령" },
+  { level: 11, min: 640, emoji: "👻", name: "책갈피 헌터" },
+  { level: 12, min: 800, emoji: "👻", name: "활자 중독자" },
+  { level: 13, min: 1000, emoji: "👻", name: "이동식 서재" },
+  { level: 14, min: 1240, emoji: "👻", name: "책갈피 큐레이터" },
+  { level: 15, min: 1520, emoji: "🦉", name: "서재의 현자" },
+  { level: 16, min: 1840, emoji: "🦉", name: "책갈피 장인" },
+  { level: 17, min: 2200, emoji: "🦉", name: "살아있는 도서관" },
+  { level: 18, min: 2600, emoji: "👑", name: "책갈피 마스터" },
+  { level: 19, min: 3200, emoji: "👑", name: "전설의 다독가" },
+  { level: 20, min: 4000, emoji: "👑", name: "책갈피 전설" }
 ];
 
 export function getLevel(score) {
