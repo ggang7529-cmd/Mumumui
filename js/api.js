@@ -1,5 +1,6 @@
-import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom } from "./main.js";
+import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showCelebrationModal } from "./main.js";
 import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight } from "./render.js";
+import { getLevel, formatNicknameFull } from "./levels.js";
 
 export function googleConfigured() {
   return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -9,6 +10,7 @@ var ANON_ID_KEY = "chaekgalpi_anon_id";
 var NICKNAME_KEY = "chaekgalpi_nickname";
 var ADMIN_KEY_STORAGE = "chaekgalpi_admin_key";
 var NOTIF_SEEN_KEY = "chaekgalpi_notif_seen";
+var LAST_LEVEL_KEY = "chaekgalpi_last_level";
 
 export function getAnonId() {
   try {
@@ -158,9 +160,25 @@ export function refreshComments() {
   }).catch(function () {});
 }
 
+// 이 브라우저에서 마지막으로 확인했던 내 레벨을 닉네임과 함께 기억해둔다 — 닉네임을
+// 바꾸면(다른 사람 취급이므로) 축하 없이 그 닉네임의 레벨을 새로 기준삼는다.
+function getLastKnownLevel(nickname) {
+  try {
+    var saved = JSON.parse(localStorage.getItem(LAST_LEVEL_KEY) || "null");
+    if (saved && saved.name === nickname) return saved.level;
+  } catch (e) {}
+  return null;
+}
+
+function saveLastKnownLevel(nickname, level) {
+  try { localStorage.setItem(LAST_LEVEL_KEY, JSON.stringify({ name: nickname, level: level })); } catch (e) {}
+}
+
 // 헤더의 "이모지 레벨 [등급명] 닉네임" 표시(js/render.js renderAuthBox)용으로 내 현재
-// 점수를 가져와 state.myScore에 채우고 다시 그린다. 책/리뷰/답글을 새로 남길 때마다
-// 불러서, 방금 오른 점수가 곧바로 헤더에 반영되게 한다.
+// 점수를 가져와 state.myScore에 채우고 다시 그린다. 책/리뷰/답글을 새로 남길 때마다,
+// 그리고 페이지를 열 때마다 불러서, 방금(또는 그 사이에 좋아요를 받아) 오른 점수가
+// 곧바로 헤더에 반영되게 한다. 이전에 확인했던 레벨보다 올랐으면 책 등록 축하와 같은
+// 모달로 레벨업을 알린다.
 export function refreshMyScore() {
   if (AUTH_MODE !== "nickname") return Promise.resolve();
   var nickname = getSavedNickname();
@@ -168,6 +186,13 @@ export function refreshMyScore() {
   return api("/api/nickname-score?name=" + encodeURIComponent(nickname)).then(function (data) {
     state.myScore = data.score || 0;
     renderAuthBox();
+
+    var newLevel = getLevel(state.myScore).level;
+    var prevLevel = getLastKnownLevel(nickname);
+    if (prevLevel !== null && newLevel > prevLevel) {
+      showCelebrationModal("레벨 업! " + formatNicknameFull(nickname, state.myScore) + " 님이 되셨어요! 🎉");
+    }
+    saveLastKnownLevel(nickname, newLevel);
   }).catch(function () {});
 }
 
