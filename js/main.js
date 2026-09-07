@@ -233,7 +233,7 @@ function showRandomStreakMsg() {
 // 짧은 축하 연출. 두 이벤트는 같은 모달/타이머를 공유한다.
 var milestoneHideTimer = null;
 
-function showCelebrationModal(message) {
+export function showCelebrationModal(message) {
   clearTimeout(milestoneHideTimer);
   dom.milestoneMessage.textContent = message;
   dom.milestoneOverlay.hidden = false;
