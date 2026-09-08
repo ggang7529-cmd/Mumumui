@@ -622,7 +622,7 @@ export function renderDetail() {
         var delBtn = document.createElement("button");
         delBtn.className = "c-del";
         delBtn.type = "button";
-        delBtn.textContent = "×";
+        delBtn.textContent = "🗑";
         delBtn.setAttribute("aria-label", "댓글 삭제");
         delBtn.addEventListener("click", function () {
           api("/api/comments/" + c.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
@@ -686,7 +686,7 @@ export function renderDetail() {
           var rDelBtn = document.createElement("button");
           rDelBtn.type = "button";
           rDelBtn.className = "c-reply-del";
-          rDelBtn.textContent = "×";
+          rDelBtn.textContent = "🗑";
           rDelBtn.setAttribute("aria-label", "답글 삭제");
           rDelBtn.addEventListener("click", function () {
             api("/api/comments/" + r.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
