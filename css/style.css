@@ -1,64 +1,106 @@
+  /* 팔레트는 5색으로 압축했다: 잉크 / 종이 / 카드 / 버건디 / 클레이.
+     예전엔 랜덤 추천 버튼만 초록(--accent2 #3F6B63)이라 팔레트가 분산됐고, 다크 모드에서
+     accent가 연분홍(#E08A90)으로 바뀌면서 라이트와 다른 브랜드처럼 보였다. 이제 다크도
+     같은 버건디 색상환을 유지해서 두 모드가 한 브랜드로 읽히게 한다.
+     (--accent2는 이름만 유지하고 값은 클레이로 바꿔, 기존 규칙을 다 고치지 않아도
+     팔레트가 통일되게 했다.) */
   :root {
-    --paper: #EFEAE1;
-    --paper-soft: #E2D9C9;
-    --paper-raised: #F7F3EC;
-    --ink: #241F1C;
-    --ink-soft: #6B6058;
-    --ink-faint: #94897C;
-    --accent: #8C2F39;
-    --accent-soft: #B5555F;
-    --accent2: #3F6B63;
-    --accent2-soft: #578179;
-    --line: rgba(36, 31, 28, 0.14);
-    --shadow: rgba(36, 31, 28, 0.16);
-    --logo-front: #7A2E3F;
-    --logo-back: #C88E92;
+    --paper: #F2EDE4;
+    --paper-soft: #E7DFD1;
+    --paper-raised: #FBF8F2;
+    --ink: #23201D;
+    --ink-soft: #5C534A;
+    /* 흰 배경 대비 4.8:1 — 예전 #94897C는 2.9:1로 AA 미달이었다. */
+    --ink-faint: #6F6558;
+    --accent: #7C2B36;
+    --accent-soft: #A84A52;
+    /* 흰 글자를 얹는 버튼(랜덤 추천)에 쓰이므로 4.9:1이 나오는 깊이로 잡았다. */
+    --accent2: #A85C46;
+    --accent2-soft: #C07253;
+    --line: rgba(35, 32, 29, 0.13);
+    --shadow: rgba(35, 32, 29, 0.10);
+    --logo-front: #7C2B36;
+    --logo-back: #C4837F;
+    /* 채운 버튼은 라이트/다크 모두 "진한 버건디(또는 클레이) 바탕 + 밝은 글자"로 통일한다.
+       텍스트 색인 --accent를 그대로 버튼 배경에 쓰면, 다크에서는 그 값이 밝은 로즈라
+       버튼만 쨍하게 떠서 라이트와 인상이 달라졌다. */
+    --btn-fill: #7C2B36;
+    --btn-fill-hover: #963642;
+    --btn-fill-ink: #FBF8F2;
+    --btn-alt: #A85C46;
+    --btn-alt-hover: #BE6D54;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper: #1B1815;
-      --paper-soft: #262019;
-      --paper-raised: #221D19;
-      --ink: #EDE6DA;
-      --ink-soft: #A79C8E;
-      --ink-faint: #766B5F;
-      --accent: #E08A90;
-      --accent-soft: #C1636B;
-      --accent2: #7FBEB1;
-      --accent2-soft: #97CBC0;
-      --line: rgba(237, 230, 218, 0.16);
-      --shadow: rgba(0, 0, 0, 0.4);
-      --logo-front: #E8B9BB;
-      --logo-back: #C0707C;
+      --paper: #17140F;
+      --paper-soft: #241F19;
+      --paper-raised: #211D17;
+      --ink: #EDE7DC;
+      --ink-soft: #B5AA9B;
+      --ink-faint: #8D8274;
+      --accent: #D9848B;
+      --accent-soft: #E8A0A6;
+      --accent2: #D89B84;
+      --accent2-soft: #E8B49F;
+      --line: rgba(237, 231, 220, 0.14);
+      --shadow: rgba(0, 0, 0, 0.45);
+      --logo-front: #D9848B;
+      --logo-back: #8C4E56;
+      --btn-fill: #8C3A44;
+      --btn-fill-hover: #A34551;
+      --btn-fill-ink: #FBEDED;
+      --btn-alt: #A15942;
+      --btn-alt-hover: #B96A4F;
     }
   }
 
   :root[data-theme="dark"] {
-    --paper: #1B1815;
-    --paper-soft: #262019;
-    --paper-raised: #221D19;
-    --ink: #EDE6DA;
-    --ink-soft: #A79C8E;
-    --ink-faint: #766B5F;
-    --accent: #E08A90;
-    --accent-soft: #C1636B;
-    --accent2: #7FBEB1;
-    --accent2-soft: #97CBC0;
-    --line: rgba(237, 230, 218, 0.16);
-    --shadow: rgba(0, 0, 0, 0.4);
-    --logo-front: #E8B9BB;
-    --logo-back: #C0707C;
+    --paper: #17140F;
+    --paper-soft: #241F19;
+    --paper-raised: #211D17;
+    --ink: #EDE7DC;
+    --ink-soft: #B5AA9B;
+    --ink-faint: #8D8274;
+    --accent: #D9848B;
+    --accent-soft: #E8A0A6;
+    --accent2: #D89B84;
+    --accent2-soft: #E8B49F;
+    --line: rgba(237, 231, 220, 0.14);
+    --shadow: rgba(0, 0, 0, 0.45);
+    --logo-front: #D9848B;
+    --logo-back: #8C4E56;
+    --btn-fill: #8C3A44;
+    --btn-fill-hover: #A34551;
+    --btn-fill-ink: #FBEDED;
+    --btn-alt: #A15942;
+    --btn-alt-hover: #B96A4F;
   }
 
   * { box-sizing: border-box; }
 
+  /* 타이포 역할 분리: 제목/책 제목/로고는 명조(Gowun Batang), 본문·UI는 고딕.
+     본문 고딕을 Gowun Dodum에서 Noto Sans KR로 바꾼 이유 — Gowun Dodum은 굵기가 400
+     하나뿐이라 라벨/섹션 제목을 굵게 만들 수단이 없었고(위계가 평평해진 근본 원인),
+     획이 얇아 작은 글씨에서 흐릿했다. 이제 400/500/700을 쓴다. */
   body {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font-family: "Gowun Dodum", "Malgun Gothic", sans-serif;
-    line-height: 1.6;
+    font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 타이포 스케일 6단계. 예전엔 제목(2rem)과 본문(0.95rem) 사이가 비어 있어서
+     "책 소개", "한줄평·별점" 같은 섹션 제목이 본문과 같은 무게로 묻혔다. */
+  :root {
+    --t-display: 2rem;     /* 인트로 헤드라인 */
+    --t-title: 1.4rem;     /* 책 제목 */
+    --t-section: 1.06rem;  /* 섹션 제목 (새로 생긴 단계) */
+    --t-body: 0.95rem;     /* 본문 */
+    --t-meta: 0.82rem;     /* 보조 정보 */
+    --t-micro: 0.72rem;    /* 라벨·배지 */
   }
 
   .wrap {
@@ -233,8 +275,27 @@
     }
   }
 
+  /* 책갈피 리본: 사용자가 남긴 것(한줄평·답글·방금 등록된 기록)의 왼쪽에 공통으로 붙는
+     표식. 끝을 V자로 파서 실제 책갈피 모양이 되게 했다 — 둥근 카드+그림자로 구분하는
+     흔한 방식 대신, 이 서비스의 이름값을 하는 시각 장치를 하나 정해 반복한다. */
+  .ribbon-mark {
+    position: relative;
+    padding-left: 0.95rem;
+  }
+
+  .ribbon-mark::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    width: 4px;
+    height: 1.45em;
+    background: var(--ribbon, var(--accent));
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+  }
+
   .header-intro {
-    margin: 1.1rem 0 1.75rem;
+    margin: 1.6rem 0 2.4rem;
   }
 
   .intro-headline {
@@ -242,21 +303,16 @@
     color: var(--ink);
     font-family: "Gowun Batang", serif;
     font-weight: 700;
-    font-size: 1.6rem;
-    line-height: 1.3;
+    font-size: var(--t-display);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
   }
 
   .intro-subtext {
-    margin: 0.3rem 0 0;
-    color: var(--accent);
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  .tagline {
-    margin: 0.75rem 0 0;
+    margin: 0.5rem 0 0;
     color: var(--ink-soft);
-    font-size: 0.92rem;
+    font-size: var(--t-body);
+    font-weight: 400;
   }
 
   .new-review-btn {
@@ -276,8 +332,8 @@
 
   .btn-primary {
     flex: none;
-    background: var(--accent);
-    color: var(--paper-raised);
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
     border: none;
     border-radius: 3px;
     padding: 0.65rem 1.1rem;
@@ -287,14 +343,14 @@
     transition: background 0.15s ease, transform 0.15s ease;
   }
 
-  .btn-primary:hover { background: var(--accent-soft); }
+  .btn-primary:hover { background: var(--btn-fill-hover); }
   .btn-primary:active { transform: translateY(1px); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-random {
     flex: none;
-    background: var(--accent2);
-    color: var(--paper-raised);
+    background: var(--btn-alt);
+    color: var(--btn-fill-ink);
     border: none;
     border-radius: 3px;
     padding: 0.65rem 1.1rem;
@@ -304,7 +360,7 @@
     transition: background 0.15s ease, transform 0.15s ease;
   }
 
-  .btn-random:hover { background: var(--accent2-soft); }
+  .btn-random:hover { background: var(--btn-alt-hover); }
   .btn-random:active { transform: translateY(1px); }
 
   .btn-primary:focus-visible,
@@ -646,6 +702,9 @@
     --card-info-ink: #F3EEE4;
   }
 
+  /* 책은 물건이니 그림자로 살짝 떠 있는 게 맞지만, 예전의 0 3px 10px는 모든 카드가
+     똑같이 붕 뜬 느낌이라 위계가 없었다. 그림자를 눌러 종이 두께 정도로만 남기고
+     모서리도 2px로 각지게 해서 '책등이 꽂힌 서가'에 가깝게 만든다. */
   .book-card {
     position: relative;
     display: block;
@@ -654,18 +713,18 @@
     color: var(--card-info-ink);
     text-decoration: none;
     border: none;
-    border-radius: 4px;
+    border-radius: 2px;
     padding: 0;
     overflow: hidden;
     cursor: pointer;
     font-family: inherit;
-    box-shadow: 0 3px 10px var(--shadow);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 3px var(--shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
 
   .book-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 18px var(--shadow);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 14px var(--shadow);
   }
 
   /* PC 기본: 표지가 카드 전체를 채우고 그 위에 .b-overlay가 절대위치로 겹친다(기존 동작
@@ -674,6 +733,20 @@
     position: absolute;
     inset: 0;
     background: var(--cover, var(--accent));
+  }
+
+  /* 책등 색(js/render.js COVERS)은 라이트 종이 배경 기준으로 고른 중간 명도라, 다크에서는
+     카드만 밝게 떠 보인다. 색을 테마별로 따로 두는 대신 여기서 한 단계 눌러준다. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .b-cover,
+    :root:not([data-theme="light"]) .detail-cover {
+      filter: brightness(0.82) saturate(0.92);
+    }
+  }
+
+  :root[data-theme="dark"] .b-cover,
+  :root[data-theme="dark"] .detail-cover {
+    filter: brightness(0.82) saturate(0.92);
   }
 
   .b-cover-img {
@@ -688,14 +761,52 @@
     top: 0.55rem;
     right: 0.55rem;
     z-index: 3;
-    background: #E0483C;
-    color: #fff;
-    font-size: 0.68rem;
+    /* 예전 #E0483C(주황빨강)는 팔레트 밖 색이라 서가에서 혼자 튀었다. 브랜드 버건디로
+       맞추고, 알약 대신 모서리를 각지게 해 다른 카드 요소와 결을 맞춘다. */
+    background: #7C2B36;
+    color: #FBF8F2;
+    font-size: var(--t-micro);
     font-weight: 700;
-    letter-spacing: 0.03em;
-    padding: 0.18rem 0.45rem;
-    border-radius: 999px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    letter-spacing: 0.06em;
+    padding: 0.16rem 0.42rem;
+    border-radius: 2px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 표지 없는 책(.book-card--typo): 예전엔 의미 없는 단색 블록이었다. 제목을 명조로 크게
+     조판한 "책등"으로 바꿔서, 빈칸을 메우는 색이 아니라 정보가 되는 시각물이 되게 한다.
+     아래 오버레이의 제목은 중복이라 감추고 별점만 남긴다. */
+  .book-card--typo .b-cover::before {
+    content: attr(data-title);
+    position: absolute;
+    /* 아래 3.4rem은 별점 줄 자리 — 제목은 그 위 영역의 세로 중앙에 놓아야
+       위쪽에 붙어 가운데가 텅 비어 보이지 않는다. */
+    inset: 0 0 3.4rem 0;
+    display: flex;
+    align-items: center;
+    padding: 1rem 0.85rem;
+    font-family: "Gowun Batang", serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--card-info-ink);
+    overflow: hidden;
+  }
+
+  /* 책등 위쪽에 얇은 가로선 — 실제 책등의 상단 띠를 흉내낸 디테일 */
+  .book-card--typo .b-cover::after {
+    content: "";
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 3.1rem;
+    height: 1px;
+    background: rgba(243, 238, 228, 0.28);
+  }
+
+  .book-card--typo .b-title {
+    display: none;
   }
 
   .b-overlay {
@@ -706,6 +817,12 @@
     z-index: 2;
     padding: 0.85rem 0.8rem 0.75rem;
     background: linear-gradient(to top, rgba(10, 8, 6, 0.85) 0%, rgba(10, 8, 6, 0.55) 48%, rgba(10, 8, 6, 0) 100%);
+  }
+
+  /* 책등 카드는 배경이 단색이라 그라데이션이 얼룩처럼 보인다 — 오버레이는 투명하게 두고
+     별점만 얹는다. */
+  .book-card--typo .b-overlay {
+    background: none;
   }
 
   .book-card .b-title {
@@ -753,10 +870,12 @@
 
   /* form */
 
+  /* 종이 한 장 위에 쓰는 느낌 — 둥근 모서리(6px)를 2px로 줄이고 그림자 없이
+     테두리만으로 면을 잡는다. 사이트 전체가 같은 규칙(각진 종이)을 따른다. */
   .panel {
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 1.75rem;
   }
 
@@ -768,24 +887,43 @@
     }
   }
 
+  /* "책 소개"/"한줄평·별점"과 같은 섹션 제목 규칙(위쪽 짧은 버건디 선)을 패널 제목에도
+     그대로 적용해, 화면이 달라도 제목의 생김새가 일관되게 한다. */
   .panel h2 {
+    position: relative;
     font-family: "Gowun Batang", serif;
-    margin: 0 0 1.4rem;
-    font-size: 1.4rem;
+    margin: 0 0 1.5rem;
+    padding-top: 0.8rem;
+    font-size: var(--t-title);
+  }
+
+  .panel h2::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.6rem;
+    height: 2px;
+    background: var(--accent);
   }
 
   .field {
     margin-bottom: 1.15rem;
   }
 
+  /* 라벨은 흐린 회색 대신 잉크색 + 500 굵기로. 폼에서 라벨은 읽어야 하는 정보지
+     장식이 아니다. */
   .field label {
     display: block;
-    font-size: 0.82rem;
-    color: var(--ink-soft);
-    letter-spacing: 0.03em;
-    margin-bottom: 0.4rem;
+    font-size: var(--t-meta);
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    margin-bottom: 0.35rem;
   }
 
+  /* 입력창은 카드(--paper-raised, 거의 흰 종이) 위에 놓이므로 배경을 한 단계 눌러
+     "여기에 쓴다"는 자리로 읽히게 하고, 테두리를 또렷하게 해 비활성처럼 보이지 않게 한다. */
   .field input[type="text"],
   .field input[type="email"],
   .field textarea {
@@ -795,9 +933,18 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--line);
-    border-radius: 3px;
+    border-bottom-color: var(--ink-faint);
+    border-radius: 2px;
     padding: 0.6rem 0.7rem;
     resize: vertical;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .field input[type="text"]:focus,
+  .field input[type="email"]:focus,
+  .field textarea:focus {
+    border-color: var(--accent);
+    background: var(--paper-raised);
   }
 
   .field textarea { min-height: 110px; line-height: 1.6; }
@@ -1008,6 +1155,27 @@
     display: block;
   }
 
+  /* 표지 없는 책의 상세 페이지: 목록 카드와 같은 책등 조판. 예전엔 화면의 1/3을
+     정보량 0인 단색 블록이 차지했다. */
+  .detail-cover--typo::before {
+    content: attr(data-title);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: 1.5rem 1.2rem;
+    font-family: "Gowun Batang", serif;
+    font-weight: 700;
+    font-size: 1.45rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--card-info-ink);
+    overflow: hidden;
+  }
+
+  /* (목록 카드에 있는 책등 가로선은 여기선 생략한다 — .detail-cover.cover-in::after가
+     진입 애니메이션용으로 ::after를 이미 쓰고 있어 충돌한다.) */
+
   /* 상세 페이지 진입 시, 랜덤 뽑기 결과 카드와 같은 방식(perspective + rotateY)으로
      표지가 옆에서 펼쳐지듯 나타난다. 재렌더링(8초 폴링)마다 재생되지 않도록 이 클래스는
      진입 시 한 번만 JS에서 붙였다 뗀다 (render.js의 state.detailCoverAnimatePending 참고). */
@@ -1067,11 +1235,18 @@
     }
   }
 
+  /* 책 제목은 섹션 제목이 아니라 그 페이지의 주인공이므로, .panel h2에 붙는 짧은 선은
+     빼고 크기로만 위계를 준다. */
   .detail-card h2 {
     font-family: "Gowun Batang", serif;
     font-size: clamp(1.7rem, 2.6vw, 2.05rem);
     margin: 0;
+    padding-top: 0;
     text-wrap: balance;
+  }
+
+  .detail-card h2::before {
+    content: none;
   }
 
   .detail-author { color: var(--ink-soft); margin: 0; font-size: 1.15rem; }
@@ -1132,10 +1307,22 @@
   }
 
   .book-contents h3 {
+    position: relative;
     font-family: "Gowun Batang", serif;
     font-weight: 700;
-    font-size: 1.05rem;
-    margin: 0 0 0.5rem;
+    font-size: var(--t-section);
+    margin: 0 0 0.6rem;
+    padding-top: 0.7rem;
+  }
+
+  .book-contents h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.6rem;
+    height: 2px;
+    background: var(--accent);
   }
 
   .book-contents-text {
@@ -1179,11 +1366,25 @@
     margin-top: 2.25rem;
   }
 
+  /* 섹션 제목(--t-section)은 본문과 확실히 구분되도록 명조 + 위쪽에 짧은 버건디 선을
+     둔다. 예전엔 본문과 거의 같은 무게라 어디서 섹션이 시작되는지 안 보였다. */
   .comments h3 {
+    position: relative;
     font-family: "Gowun Batang", serif;
     font-weight: 700;
-    font-size: 1.05rem;
-    margin: 0 0 0.9rem;
+    font-size: var(--t-section);
+    margin: 0 0 1.1rem;
+    padding-top: 0.7rem;
+  }
+
+  .comments h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.6rem;
+    height: 2px;
+    background: var(--accent);
   }
 
   .comments h3 .count {
@@ -1198,14 +1399,30 @@
     padding: 0;
   }
 
+  /* 한줄평 한 줄 = 책 사이에 끼운 책갈피 한 장. 왼쪽 리본이 이 서비스의 공통 표식이고
+     (.ribbon-mark, .latest-highlight-card와 같은 V자 모양), 한줄평은 버건디 / 답글은
+     클레이로 색만 달리해 원글과 답글이 색으로도 구분되게 했다.
+     absolute라 flex 아이템이 되지 않으므로 기존 order 기반 배치는 그대로다. */
   #commentList li {
+    position: relative;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
-    padding: 0.85rem 0;
+    padding: 0.85rem 0 0.85rem 0.95rem;
     border-bottom: 1px solid var(--line);
-    font-size: 0.95rem;
+    font-size: var(--t-body);
+  }
+
+  #commentList > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.95rem;
+    width: 4px;
+    height: 1.4em;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
   }
 
   /* 데스크톱 기본값: 닉네임+별점(왼쪽) · 리뷰 텍스트(가운데, 넓게) · 좋아요+답글+날짜(오른쪽)를
@@ -1313,14 +1530,27 @@
   }
 
   #commentList .c-replies li {
+    position: relative;
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
     /* 좋아요/날짜/삭제 버튼이 원댓글 줄과 세로로 맞도록 열 간격(column-gap)을
        원댓글(#commentList li)과 동일한 1rem으로 맞춘다. */
     gap: 0.35rem 1rem;
-    padding: 0.4rem 0;
-    font-size: 0.85rem;
+    padding: 0.4rem 0 0.4rem 0.85rem;
+    font-size: var(--t-meta);
+  }
+
+  /* 답글 리본은 클레이색 — 원글(버건디)과 한눈에 구분된다. */
+  #commentList .c-replies li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    width: 3px;
+    height: 1.2em;
+    background: var(--accent2);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
   }
 
   #commentList .c-reply-text {
@@ -1510,10 +1740,17 @@
     }
   }
 
+  /* 예전엔 한줄평 목록 바로 아래에 폼이 아무 구분 없이 이어져서, 남의 글과 내 입력창의
+     경계가 없었다. 살짝 다른 바탕색 + 여백으로 "내가 쓰는 자리"를 하나의 구역으로 묶는다. */
   #commentForm {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-top: 1.4rem;
+    padding: 1.1rem 1.1rem 1.2rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
   }
 
   #commentForm .field {
@@ -1569,26 +1806,17 @@
     margin: 0.35rem 0 0;
   }
 
-  .tagline-note {
-    margin: 0.3rem 0 0;
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-  }
-
-  .intro-hook {
-    margin: 0.6rem 0 0;
-    color: var(--ink-soft);
-    font-size: 0.82rem;
-  }
-
   .latest-highlight {
     display: flex;
     flex-wrap: wrap;
     gap: 0.7rem;
-    margin: 0.85rem 0 0;
+    margin: 1.4rem 0 0;
   }
 
+  /* 종이 조각 느낌: 둥근 모서리+그림자 대신 각진 카드 + 왼쪽 리본. 리본은 위 .ribbon-mark와
+     같은 V자 모양을 카드 높이 전체에 세로로 세운 형태다. */
   .latest-highlight-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -1596,34 +1824,44 @@
     min-width: 0;
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 0.65rem 0.85rem;
+    border-radius: 2px;
+    padding: 0.8rem 0.95rem 0.85rem 1.35rem;
     text-align: left;
     color: inherit;
     text-decoration: none;
     font-family: inherit;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .latest-highlight-card::before {
+    content: "";
+    position: absolute;
+    left: 0.55rem;
+    top: 0.8rem;
+    bottom: 0.8rem;
+    width: 4px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 92%, 0 100%);
   }
 
   .latest-highlight-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px var(--shadow);
+    border-color: var(--accent);
+    background: var(--paper);
   }
 
   .latest-highlight-label {
     display: inline-flex;
     align-self: flex-start;
-    color: var(--accent);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    color: var(--ink-faint);
+    font-size: var(--t-micro);
+    font-weight: 500;
+    letter-spacing: 0.04em;
   }
 
   .latest-highlight-book {
     color: var(--ink);
-    font-size: 0.82rem;
+    font-size: var(--t-meta);
   }
 
   .latest-highlight-book strong {

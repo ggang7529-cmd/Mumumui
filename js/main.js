@@ -83,6 +83,7 @@ export var dom = {
   milestoneOverlay: document.getElementById("milestoneOverlay"),
   milestoneMessage: document.getElementById("milestoneMessage"),
   latestHighlight: document.getElementById("latestHighlight"),
+  headerIntro: document.getElementById("headerIntro"),
   stickyHeader: document.getElementById("stickyHeader")
 };
 
@@ -140,6 +141,9 @@ export function showView(name) {
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
   dom.homeBtn.hidden = name !== "detail" && name !== "random";
+  // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
+  // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
+  if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
   if (name === "library") {
     stopDetailPolling(); startLibraryPolling();
     // /book/:id로 바로 들어왔다가 돌아오는 경우처럼, 책 목록이 로딩된 뒤로 한 번도

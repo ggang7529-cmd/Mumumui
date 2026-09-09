@@ -5,7 +5,11 @@ import {
 } from "./api.js";
 import { formatNicknameShort, formatNicknameFull } from "./levels.js";
 
-var COVERS = ["#5B6B4F", "#3F5A6B", "#7C5A3A", "#6B4357", "#4A6B5C", "#7A4B3A"];
+// 표지 없는 책의 "책등" 배경색. 예전엔 녹색·청색·남색까지 섞인 6색이라 브랜드 색과
+// 무관한 무지개가 됐다 — 버건디에서 클레이/탠으로 이어지는 같은 계열 5색으로 좁혀,
+// 서로 구분은 되면서 서가 전체가 한 톤으로 읽히게 한다. 전부 크림색 활자를 얹어도
+// 대비가 충분한 중간~어두운 명도로 골랐다.
+var COVERS = ["#6E2733", "#8C3A38", "#A85C46", "#7A4A52", "#6B5240"];
 
 export function coverFor(title) {
   var hash = 0;
@@ -304,7 +308,8 @@ export function renderLibrary() {
     var rating = bookRating(r);
     var card = document.createElement("a");
     card.href = "/book/" + encodeURIComponent(r.id);
-    card.className = "book-card";
+    // 표지 이미지가 없으면 제목을 크게 조판한 "책등"으로 보여준다(css의 .book-card--typo).
+    card.className = r.cover ? "book-card" : "book-card book-card--typo";
     card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
       (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
 
@@ -316,6 +321,9 @@ export function renderLibrary() {
     var coverBox = document.createElement("div");
     coverBox.className = "b-cover";
     coverBox.style.setProperty("--cover", coverFor(r.title));
+    // 표지가 없을 때 CSS(.book-card--typo .b-cover::before)가 content: attr(data-title)로
+    // 읽어 책등에 제목을 찍는다.
+    coverBox.dataset.title = r.title;
 
     if (r.cover) {
       var img = document.createElement("img");
@@ -502,6 +510,9 @@ export function renderDetail() {
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";
   $detailCover.style.setProperty("--cover", coverFor(r.title));
+  // 목록 카드와 같은 규칙: 표지가 없으면 제목을 조판한 책등으로 보여준다.
+  $detailCover.dataset.title = r.title;
+  $detailCover.classList.toggle("detail-cover--typo", !r.cover);
   if (r.cover) {
     var coverImg = document.createElement("img");
     coverImg.src = upscaleCover(r.cover);
