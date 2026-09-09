@@ -585,11 +585,11 @@ function bookIdFromPath(pathname) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-// 모바일에서만 의미가 있는 스크롤 방향 기반 헤더 숨김/노출 (css/style.css의
-// @media (max-width: 640px) .sticky-header.header-hidden 규칙에서만 실제로 보이므로,
-// PC 폭에서는 클래스가 붙어도 시각적으로 아무 효과가 없다 — 뷰포트 분기를 여기서 따로
-// 할 필요가 없다). 헤더 높이만큼 스크롤하기 전까지는 숨기지 않고, 위로 스크롤하면 즉시
-// 다시 보여준다.
+// 헤더가 두 줄로 접히는 폭(모바일·태블릿)에서 의미가 있는 스크롤 방향 기반 헤더
+// 숨김/노출 (css/style.css의 @media (max-width: 900px) .sticky-header.header-hidden
+// 규칙에서만 실제로 보이므로, PC 폭에서는 클래스가 붙어도 시각적으로 아무 효과가 없다
+// — 뷰포트 분기를 여기서 따로 할 필요가 없다). 헤더 높이만큼 스크롤하기 전까지는
+// 숨기지 않고, 위로 스크롤하면 즉시 다시 보여준다.
 var lastScrollY = window.scrollY;
 var SCROLL_HIDE_DELTA = 8;
 window.addEventListener("scroll", function () {
