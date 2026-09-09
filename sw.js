@@ -9,7 +9,7 @@
 // - 그래도 정적 자산 목록 자체가 바뀌는(파일 추가/삭제) 배포에서는 아래
 //   CACHE_VERSION을 올려야 한다 — 배포마다 새 캐시 이름이 만들어지고,
 //   activate 시점에 이전 버전 캐시가 전부 삭제된다.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const STATIC_CACHE = `galpi-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
