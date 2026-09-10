@@ -1,5 +1,13 @@
 import { fetchScoreMap } from "../_lib/scores.js";
-import { formatNicknameShort } from "../_lib/levels.js";
+import { getLevel, formatNicknameShort } from "../_lib/levels.js";
+
+// index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
+// index.html을 읽어 치환하는 방식이라 스프라이트가 이미 페이지 안에 들어 있다.
+// name/className은 코드가 직접 넘기는 고정 값이라 이스케이프할 사용자 입력이 없다.
+function iconSvg(name, className) {
+  return '<svg class="icon' + (className ? " " + className : "") +
+    '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"></use></svg>';
+}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
@@ -187,12 +195,17 @@ export async function onRequestGet(context) {
       commentCountText = "(" + topLevelComments.length + ")";
       var scoreMap = await fetchScoreMap(env);
       commentListHtml = topLevelComments.map(function (c) {
-        var stars = "";
-        for (var i = 1; i <= 5; i++) stars += i <= c.rating ? "★" : "☆";
-        var nameWithLevel = formatNicknameShort(c.author_name || "책갈피 사용자", scoreMap[c.author_name] || 0);
+        var starsHtml = "";
+        for (var i = 1; i <= 5; i++) {
+          starsHtml += iconSvg("star", "star-icon" + (i <= c.rating ? " is-filled" : ""));
+        }
+        var authorName = c.author_name || "책갈피 사용자";
+        var score = scoreMap[c.author_name] || 0;
+        var lvl = getLevel(score);
         return (
-          "<li><strong>" + escapeHtml(nameWithLevel) + "</strong> " +
-          escapeHtml(stars) + " " + escapeHtml(c.text) + "</li>"
+          "<li><strong>" + iconSvg(lvl.icon, "lv-icon lv-icon--" + lvl.icon) +
+          escapeHtml(formatNicknameShort(authorName, score)) + "</strong> " +
+          starsHtml + " " + escapeHtml(c.text) + "</li>"
         );
       }).join("");
     }

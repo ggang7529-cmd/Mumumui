@@ -29,6 +29,13 @@
     --btn-fill-ink: #FBF8F2;
     --btn-alt: #A85C46;
     --btn-alt-hover: #BE6D54;
+    /* 등급 아이콘 5티어 색. 브랜드 계열 안에서 입문(밝은 클레이) → 전설(가장 깊은 버건디)로
+       점점 진해지게 잡아, 모양뿐 아니라 색으로도 등급이 올라간 게 읽히게 한다. */
+    --lv-bookmark: #A85C46;
+    --lv-books: #A84A52;
+    --lv-ghost: #7A4A52;
+    --lv-owl: #8C3A38;
+    --lv-crown: #6E2733;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -52,6 +59,13 @@
       --btn-fill-ink: #FBEDED;
       --btn-alt: #A15942;
       --btn-alt-hover: #B96A4F;
+      /* 어두운 바탕에서는 같은 순서로 흐린 톤 → 밝은 톤으로 올라간다(라이트의 반대 방향이
+         아니라, 낮은 등급이 눈에 덜 띄고 높은 등급이 도드라진다는 관계를 유지한 것). */
+      --lv-bookmark: #C08268;
+      --lv-books: #CE7F86;
+      --lv-ghost: #C295A0;
+      --lv-owl: #E0918C;
+      --lv-crown: #F0B9BE;
     }
   }
 
@@ -75,6 +89,13 @@
     --btn-fill-ink: #FBEDED;
     --btn-alt: #A15942;
     --btn-alt-hover: #B96A4F;
+    /* 어두운 바탕에서는 같은 순서로 흐린 톤 → 밝은 톤으로 올라간다(라이트의 반대 방향이
+       아니라, 낮은 등급이 눈에 덜 띄고 높은 등급이 도드라진다는 관계를 유지한 것). */
+    --lv-bookmark: #C08268;
+    --lv-books: #CE7F86;
+    --lv-ghost: #C295A0;
+    --lv-owl: #E0918C;
+    --lv-crown: #F0B9BE;
   }
 
   * { box-sizing: border-box; }
@@ -107,6 +128,89 @@
     max-width: 920px;
     margin: 0 auto;
     padding: 2.5rem 1.5rem 5rem;
+  }
+
+  /* icons */
+
+  /* 선형 아이콘 공통 규격. 크기를 em으로 묶어두면 놓이는 자리의 font-size를 그대로
+     따라가므로 자리마다 픽셀을 다시 잡을 필요가 없다. vertical-align은 글자 가운데에
+     맞춘다 — 기본값(baseline)이면 아이콘이 글자보다 아래로 처져 보인다.
+     path의 stroke는 currentColor라 색은 놓이는 자리의 color가 정한다. */
+  .icon {
+    width: 1.05em;
+    height: 1.05em;
+    flex: none;
+    vertical-align: -0.19em;
+    /* fill을 심볼의 fill="none" 속성이 아니라 여기서 준다. 프리젠테이션 속성은 상속값을
+       이기기 때문에, 심볼 path에 fill="none"이 박혀 있으면 .star-icon.is-filled에서
+       fill: currentColor를 줘도 안쪽이 칠해지지 않는다(별이 전부 빈 별로 나왔다). */
+    fill: none;
+  }
+
+  /* 스프라이트 정의용 svg는 자리를 차지하면 안 된다. width=0으로도 대개 사라지지만,
+     일부 브라우저가 인라인 요소로 한 줄을 잡는 경우가 있어 확실히 접어둔다. */
+  .icon-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* 별점: 채운 별과 빈 별이 같은 path를 쓰고 안쪽을 칠하는지만 다르다. 별 모양이 서로
+     어긋나지 않아 5칸이 정확히 같은 폭으로 나란히 선다. */
+  .star-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--ink-faint);
+  }
+
+  .star-icon.is-filled {
+    color: var(--accent);
+    fill: currentColor;
+  }
+
+  .star-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.06em;
+  }
+
+  /* 별점 선택 위젯 안에서는 아이콘이 자기 색을 고집하지 않고 버튼 색을 따라간다 —
+     .star-picker button이 이미 기본/선택(.filled)/호버 색을 다 갖고 있어서, 그 규칙을
+     그대로 쓰는 편이 색을 두 군데서 관리하지 않아도 된다. */
+  .star-picker button .star-icon {
+    color: inherit;
+  }
+
+  /* 책 표지(책등) 위에 얹히는 별점은 어두운 바탕이라 버건디로는 안 읽힌다 — 크림색으로
+     바꾸고, 빈 별은 같은 크림을 옅게 깔아 채운 별과 구분되게 한다. */
+  .book-card .b-stars .star-icon {
+    color: #FBF8F2;
+  }
+
+  .book-card .b-stars .star-icon:not(.is-filled) {
+    color: rgba(251, 248, 242, 0.5);
+  }
+
+  /* 등급 아이콘. 티어마다 색을 달리 줘서 모양과 색 두 가지로 등급이 구분된다. */
+  .lv-icon {
+    margin-right: 0.24em;
+  }
+
+  .lv-icon--bookmark { color: var(--lv-bookmark); }
+  .lv-icon--books { color: var(--lv-books); }
+  .lv-icon--ghost { color: var(--lv-ghost); }
+  .lv-icon--owl { color: var(--lv-owl); }
+  .lv-icon--crown { color: var(--lv-crown); }
+
+  /* 좋아요 하트: 누르지 않은 상태는 윤곽선만, 누르면 안쪽까지 칠해진다. */
+  .like-icon {
+    width: 0.95em;
+    height: 0.95em;
+  }
+
+  .liked .like-icon {
+    fill: currentColor;
   }
 
   /* header */
@@ -854,8 +958,10 @@
      빠듯해 끝이 말줄임(...)으로 잘릴 수 있다 — white-space: nowrap +
      text-overflow: ellipsis로 넘쳐도 레이아웃은 깨지지 않게만 막아둔 것. */
   .book-card .b-stars {
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
     font-size: 0.95rem;
-    letter-spacing: 0.01em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
@@ -1265,7 +1371,8 @@
 
   .detail-author { color: var(--ink-soft); margin: 0; font-size: 1.15rem; }
 
-  .stars { color: var(--accent); letter-spacing: 0.08em; font-size: 1.5rem; }
+  /* 별점이 이제 svg라 letter-spacing이 안 먹는다 — 간격은 flex gap으로 준다. */
+  .stars { color: var(--accent); font-size: 1.5rem; display: flex; align-items: center; gap: 0.12em; }
   .stars .empty { color: var(--ink-faint); }
 
   .rating-line {
@@ -1454,9 +1561,11 @@
   #commentList .c-rating {
     order: 2;
     flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.08em;
     color: var(--accent);
     font-size: 1.05rem;
-    letter-spacing: 0.06em;
     margin-right: 0.35rem;
   }
 
@@ -1885,7 +1994,6 @@
   .latest-highlight-stars {
     color: var(--accent);
     font-size: 0.78rem;
-    letter-spacing: 0.05em;
   }
 
   .latest-highlight-text {

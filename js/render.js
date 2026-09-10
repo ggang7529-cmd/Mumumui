@@ -3,13 +3,32 @@ import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
 } from "./api.js";
-import { formatNicknameShort, formatNicknameFull } from "./levels.js";
+import { getLevel, formatNicknameShort, formatNicknameFull } from "./levels.js";
 
 // 표지 없는 책의 "책등" 배경색. 예전엔 녹색·청색·남색까지 섞인 6색이라 브랜드 색과
 // 무관한 무지개가 됐다 — 버건디에서 클레이/탠으로 이어지는 같은 계열 5색으로 좁혀,
 // 서로 구분은 되면서 서가 전체가 한 톤으로 읽히게 한다. 전부 크림색 활자를 얹어도
 // 대비가 충분한 중간~어두운 명도로 골랐다.
 var COVERS = ["#6E2733", "#8C3A38", "#A85C46", "#7A4A52", "#6B5240"];
+
+// index.html 상단 스프라이트에 정의된 선형 아이콘을 <svg><use></svg> 한 벌로 만들어 준다.
+// 크기·색은 CSS(.icon)가 정하고, stroke는 currentColor라 놓이는 자리의 글자색을 따라간다.
+// SVG는 HTML과 네임스페이스가 달라서 document.createElement로는 못 만든다 — createElementNS 필수.
+var SVG_NS = "http://www.w3.org/2000/svg";
+var XLINK_NS = "http://www.w3.org/1999/xlink";
+
+export function buildIcon(name, className) {
+  var svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "icon" + (className ? " " + className : ""));
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  var use = document.createElementNS(SVG_NS, "use");
+  use.setAttribute("href", "#i-" + name);
+  // 사파리 12 이전은 SVG2의 href를 모르고 xlink:href만 읽는다. 둘 다 적어두면 양쪽에서 뜬다.
+  use.setAttributeNS(XLINK_NS, "xlink:href", "#i-" + name);
+  svg.appendChild(use);
+  return svg;
+}
 
 export function coverFor(title) {
   var hash = 0;
@@ -18,11 +37,13 @@ export function coverFor(title) {
 }
 
 // 댓글/답글 작성자 닉네임 span을 공통으로 만든다. 별점·좋아요·날짜까지 같이 붙는 줄이라
-// "이모지 레벨 닉네임" 축약형으로 표시한다 (예: "📚 6 이과생").
+// "등급아이콘 레벨 닉네임" 축약형으로 표시한다 (예: 책아이콘 + "6 이과생").
+// 닉네임은 사용자 입력이므로 textContent로만 넣는다 — innerHTML로 조립하지 않는다.
 function buildAuthorChip(name, score, className) {
   var span = document.createElement("span");
   span.className = className;
-  span.textContent = formatNicknameShort((name || "").trim(), score);
+  span.appendChild(buildIcon(getLevel(score).icon, "lv-icon lv-icon--" + getLevel(score).icon));
+  span.appendChild(document.createTextNode(formatNicknameShort((name || "").trim(), score)));
   return span;
 }
 
@@ -65,6 +86,12 @@ export function findBook(id) {
   return null;
 }
 
+// 별점 하나를 그린다. 채운 별과 빈 별은 같은 선형 아이콘을 쓰고 CSS에서 안쪽을 칠할지만
+// 다르게 한다(.star-icon.is-filled) — 모양이 어긋나지 않아 5칸이 나란히 맞는다.
+function buildStarIcon(filled) {
+  return buildIcon("star", "star-icon" + (filled ? " is-filled" : ""));
+}
+
 export function renderStars(container, rating, interactive, onSelect) {
   container.innerHTML = "";
   for (var i = 1; i <= 5; i++) {
@@ -73,7 +100,7 @@ export function renderStars(container, rating, interactive, onSelect) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = filled ? "filled" : "";
-      btn.textContent = filled ? "★" : "☆";
+      btn.appendChild(buildStarIcon(filled));
       btn.setAttribute("aria-label", i + "점");
       btn.addEventListener("click", function (idx) {
         return function () { onSelect(idx); };
@@ -82,10 +109,18 @@ export function renderStars(container, rating, interactive, onSelect) {
     } else {
       var span = document.createElement("span");
       span.className = filled ? "" : "empty";
-      span.textContent = filled ? "★" : "☆";
+      span.appendChild(buildStarIcon(filled));
       container.appendChild(span);
     }
   }
+}
+
+// 카드/하이라이트처럼 별 5개를 한 덩어리로만 보여주는 자리에서 쓴다.
+export function buildStarRow(rating, className) {
+  var wrap = document.createElement("span");
+  wrap.className = className || "star-row";
+  for (var i = 1; i <= 5; i++) wrap.appendChild(buildStarIcon(i <= rating));
+  return wrap;
 }
 
 export function selectBook(b) {
@@ -172,7 +207,9 @@ export function renderAuthBox() {
       savedChip.className = "user-chip";
       var savedName = document.createElement("span");
       savedName.className = "user-name";
-      savedName.textContent = formatNicknameFull(nickname, state.myScore);
+      var myLevel = getLevel(state.myScore);
+      savedName.appendChild(buildIcon(myLevel.icon, "lv-icon lv-icon--" + myLevel.icon));
+      savedName.appendChild(document.createTextNode(formatNicknameFull(nickname, state.myScore)));
       savedChip.appendChild(savedName);
       $box.appendChild(savedChip);
     }
@@ -352,9 +389,8 @@ export function renderLibrary() {
     var starsEl = document.createElement("div");
     starsEl.className = "b-stars";
     if (rating) {
-      var stars = "";
-      for (var i = 1; i <= 5; i++) stars += i <= Math.round(rating.avg) ? "★" : "☆";
-      starsEl.textContent = stars + " " + rating.avg.toFixed(1) + " (" + rating.count + ")";
+      starsEl.appendChild(buildStarRow(Math.round(rating.avg)));
+      starsEl.appendChild(document.createTextNode(" " + rating.avg.toFixed(1) + " (" + rating.count + ")"));
     } else {
       starsEl.textContent = "평점 없음";
     }
@@ -413,9 +449,7 @@ export function renderLatestHighlight() {
 
     var starsEl = document.createElement("div");
     starsEl.className = "latest-highlight-stars";
-    var stars = "";
-    for (var i = 1; i <= 5; i++) stars += i <= r.rating ? "★" : "☆";
-    starsEl.textContent = stars;
+    starsEl.appendChild(buildStarRow(r.rating));
 
     var textEl = document.createElement("p");
     textEl.className = "latest-highlight-text";
@@ -600,15 +634,14 @@ export function renderDetail() {
       var ratingSpan = document.createElement("span");
       ratingSpan.className = "c-rating";
       if (typeof c.rating === "number") {
-        var ratingStars = "";
-        for (var i = 1; i <= 5; i++) ratingStars += i <= c.rating ? "★" : "☆";
-        ratingSpan.textContent = ratingStars;
+        for (var i = 1; i <= 5; i++) ratingSpan.appendChild(buildStarIcon(i <= c.rating));
       }
 
       var likeBtn = document.createElement("button");
       likeBtn.type = "button";
       likeBtn.className = "c-like" + (c.likedByMe ? " liked" : "");
-      likeBtn.textContent = "♥ " + c.likes;
+      likeBtn.appendChild(buildIcon("heart", "like-icon"));
+      likeBtn.appendChild(document.createTextNode(String(c.likes)));
       likeBtn.setAttribute("aria-pressed", c.likedByMe ? "true" : "false");
       likeBtn.setAttribute("aria-label", "좋아요 " + c.likes + "개");
       likeBtn.addEventListener("click", function () {
@@ -633,7 +666,7 @@ export function renderDetail() {
         var delBtn = document.createElement("button");
         delBtn.className = "c-del";
         delBtn.type = "button";
-        delBtn.textContent = "🗑";
+        delBtn.appendChild(buildIcon("trash"));
         delBtn.setAttribute("aria-label", "댓글 삭제");
         delBtn.addEventListener("click", function () {
           api("/api/comments/" + c.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
@@ -664,7 +697,8 @@ export function renderDetail() {
         var rLikeBtn = document.createElement("button");
         rLikeBtn.type = "button";
         rLikeBtn.className = "c-reply-like" + (r.likedByMe ? " liked" : "");
-        rLikeBtn.textContent = "♥ " + r.likes;
+        rLikeBtn.appendChild(buildIcon("heart", "like-icon"));
+        rLikeBtn.appendChild(document.createTextNode(String(r.likes)));
         rLikeBtn.setAttribute("aria-pressed", r.likedByMe ? "true" : "false");
         rLikeBtn.setAttribute("aria-label", "좋아요 " + r.likes + "개");
         rLikeBtn.addEventListener("click", function () {
@@ -697,7 +731,7 @@ export function renderDetail() {
           var rDelBtn = document.createElement("button");
           rDelBtn.type = "button";
           rDelBtn.className = "c-reply-del";
-          rDelBtn.textContent = "🗑";
+          rDelBtn.appendChild(buildIcon("trash"));
           rDelBtn.setAttribute("aria-label", "답글 삭제");
           rDelBtn.addEventListener("click", function () {
             api("/api/comments/" + r.id, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
