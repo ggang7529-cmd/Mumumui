@@ -19,12 +19,18 @@
     })(window, document, "clarity", "script", "y87i3pjxhj");
 </script>
 <meta charset="UTF-8">
-<title>책갈피</title>
-<meta name="description" content="읽은 책마다 별점과 한 줄 감상을 남겨두는 개인 서재">
+<!-- 아래 <title>과 description 두 줄은 functions/book/[id].js가 문자열을 그대로 매칭해서
+     책 전용 값으로 치환한다. 여기 문구를 고치면 그쪽 replace 대상도 같이 고쳐야 한다 —
+     안 그러면 조용히 매칭에 실패해서 모든 책 페이지가 홈 제목을 달고 나간다. -->
+<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>
+<meta name="description" content="가입 없이 닉네임만으로 참여하는 책 리뷰 커뮤니티. 읽은 책에 별점과 한 줄 감상을 남기고, 다른 사람들이 남긴 한줄평을 구경하며 다음에 읽을 책을 골라보세요.">
 <meta name="naver-site-verification" content="a3a270dd6f23ff31a2c9bf4238b56be2e6150aa4" />
 <meta name="google-site-verification" content="ZQWLLFnK1YHe9O1ycKM_kWESA4qpEpgUJK0POgndoJU" />
 <link rel="canonical" href="https://galpi.pages.dev/">
 <link rel="alternate" type="application/rss+xml" title="책갈피 - 최근 등록된 책 리뷰" href="/rss.xml">
+<!-- og:site_name은 일부러 아래 og 블록 바깥에 둔다. 그 블록은 책 페이지에서 통째로
+     교체되는데, 사이트 이름은 어느 페이지에서나 같아야 해서 살아남아야 한다. -->
+<meta property="og:site_name" content="책갈피">
 <meta property="og:title" content="책갈피 - 읽은 책마다 별점과 한 줄 감상을 남겨보세요">
 <meta property="og:description" content="닉네임만 입력하면 누구나 참여할 수 있는 책 리뷰 커뮤니티. 읽은 책을 등록하고 별점과 한 줄 감상을 남겨보세요.">
 <meta property="og:image" content="https://galpi.pages.dev/og-image.png">
@@ -46,6 +52,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- 사이트 자체를 설명하는 구조화 데이터. 검색 결과에 출처 이름이 "Cloudflare"(호스팅
+     업체)로 뜨던 걸 "책갈피"로 잡아주는 것이 주 목적이다. 책 페이지에도 그대로 남는데,
+     WebSite는 페이지가 아니라 사이트를 설명하는 타입이라 중복이 아니다.
+     sitelinks 검색창을 노리는 SearchAction은 넣지 않았다 — 지금 사이트 검색은 이미 불러온
+     목록을 걸러내는 클라이언트 동작이라 "?q=..." 같은 검색 결과 주소가 없다. 없는 주소를
+     적어두면 잘못된 정보가 된다. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "책갈피",
+  "alternateName": "galpi",
+  "url": "https://galpi.pages.dev/",
+  "inLanguage": "ko-KR",
+  "description": "가입 없이 닉네임만으로 참여하는 책 리뷰 커뮤니티. 읽은 책에 별점과 한 줄 감상을 남기고, 다른 사람들이 남긴 한줄평을 구경하며 다음에 읽을 책을 골라보세요.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "책갈피",
+    "url": "https://galpi.pages.dev/",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://galpi.pages.dev/apple-touch-icon.png"
+    }
+  }
+}
+</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

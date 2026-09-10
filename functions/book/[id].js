@@ -214,9 +214,9 @@ export async function onRequestGet(context) {
   }
 
   html = html
-    .replace("<title>책갈피</title>", "<title>" + title + "</title>")
+    .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
     .replace(
-      '<meta name="description" content="읽은 책마다 별점과 한 줄 감상을 남겨두는 개인 서재">',
+      '<meta name="description" content="가입 없이 닉네임만으로 참여하는 책 리뷰 커뮤니티. 읽은 책에 별점과 한 줄 감상을 남기고, 다른 사람들이 남긴 한줄평을 구경하며 다음에 읽을 책을 골라보세요.">',
       '<meta name="description" content="' + desc + '">'
     )
     .replace(
