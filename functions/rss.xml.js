@@ -8,7 +8,8 @@ function escapeXml(s) {
 // 발견하도록, 신간 20권만 담는다 (전체 목록은 sitemap.xml이 이미 담당).
 var ITEM_LIMIT = 20;
 
-export async function onRequestGet(context) {
+// GET/HEAD 둘 다 이 함수가 받는다 — 이유는 functions/sitemap.xml.js 주석 참고.
+async function handle(context) {
   var env = context.env;
   var origin = new URL(context.request.url).origin;
 
@@ -59,5 +60,13 @@ export async function onRequestGet(context) {
     items.join("\n") +
     "\n</channel>\n</rss>";
 
-  return new Response(xml, { headers: { "Content-Type": "application/rss+xml; charset=UTF-8" } });
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/rss+xml; charset=UTF-8",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }
+
+export const onRequestGet = handle;
+export const onRequestHead = handle;

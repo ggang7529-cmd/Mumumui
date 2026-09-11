@@ -9,7 +9,7 @@
 // - 그래도 정적 자산 목록 자체가 바뀌는(파일 추가/삭제) 배포에서는 아래
 //   CACHE_VERSION을 올려야 한다 — 배포마다 새 캐시 이름이 만들어지고,
 //   activate 시점에 이전 버전 캐시가 전부 삭제된다.
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const STATIC_CACHE = `galpi-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
@@ -58,6 +58,9 @@ self.addEventListener("message", (event) => {
 
 const STATIC_ASSET_RE = /\.(css|js|png|jpe?g|svg|webp|gif|ico|woff2?|json)$/;
 
+// robots.txt / sitemap.xml / rss.xml 등 검색엔진이 직접 가져가는 파일.
+const CRAWLER_FILE_RE = /^\/(robots\.txt|sitemap\.xml|rss\.xml)$/;
+
 function isNavigationRequest(request) {
   return (
     request.mode === "navigate" ||
@@ -72,6 +75,15 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+
+  // 크롤러용 파일은 서비스워커를 태우지 않고 네트워크로 그대로 내보낸다.
+  //
+  // 검색엔진 크롤러 자체는 서비스워커를 실행하지 않으므로 이게 크롤링 실패의 원인은
+  // 아니다. 다만 사람이 주소창에 /sitemap.xml을 치면 그건 navigate 요청이라 아래
+  // isNavigationRequest 분기에 걸리고, 네트워크가 잠깐 끊기면 offline.html(HTML)이
+  // 사이트맵 자리에 응답으로 나간다 — 사이트맵 주소에서 HTML을 받는 건 어느 쪽에도
+  // 도움이 안 된다. 그래서 아예 워커가 손대지 않게 먼저 빼둔다.
+  if (CRAWLER_FILE_RE.test(url.pathname)) return;
 
   if (isNavigationRequest(request)) {
     event.respondWith(
