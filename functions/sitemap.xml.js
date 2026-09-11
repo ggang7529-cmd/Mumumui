@@ -1,5 +1,24 @@
+// 잘못된 값에는 예외 대신 null을 준다. new Date(x).toISOString()은 x가 undefined거나
+// NaN이거나 Date가 표현할 수 있는 범위를 벗어나면 RangeError를 던진다. 예전에는 이
+// 함수를 try/catch 바깥에서 부르고 있어서, 책 한 권의 타임스탬프만 이상해도 사이트맵
+// 전체가 500으로 죽었다.
 function toIsoDate(ms) {
-  return new Date(ms).toISOString().slice(0, 10);
+  var d = new Date(ms);
+  if (isNaN(d.getTime())) return null;
+  var year = d.getUTCFullYear();
+  // 1995년(사이트맵 표준이 생기기 한참 전)보다 이르거나 먼 미래의 날짜는 데이터가
+  // 깨졌다는 신호다. 그런 lastmod를 넣느니 아예 빼는 편이 낫다 — lastmod는 선택 항목이라
+  // 없어도 유효한 사이트맵이다.
+  if (year < 1995 || year > new Date().getUTCFullYear() + 1) return null;
+  return d.toISOString().slice(0, 10);
+}
+
+// <loc>에 들어가는 값을 XML로 안전하게 만든다. 지금은 id가 UUID라 위험한 문자가 없지만,
+// 여기서 막아두면 나중에 id 규칙이 바뀌어도 사이트맵이 깨지지 않는다.
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c];
+  });
 }
 
 // GET과 HEAD를 같은 핸들러로 처리한다.
@@ -24,13 +43,23 @@ async function handle(context) {
     // 처리해버린다.
   }
 
-  var urls = ["<url><loc>" + origin + "/</loc></url>"];
+  // 한 권이 잘못돼도 그 한 줄만 빠지고 나머지는 살아남게 한 권씩 처리한다. 사이트맵은
+  // 전부 아니면 전무가 아니라서, 60권 중 1권이 이상하다고 60권을 다 잃을 이유가 없다.
+  var urls = ["<url><loc>" + escapeXml(origin) + "/</loc></url>"];
   for (var i = 0; i < books.length; i++) {
-    var b = books[i];
-    var lastmodMs = b.updated_at && b.updated_at > 0 ? b.updated_at : b.created_at;
-    urls.push(
-      "<url><loc>" + origin + "/book/" + encodeURIComponent(b.id) + "</loc><lastmod>" + toIsoDate(lastmodMs) + "</lastmod></url>"
-    );
+    try {
+      var b = books[i];
+      if (!b || !b.id) continue;
+      var lastmodMs = b.updated_at && b.updated_at > 0 ? b.updated_at : b.created_at;
+      var lastmod = toIsoDate(lastmodMs);
+      urls.push(
+        "<url><loc>" + escapeXml(origin + "/book/" + encodeURIComponent(b.id)) + "</loc>" +
+        (lastmod ? "<lastmod>" + lastmod + "</lastmod>" : "") +
+        "</url>"
+      );
+    } catch (rowErr) {
+      // 이 책만 건너뛴다.
+    }
   }
 
   var xml =
