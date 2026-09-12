@@ -80,7 +80,9 @@ export function normalizeBook(row) {
     id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, contents: row.contents || "",
     category: row.category || "", text: row.text,
     ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
-    ownerUid: row.owner_uid, ownerName: row.owner_name, ownerPhoto: row.owner_photo,
+    // ownerUid는 더 이상 서버가 내려주지 않는다(남의 uid를 알면 그 사람 한줄평을 지울 수
+    // 있어서). 화면에서도 쓰지 않던 값이라 함께 뺐다.
+    ownerName: row.owner_name, ownerPhoto: row.owner_photo,
     createdAt: row.created_at, updatedAt: row.updated_at || row.created_at
   };
 }
@@ -88,7 +90,11 @@ export function normalizeBook(row) {
 export function normalizeComment(row) {
   return {
     id: row.id, text: row.text, rating: row.rating,
-    authorUid: row.author_uid, authorName: row.author_name, authorPhoto: row.author_photo,
+    // 예전에는 authorUid를 받아와 내 uid와 직접 비교했는데, 그러려면 서버가 모든 사람의
+    // uid를 내려줘야 했고 그게 곧 삭제 권한을 통째로 넘겨주는 꼴이었다. 이제 비교는
+    // 서버가 하고 결과(mine)만 받는다.
+    mine: !!row.mine,
+    authorName: row.author_name, authorPhoto: row.author_photo,
     authorScore: row.score || 0,
     createdAt: row.created_at, likes: row.likes, likedByMe: !!row.liked_by_me,
     parentId: row.parent_id || null

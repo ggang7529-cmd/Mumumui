@@ -662,7 +662,9 @@ export function renderDetail() {
       item.appendChild(likeBtn);
       item.appendChild(dateSpan);
 
-      if (myUid() === c.authorUid || isAdminMode()) {
+      // 내 댓글인지는 서버가 판단해서 mine으로 내려준다(예전엔 uid를 받아와 직접
+      // 비교했는데, 그러려면 모든 사람의 uid가 공개돼야 했다).
+      if (c.mine || isAdminMode()) {
         var delBtn = document.createElement("button");
         delBtn.className = "c-del";
         delBtn.type = "button";
@@ -727,7 +729,7 @@ export function renderDetail() {
         rItem.appendChild(rReplyBtnSpacer);
         rItem.appendChild(rDate);
 
-        if (myUid() === r.authorUid || isAdminMode()) {
+        if (r.mine || isAdminMode()) {
           var rDelBtn = document.createElement("button");
           rDelBtn.type = "button";
           rDelBtn.className = "c-reply-del";

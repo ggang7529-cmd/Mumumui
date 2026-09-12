@@ -8,9 +8,12 @@ import { fetchLibraryCategory } from "../../_lib/libraryCategory.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
+  // owner_uid는 내려주지 않는다. 책을 등록하면 같은 uid로 첫 한줄평이 함께 만들어지므로
+  // (아래 onRequestPost), 이 값이 공개되면 그대로 X-Anon-Id에 넣어 그 사람의 한줄평을
+  // 지울 수 있다. 클라이언트도 쓰지 않는 값이라 아예 select에서 뺀다.
   var rows = await env.DB.prepare(
     "SELECT id, title, author, cover, isbn, contents, category, text, rating_sum, rating_count, comment_count, " +
-    "owner_uid, owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
+    "owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
 }
@@ -72,7 +75,9 @@ export async function onRequestPost(context) {
       id: id, title: title, author: author, cover: cover, isbn: isbn || null, contents: contents || null,
       category: category || null, text: text,
       rating_sum: rating, rating_count: 1, comment_count: 1,
-      owner_uid: uid, owner_name: name, owner_photo: null, created_at: now, updated_at: now
+      // owner_uid는 목록 API와 마찬가지로 돌려주지 않는다 — 클라이언트가 쓰지 않고,
+      // 응답 모양을 목록과 맞춰두는 편이 나중에 실수로 다시 새어나갈 여지를 줄인다.
+      owner_name: name, owner_photo: null, created_at: now, updated_at: now
     },
     // 위에서 isbn/제목 중복 체크를 이미 통과했으므로, 여기까지 오는 모든 생성은 정의상
     // "이 책의 첫 등록"이다. 클라이언트가 첫 등록자 축하 메시지를 띄우는 데 쓴다.

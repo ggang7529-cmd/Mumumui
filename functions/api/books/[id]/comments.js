@@ -18,8 +18,34 @@ export async function onRequestGet(context) {
   // 활동 점수/등급 표시(js/render.js buildAuthorChip)용으로 작성자 닉네임마다 현재 점수를
   // 함께 내려준다.
   var scoreMap = await fetchScoreMap(env);
+
+  // author_uid는 절대 응답에 싣지 않는다.
+  //
+  // 댓글 삭제 권한은 X-Anon-Id 헤더 하나만 보고 판단한다(로그인이 없는 사이트라
+  // functions/_lib/identity.js가 그 값을 그대로 신뢰한다). 그래서 남의 uid를 알면
+  // 그 값을 헤더에 넣는 것만으로 남의 댓글을 지울 수 있다. uid 자체는 랜덤 UUID라
+  // 원래는 알아낼 방법이 없는데, 예전에는 이 목록 API가 모든 작성자의 author_uid를
+  // 그대로 내려주고 있어서 누구나 읽어갈 수 있었다.
+  //
+  // 클라이언트는 삭제 버튼을 그릴지 정하려고 "내 댓글인가"만 알면 되므로, 비교는
+  // 서버에서 하고 결과를 boolean(mine)으로만 내려준다.
+  //
+  // 스프레드(Object.assign) 대신 필요한 필드를 하나씩 적는다 — 나중에 comments 테이블에
+  // 컬럼이 추가돼도 모르는 사이에 응답으로 새어나가지 않게 하려는 것이다.
   var comments = (rows.results || []).map(function (c) {
-    return Object.assign({}, c, { score: scoreMap[c.author_name] || 0 });
+    return {
+      id: c.id,
+      text: c.text,
+      rating: c.rating,
+      author_name: c.author_name,
+      author_photo: c.author_photo,
+      created_at: c.created_at,
+      parent_id: c.parent_id,
+      likes: c.likes,
+      liked_by_me: c.liked_by_me,
+      mine: !!myUid && c.author_uid === myUid,
+      score: scoreMap[c.author_name] || 0
+    };
   });
 
   return json({ comments: comments });
