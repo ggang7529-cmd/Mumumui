@@ -1,6 +1,6 @@
 import { json } from "../../_lib/db.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
-import { fetchLibraryCategory } from "../../_lib/libraryCategory.js";
+import { extractIsbn13, lookupLibraryCategory } from "../../_lib/libraryCategory.js";
 
 // LIBRARY_API_KEY가 아직 설정되지 않았던 시절에 등록됐거나, 그때 도서관 정보나루
 // 조회가 실패한 책들은 category가 빈 채로 남아 있다. 이 라우트는 그런 책을 찾아
@@ -17,6 +17,10 @@ import { fetchLibraryCategory } from "../../_lib/libraryCategory.js";
 // 가리게 된다. 매 호출마다 다른 25개를 뽑으면 해결 가능한 책들은 결국 다 처리되고,
 // 해결 불가능한 책만 remaining에 남아 관리자가 "더 안 줄어드네" 하고 멈출 수 있다.
 var BATCH_SIZE = 25;
+// 실패 이유를 몇 건이라도 눈으로 보여줘야 "도서관에 진짜 없어서"인지 "키/네트워크
+// 문제로 아예 조회 자체가 안 되고 있는지"를 구분할 수 있다. 전부 다 담으면 응답이
+// 커지니 앞쪽 몇 건만.
+var SAMPLE_LIMIT = 5;
 
 export async function onRequestPost(context) {
   var env = context.env;
@@ -40,14 +44,31 @@ export async function onRequestPost(context) {
   var rows = candidates.results || [];
   var updated = 0;
   var noResult = 0;
+  var samples = [];
 
   for (var i = 0; i < rows.length; i++) {
-    var category = (await fetchLibraryCategory(env, rows[i].isbn)).slice(0, 200);
+    var isbn13 = extractIsbn13(rows[i].isbn);
+    var result = await lookupLibraryCategory(env, isbn13);
+    var category = result.ok && result.classNm ? result.classNm.slice(0, 200) : "";
+
     if (category) {
       await env.DB.prepare("UPDATE books SET category = ?1 WHERE id = ?2").bind(category, rows[i].id).run();
       updated++;
     } else {
       noResult++;
+      if (samples.length < SAMPLE_LIMIT) {
+        samples.push({
+          id: rows[i].id,
+          isbn: rows[i].isbn,
+          isbn13: isbn13,
+          // 도서관에 없어서 못 찾은 것과, 애초에 API 호출 자체가 실패한 것을 구분한다.
+          // ok:true인데 classNm이 없으면 정말 그 책이 소장 목록에 없는 것이고,
+          // ok:false면 lookupLibraryCategory의 reason(no-isbn13/http-4xx/api-error/
+          // network-error)이 원인이다.
+          reason: result.ok ? "not-in-catalog" : result.reason,
+          detail: result.detail
+        });
+      }
     }
   }
 
@@ -59,6 +80,7 @@ export async function onRequestPost(context) {
     processedThisBatch: rows.length,
     updated: updated,
     noResult: noResult,
-    remaining: remainingRow ? remainingRow.n : 0
+    remaining: remainingRow ? remainingRow.n : 0,
+    sampleFailures: samples
   });
 }
