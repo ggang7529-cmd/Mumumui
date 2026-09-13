@@ -46,6 +46,10 @@ export var state = {
   // 8초 폴링(refreshComments)이 댓글 목록을 통째로 다시 그리기 때문에, 답글 입력 중이던
   // 내용을 잃지 않도록 열려 있는 답글창의 임시 입력값을 부모 댓글 id별로 기억해둔다.
   openReplies: {},
+  // 수정 중인 댓글의 임시 입력값을 댓글 id별로 기억해둔다 — openReplies와 같은 이유로,
+  // 8초 폴링이 목록을 다시 그려도 쓰던 내용과 고르던 별점이 날아가지 않게 한다.
+  // { 댓글id: { text, rating } } 형태이고, 키가 있으면 그 댓글이 수정 모드라는 뜻이다.
+  openEdits: {},
   // "책 뽑기" 연속 클릭 이스터에그: 최근 클릭 시각들을 기억해 짧은 시간 안에 여러 번
   // 눌렀는지 판단한다 (trackRandomStreak 참고).
   randomClickTimestamps: [],

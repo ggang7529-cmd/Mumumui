@@ -1643,8 +1643,111 @@
 
   #commentList .c-del:hover { color: var(--accent); border-color: var(--accent); }
 
-  #commentList .c-replies {
+  /* 수정 버튼은 삭제 버튼과 같은 알약 모양으로 나란히 둔다. order를 .c-del과 같은 7로
+     두면 DOM에서 먼저 붙는 이쪽이 왼쪽에 온다(js/render.js에서 수정 버튼을 삭제 버튼보다
+     앞서 append한다). */
+  #commentList .c-edit {
+    order: 7;
+    flex: none;
+    display: flex;
+    align-items: center;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    padding: 0.15rem 0.5rem;
+  }
+
+  #commentList .c-edit:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* 수정 폼은 고치려는 댓글 바로 아래(답글 목록보다 위)에 와야 무엇을 고치는 중인지
+     읽힌다. 그래서 .c-replies(9)·.c-reply-form(10)보다 앞 순서를 쓴다. */
+  #commentList .c-edit-form {
     order: 8;
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+
+  #commentList .c-edit-form input[type="text"] {
+    flex: 1 1 12rem;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.35rem 0.6rem;
+  }
+
+  #commentList .c-edit-form button {
+    border: none;
+    border-radius: 3px;
+    padding: 0.35rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  #commentList .c-edit-save {
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
+  }
+
+  #commentList .c-edit-save:hover { background: var(--btn-fill-hover); }
+
+  #commentList .c-edit-cancel {
+    background: none;
+    color: var(--ink-soft);
+    border: 1px solid var(--line) !important;
+  }
+
+  #commentList .c-edit-cancel:hover { color: var(--ink); border-color: var(--ink-faint) !important; }
+
+  /* 수정 중인 별점 위젯은 한줄평 줄 안에 들어가므로 작성 폼의 큰 별(1.6rem)보다 작고
+     촘촘하게. .star-picker button이 크기를 직접 지정하므로 여기서도 button을 짚어야
+     한다 — 컨테이너 font-size만 줄이면 안 먹는다. */
+  #commentList .c-edit-stars {
+    flex: none;
+    gap: 0.1rem;
+  }
+
+  #commentList .c-edit-stars button {
+    font-size: 1.05rem;
+    padding: 0;
+  }
+
+  /* 답글 수정 버튼/폼. 답글 줄은 별점이 없어 본문만 고친다. */
+  #commentList .c-reply-edit {
+    flex: none;
+    display: flex;
+    align-items: center;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    padding: 0.15rem 0.5rem;
+  }
+
+  #commentList .c-reply-edit:hover { color: var(--accent); border-color: var(--accent); }
+
+  #commentList .c-reply-edit-form {
+    order: 9;
+    margin-top: 0.35rem;
+  }
+
+  #commentList .c-replies {
+    order: 9;
     flex: 1 1 100%;
     list-style: none;
     margin: 0.3rem 0 0;
@@ -1751,7 +1854,7 @@
   #commentList .c-reply-del:hover { color: var(--accent); border-color: var(--accent); }
 
   #commentList .c-reply-form {
-    order: 9;
+    order: 10;
     flex: 1 1 100%;
     display: flex;
     gap: 0.5rem;
@@ -1842,9 +1945,22 @@
       order: 6;
     }
 
+    /* 데스크톱에선 날짜(order 6)가 사이에 있지만 모바일은 날짜를 감추므로, 수정 버튼도
+       삭제와 같은 6으로 내려 좋아요·답글 바로 뒤에 붙게 한다. */
+    #commentList .c-edit {
+      order: 6;
+    }
+
     #commentList .c-del,
-    #commentList .c-reply-del {
+    #commentList .c-edit,
+    #commentList .c-reply-del,
+    #commentList .c-reply-edit {
       padding: 0.3rem 0.4rem;
+    }
+
+    /* iOS Safari가 16px 미만 입력창에 포커스하면 화면을 확대해버린다 — 수정창도 동일 처리. */
+    #commentList .c-edit-form input[type="text"] {
+      font-size: 16px;
     }
 
     #commentList .c-reply-form {

@@ -594,9 +594,14 @@ export function renderDetail() {
   // 그 blur는 "사용자가 답글창을 떠났다"는 신호가 아니라 재렌더링의 부작용일 뿐이므로,
   // 지우기 전에 지금 포커스가 어느 댓글의 답글창에 있었는지 미리 스냅샷해 재렌더링 후 복원한다.
   var focusedReplyId = null;
+  var focusedEditId = null;
   var $activeEl = document.activeElement;
-  if ($activeEl && $activeEl.classList && $activeEl.classList.contains("c-reply-text-input")) {
-    focusedReplyId = $activeEl.dataset.replyFor || null;
+  if ($activeEl && $activeEl.classList) {
+    if ($activeEl.classList.contains("c-reply-text-input")) {
+      focusedReplyId = $activeEl.dataset.replyFor || null;
+    } else if ($activeEl.classList.contains("c-edit-text-input")) {
+      focusedEditId = $activeEl.dataset.editFor || null;
+    }
   }
   $list.innerHTML = "";
 
@@ -661,6 +666,105 @@ export function renderDetail() {
       item.appendChild(ratingSpan);
       item.appendChild(likeBtn);
       item.appendChild(dateSpan);
+
+      // 수정 중이면 원래 본문/별점 자리를 감추고 아래 수정 폼을 대신 보여준다. 수정
+      // 여부는 state.openEdits에 키가 있는지로 판단하므로, 폴링으로 목록이 다시 그려져도
+      // 수정 모드와 입력 중이던 내용이 그대로 유지된다.
+      var editDraft = Object.prototype.hasOwnProperty.call(state.openEdits, c.id)
+        ? state.openEdits[c.id]
+        : null;
+      textSpan.hidden = !!editDraft;
+      ratingSpan.hidden = !!editDraft;
+
+      var editForm = null;
+      var editTextInput = null;
+      if (c.mine) {
+        editForm = document.createElement("div");
+        editForm.className = "c-edit-form";
+        editForm.hidden = !editDraft;
+
+        var editStars = document.createElement("div");
+        editStars.className = "star-picker c-edit-stars";
+        editForm.appendChild(editStars);
+
+        editTextInput = document.createElement("input");
+        editTextInput.type = "text";
+        editTextInput.className = "c-edit-text-input";
+        editTextInput.maxLength = 60;
+        editTextInput.dataset.editFor = String(c.id);
+        editTextInput.value = editDraft ? editDraft.text : c.text;
+        editForm.appendChild(editTextInput);
+
+        var editSaveBtn = document.createElement("button");
+        editSaveBtn.type = "button";
+        editSaveBtn.className = "c-edit-save";
+        editSaveBtn.textContent = "저장";
+        editForm.appendChild(editSaveBtn);
+
+        var editCancelBtn = document.createElement("button");
+        editCancelBtn.type = "button";
+        editCancelBtn.className = "c-edit-cancel";
+        editCancelBtn.textContent = "취소";
+        editForm.appendChild(editCancelBtn);
+
+        // 별점 위젯은 고를 때마다 다시 그려야 채워진 개수가 바뀐다. 고른 값은 초안에
+        // 바로 적어둬서 폴링 재렌더링에도 살아남게 한다.
+        var paintEditStars = function () {
+          var draft = state.openEdits[c.id];
+          renderStars(editStars, draft ? draft.rating : c.rating, true, function (n) {
+            if (state.openEdits[c.id]) state.openEdits[c.id].rating = n;
+            paintEditStars();
+          });
+        };
+        paintEditStars();
+
+        editTextInput.addEventListener("input", function () {
+          if (state.openEdits[c.id]) state.openEdits[c.id].text = editTextInput.value;
+        });
+
+        var closeEdit = function () {
+          delete state.openEdits[c.id];
+          editForm.hidden = true;
+          textSpan.hidden = false;
+          ratingSpan.hidden = false;
+        };
+
+        editCancelBtn.addEventListener("click", closeEdit);
+
+        editSaveBtn.addEventListener("click", function () {
+          var draft = state.openEdits[c.id];
+          var newText = editTextInput.value.trim().slice(0, 60);
+          if (!newText) { alert("내용을 입력해주세요."); return; }
+          api("/api/comments/" + c.id, {
+            method: "PATCH",
+            body: { text: newText, rating: draft ? draft.rating : c.rating }
+          })
+            .then(function () {
+              gtag("event", "edit_comment");
+              delete state.openEdits[c.id];
+              // 별점을 바꿨으면 책의 평균도 달라지므로 목록까지 같이 새로고침한다.
+              return Promise.all([refreshBooks(), refreshComments()]);
+            })
+            .catch(function (e) { alert(e.message); });
+        });
+
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "c-edit";
+        editBtn.appendChild(buildIcon("pencil"));
+        editBtn.setAttribute("aria-label", "댓글 수정");
+        editBtn.addEventListener("click", function () {
+          if (state.openEdits[c.id]) { closeEdit(); return; }
+          state.openEdits[c.id] = { text: c.text, rating: c.rating };
+          editTextInput.value = c.text;
+          paintEditStars();
+          editForm.hidden = false;
+          textSpan.hidden = true;
+          ratingSpan.hidden = true;
+          editTextInput.focus();
+        });
+        item.appendChild(editBtn);
+      }
 
       // 내 댓글인지는 서버가 판단해서 mine으로 내려준다(예전엔 uid를 받아와 직접
       // 비교했는데, 그러려면 모든 사람의 uid가 공개돼야 했다).
@@ -729,6 +833,79 @@ export function renderDetail() {
         rItem.appendChild(rReplyBtnSpacer);
         rItem.appendChild(rDate);
 
+        // 답글 수정. 원댓글과 같은 방식이지만 답글에는 별점이 없어 본문만 고친다.
+        var rEditDraft = Object.prototype.hasOwnProperty.call(state.openEdits, r.id)
+          ? state.openEdits[r.id]
+          : null;
+        rText.hidden = !!rEditDraft;
+
+        var rEditForm = null;
+        var rEditInput = null;
+        if (r.mine) {
+          rEditForm = document.createElement("div");
+          rEditForm.className = "c-edit-form c-reply-edit-form";
+          rEditForm.hidden = !rEditDraft;
+
+          rEditInput = document.createElement("input");
+          rEditInput.type = "text";
+          rEditInput.className = "c-edit-text-input";
+          rEditInput.maxLength = 60;
+          rEditInput.dataset.editFor = String(r.id);
+          rEditInput.value = rEditDraft ? rEditDraft.text : r.text;
+          rEditForm.appendChild(rEditInput);
+
+          var rEditSave = document.createElement("button");
+          rEditSave.type = "button";
+          rEditSave.className = "c-edit-save";
+          rEditSave.textContent = "저장";
+          rEditForm.appendChild(rEditSave);
+
+          var rEditCancel = document.createElement("button");
+          rEditCancel.type = "button";
+          rEditCancel.className = "c-edit-cancel";
+          rEditCancel.textContent = "취소";
+          rEditForm.appendChild(rEditCancel);
+
+          rEditInput.addEventListener("input", function () {
+            if (state.openEdits[r.id]) state.openEdits[r.id].text = rEditInput.value;
+          });
+
+          var closeReplyEdit = function () {
+            delete state.openEdits[r.id];
+            rEditForm.hidden = true;
+            rText.hidden = false;
+          };
+
+          rEditCancel.addEventListener("click", closeReplyEdit);
+
+          rEditSave.addEventListener("click", function () {
+            var newText = rEditInput.value.trim().slice(0, 60);
+            if (!newText) { alert("내용을 입력해주세요."); return; }
+            api("/api/comments/" + r.id, { method: "PATCH", body: { text: newText } })
+              .then(function () {
+                gtag("event", "edit_comment");
+                delete state.openEdits[r.id];
+                refreshComments();
+              })
+              .catch(function (e) { alert(e.message); });
+          });
+
+          var rEditBtn = document.createElement("button");
+          rEditBtn.type = "button";
+          rEditBtn.className = "c-reply-edit";
+          rEditBtn.appendChild(buildIcon("pencil"));
+          rEditBtn.setAttribute("aria-label", "답글 수정");
+          rEditBtn.addEventListener("click", function () {
+            if (state.openEdits[r.id]) { closeReplyEdit(); return; }
+            state.openEdits[r.id] = { text: r.text, rating: 0 };
+            rEditInput.value = r.text;
+            rEditForm.hidden = false;
+            rText.hidden = true;
+            rEditInput.focus();
+          });
+          rItem.appendChild(rEditBtn);
+        }
+
         if (r.mine || isAdminMode()) {
           var rDelBtn = document.createElement("button");
           rDelBtn.type = "button";
@@ -743,7 +920,14 @@ export function renderDetail() {
           rItem.appendChild(rDelBtn);
         }
 
+        if (rEditForm) rItem.appendChild(rEditForm);
         repliesList.appendChild(rItem);
+
+        if (rEditDraft && rEditInput && focusedEditId === String(r.id)) {
+          rEditInput.focus();
+          var rCaret = rEditInput.value.length;
+          rEditInput.setSelectionRange(rCaret, rCaret);
+        }
       });
       if (repliesList.children.length) item.appendChild(repliesList);
 
@@ -817,6 +1001,7 @@ export function renderDetail() {
           .catch(function (e) { alert(e.message); });
       });
 
+      if (editForm) item.appendChild(editForm);
       item.appendChild(replyForm);
       $list.appendChild(item);
 
@@ -824,6 +1009,11 @@ export function renderDetail() {
         replyTextInput.focus();
         var caret = replyTextInput.value.length;
         replyTextInput.setSelectionRange(caret, caret);
+      }
+      if (editDraft && editTextInput && focusedEditId === String(c.id)) {
+        editTextInput.focus();
+        var editCaret = editTextInput.value.length;
+        editTextInput.setSelectionRange(editCaret, editCaret);
       }
     });
   }
