@@ -192,6 +192,10 @@
   <div class="header-intro" id="headerIntro">
     <h2 class="intro-headline">기록하고, 나누세요.</h2>
     <p class="intro-subtext">가입 없이 닉네임만으로 남기는 한 줄 독서 기록</p>
+    <!-- 지금까지 쌓인 권수를 보여주며 가볍게 참여를 권하는 줄. 문구는 js/render.js의
+         renderLibrary가 실제 등록 권수로 채운다(비어 있는 채로 자리만 잡지 않도록
+         기본은 hidden). -->
+    <p class="intro-invite" id="introInvite" hidden></p>
     <div class="latest-highlight" id="latestHighlight" hidden></div>
   </div>
 
@@ -207,7 +211,10 @@
           <div class="field" id="bookSearchField">
             <label for="bookSearchInput">책 검색</label>
             <div class="book-search-row">
-              <input type="search" id="bookSearchInput" placeholder="책 제목으로 검색 (예: 아몬드)" autocomplete="off">
+              <!-- "최근에 읽은 책이 없어서 남길 게 없다"고 느끼고 그냥 나가는 사람이 있어,
+                   예시 도서명(예: 아몬드) 대신 "지금 읽는 책이 아니어도 된다"는 안내를
+                   자리표시자에 담았다. -->
+              <input type="search" id="bookSearchInput" placeholder="책 제목으로 검색 (예전에 읽은 책도 좋아요)" autocomplete="off">
               <button type="button" class="btn-ghost" id="bookSearchBtn">검색</button>
             </div>
             <p class="char-hint">도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>

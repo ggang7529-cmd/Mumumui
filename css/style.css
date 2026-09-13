@@ -426,6 +426,15 @@
     font-weight: 400;
   }
 
+  /* 참여를 권하는 줄. 위 설명(intro-subtext)과 구분되게 브랜드 색을 쓰되, 크기는 한 단계
+     줄이고 무게만 살짝 올려서 "권유"로 읽히되 헤드라인을 가리지 않게 한다. */
+  .intro-invite {
+    margin: 0.35rem 0 0;
+    color: var(--accent);
+    font-size: var(--t-meta);
+    font-weight: 500;
+  }
+
   .new-review-btn {
     display: flex;
     flex-direction: column;

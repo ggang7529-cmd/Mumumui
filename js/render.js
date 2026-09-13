@@ -325,6 +325,24 @@ export function renderLibrary() {
     dom.countLabel.textContent = state.books.length ? "총 " + state.books.length + "권의 리뷰" : "";
   }
 
+  // 처음 온 사람이 "나는 지금 등록할 책이 없다"고 느끼고 그냥 나가는 걸 줄이려고, 이미
+  // 이만큼 쌓여 있다는 사실과 함께 한 권 보태달라고 가볍게 권한다. 권수는 바로 위
+  // countLabel과 같은 state.books.length를 그대로 쓴다 — 따로 세지 않는다.
+  //
+  // 검색·분류로 걸러도 문구는 전체 권수를 그대로 보여준다. 이 줄은 "이 서가에 지금까지
+  // 몇 권이 모였나"를 말하는 것이지 지금 화면에 몇 권이 보이나가 아니고, 필터를 만질
+  // 때마다 숫자가 같이 흔들리면 오히려 산만하다.
+  if (dom.introInvite) {
+    if (!state.booksLoaded) {
+      dom.introInvite.hidden = true;
+    } else {
+      dom.introInvite.hidden = false;
+      dom.introInvite.textContent = state.books.length
+        ? "지금까지 " + state.books.length + "권이 모였어요. 다음 한 권은 당신 차례예요"
+        : "아직 한 권도 없어요. 첫 기록을 남겨보세요";
+    }
+  }
+
   dom.shelf.innerHTML = "";
 
   if (state.booksLoaded && state.books.length === 0) {

@@ -88,6 +88,7 @@ export var dom = {
   milestoneMessage: document.getElementById("milestoneMessage"),
   latestHighlight: document.getElementById("latestHighlight"),
   headerIntro: document.getElementById("headerIntro"),
+  introInvite: document.getElementById("introInvite"),
   stickyHeader: document.getElementById("stickyHeader")
 };
 
