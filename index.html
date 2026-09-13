@@ -211,13 +211,15 @@
           <div class="field" id="bookSearchField">
             <label for="bookSearchInput">책 검색</label>
             <div class="book-search-row">
-              <!-- "최근에 읽은 책이 없어서 남길 게 없다"고 느끼고 그냥 나가는 사람이 있어,
-                   예시 도서명(예: 아몬드) 대신 "지금 읽는 책이 아니어도 된다"는 안내를
-                   자리표시자에 담았다. -->
-              <input type="search" id="bookSearchInput" placeholder="책 제목으로 검색 (예전에 읽은 책도 좋아요)" autocomplete="off">
+              <!-- 자리표시자는 줄바꿈이 안 돼서 좁은 화면에선 그냥 잘린다(모바일에서
+                   "책 제목으로 검색 (예전에 읽은 책…"으로 끊겼다). 그래서 여기는 짧게
+                   두고, "지금 읽는 책이 아니어도 된다"는 안내는 줄바꿈이 되는 아래
+                   힌트 문장으로 옮겼다. 무엇을 검색하는 칸인지는 위 label("책 검색")과
+                   옆 버튼("검색")이 이미 말해준다. -->
+              <input type="search" id="bookSearchInput" placeholder="어떤 책이든 검색해보세요" autocomplete="off">
               <button type="button" class="btn-ghost" id="bookSearchBtn">검색</button>
             </div>
-            <p class="char-hint">도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
+            <p class="char-hint">예전에 읽은 책도 좋아요. 도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
             <ul class="book-results" id="bookResults" hidden></ul>
           </div>
           <div class="field" id="selectedBookField" hidden>
