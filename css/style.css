@@ -1048,6 +1048,40 @@
     padding: 1.5rem 0;
   }
 
+  /* 검색 결과가 없을 때 뜨는 안내 묶음(안내 문구 + 권유 + 등록 버튼). .shelf가 카드용
+     그리드라서 그 안에서는 자식마다 한 칸씩 차지하고 사이에 카드 간격이 들어간다 —
+     한 칸에 묶어 전체 폭을 쓰게 하고, 내부 간격은 여백으로 직접 잡는다. */
+  .shelf .empty-cta {
+    grid-column: 1 / -1;
+  }
+
+  /* 묶음 안에서는 세 줄이 한 문단처럼 붙어 읽혀야 한다. */
+  .empty-cta .empty-note {
+    padding: 1.25rem 0 0.3rem;
+  }
+
+  .empty-note-sub {
+    margin: 0 0 0.9rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+
+  .empty-note-cta {
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
+    border: none;
+    border-radius: 2px;
+    padding: 0.55rem 1rem;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .empty-note-cta:hover { background: var(--btn-fill-hover); }
+  .empty-note-cta:active { transform: translateY(1px); }
+
   /* 모바일 카드도 PC와 동일하게 표지 위에 그라데이션 오버레이로 제목/저자/별점을
      겹쳐 보여준다(표지 아래 별도 정보 박스로 분리했던 이전 방식은 카드가 세로로
      길어져 한 화면에 보이는 책 수가 줄어드는 문제가 있어 되돌림). */

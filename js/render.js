@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration } from "./main.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
@@ -353,10 +353,44 @@ export function renderLibrary() {
   } else if (filtered && visible.length === 0) {
     var noMatch = document.createElement("p");
     noMatch.className = "empty-note";
-    noMatch.textContent = query
-      ? "\"" + state.searchQuery.trim() + "\"에 해당하는 책이 없어요."
-      : "\"" + state.categoryFilter + "\" 분류의 책이 없어요.";
-    dom.shelf.appendChild(noMatch);
+
+    if (query) {
+      // 제목으로 찾았는데 없을 때가 이탈이 제일 쉬운 지점이다. 예전에는 "없어요"에서
+      // 끝나 다음에 뭘 해야 할지 알려주지 않았다 — 아직 아무도 안 남긴 책이라는 뜻이니
+      // 그 자리에서 등록으로 넘어갈 수 있게 안내와 버튼을 같이 둔다.
+      //
+      // 문구에 조사(은/는)를 붙이지 않았다. 검색어 끝 글자의 받침에 따라 달라지는데
+      // 영문·숫자 제목까지 맞추기가 애매해서, 조사가 필요 없는 형태로 썼다.
+      var typed = state.searchQuery.trim();
+      noMatch.textContent = "아직 “" + typed + "” 기록이 없어요";
+
+      var subNote = document.createElement("p");
+      subNote.className = "empty-note-sub";
+      subNote.textContent = "찾으시는 책이면 직접 남겨보실래요?";
+
+      var goRegister = document.createElement("button");
+      goRegister.type = "button";
+      goRegister.className = "empty-note-cta";
+      goRegister.textContent = "이 제목으로 등록하기";
+      goRegister.addEventListener("click", function () {
+        gtag("event", "click_add_from_search");
+        // 방금 친 제목을 그대로 넘겨서 카카오 책 검색까지 자동으로 돌게 한다.
+        startBookRegistration(typed);
+      });
+
+      // .shelf가 카드용 그리드라서 세 요소를 그대로 넣으면 각각 다른 칸/행에 떨어져
+      // 사이에 카드 간격(gap)이 끼어든다. 한 덩어리로 읽히도록 묶어서 넣는다.
+      var block = document.createElement("div");
+      block.className = "empty-cta";
+      block.appendChild(noMatch);
+      block.appendChild(subNote);
+      block.appendChild(goRegister);
+      dom.shelf.appendChild(block);
+    } else {
+      // 분류 필터만 걸린 경우에는 넘겨줄 검색어가 없어 등록 버튼을 붙이지 않는다.
+      noMatch.textContent = "\"" + state.categoryFilter + "\" 분류의 책이 없어요.";
+      dom.shelf.appendChild(noMatch);
+    }
   }
 
   visible.forEach(function (r) {

@@ -166,7 +166,10 @@ export function showView(name) {
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
-function openForm() {
+// prefillQuery를 주면 카카오 책 검색창을 그 말로 채우고 바로 검색까지 돌린다. 홈에서
+// 검색했는데 등록된 책이 없어 "등록하러 가기"로 넘어온 경우, 방금 친 제목을 또 치게 하지
+// 않으려는 것이다.
+function openForm(prefillQuery) {
   dom.reviewForm.reset();
   state.selectedBook = null;
   state.formRating = 0;
@@ -177,7 +180,24 @@ function openForm() {
   renderStars(dom.fStars, 0, true, selectFormRating);
   if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
   showView("form");
+
+  // reset()이 입력값을 비우므로 채우는 건 그 뒤여야 한다.
+  var prefill = String(prefillQuery || "").trim();
+  if (prefill) {
+    dom.bookSearchInput.value = prefill;
+    searchBooks(prefill);
+  }
   dom.bookSearchInput.focus();
+}
+
+// 책 등록 화면으로 들어가는 공통 진입점. 헤더의 "+ 책장에 추가하기" 버튼과, 홈 검색이
+// 비었을 때 뜨는 "등록하러 가기" 버튼이 같은 함수를 쓴다 — 로그인 모드일 때의 확인 절차가
+// 한쪽에만 빠지는 일이 없도록 한곳에 모아둔다.
+export function startBookRegistration(prefillQuery) {
+  if (AUTH_MODE === "nickname") { openForm(prefillQuery); return; }
+  if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
+  if (!state.currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
+  openForm(prefillQuery);
 }
 
 export function openDetail(id) {
@@ -376,10 +396,7 @@ dom.categoryFilter.addEventListener("change", function (e) {
 
 document.getElementById("newReviewBtn").addEventListener("click", function () {
   gtag("event", "click_add_book");
-  if (AUTH_MODE === "nickname") { openForm(); return; }
-  if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
-  if (!state.currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
-  openForm();
+  startBookRegistration();
 });
 document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
 document.getElementById("feedbackBtn").addEventListener("click", function () {
