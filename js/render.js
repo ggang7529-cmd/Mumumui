@@ -343,6 +343,17 @@ export function renderLibrary() {
     }
   }
 
+  // 검색어나 분류로 목록을 걸렀다면 인트로(헤드라인 + 참여 문구 + "방금 등록됐어요"
+  // 하이라이트)를 접는다. 결과를 보려고 거른 건데 그 위에 고정 안내가 한 화면을
+  // 차지하고 있으면 결과가 화면 밖으로 밀려서, 검색이 된 건지조차 바로 안 보인다.
+  //
+  // showView()도 같은 요소를 여닫는다(목록 화면이 아니면 항상 숨김). 그래서 여기서는
+  // 목록 화면일 때만 손대 — 안 그러면 폴링으로 이 함수가 돌 때 상세/등록 화면 위에
+  // 인트로가 되살아난다.
+  if (dom.headerIntro && !dom.libraryView.hidden) {
+    dom.headerIntro.hidden = filtered;
+  }
+
   dom.shelf.innerHTML = "";
 
   if (state.booksLoaded && state.books.length === 0) {

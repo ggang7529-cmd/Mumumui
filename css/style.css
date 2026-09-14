@@ -409,6 +409,13 @@
     margin: 1.6rem 0 2.4rem;
   }
 
+  /* 검색·분류로 걸러 인트로를 접으면 인트로가 갖고 있던 아래 여백(2.4rem)까지 같이
+     사라져서 결과가 도구 막대에 딱 붙는다. 접혔을 때만 목록이 그만큼을 대신 준다.
+     .shelf는 목록 화면 안에만 있으므로 상세·등록 화면에는 영향이 없다. */
+  .header-intro[hidden] + main .shelf {
+    margin-top: 1.5rem;
+  }
+
   .intro-headline {
     margin: 0;
     color: var(--ink);
