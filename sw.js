@@ -4,12 +4,14 @@
 // - HTML(내비게이션 요청)은 절대 캐싱하지 않고 항상 네트워크에서 받아온다.
 //   네트워크가 끊겼을 때만 offline.html로 대체한다.
 // - CSS/JS/이미지 등 정적 자산은 "먼저 캐시로 응답하고 백그라운드에서 갱신"
-//   (stale-while-revalidate) 방식을 쓴다. 그래서 CACHE_VERSION을 깜빡 잊고
-//   올리지 않아도, 방문할 때마다 최신 파일로 캐시가 조용히 갱신된다.
-// - 그래도 정적 자산 목록 자체가 바뀌는(파일 추가/삭제) 배포에서는 아래
-//   CACHE_VERSION을 올려야 한다 — 배포마다 새 캐시 이름이 만들어지고,
-//   activate 시점에 이전 버전 캐시가 전부 삭제된다.
-const CACHE_VERSION = "v4";
+//   (stale-while-revalidate) 방식을 쓴다.
+// - 그래서 css/js를 고친 배포에서는 반드시 아래 CACHE_VERSION을 같이 올려야 한다.
+//   올리지 않으면 이번 방문에는 캐시에 있던 옛 파일이 그대로 나가고 새 파일은 뒤에서
+//   받아두기만 해서, 바뀐 화면이 다음 방문에야 보인다. 게다가 sw.js 자체가 그대로면
+//   브라우저가 업데이트를 감지하지 못해 main.js의 "새로고침" 안내 배너도 안 뜬다.
+//   (실제로 v4에서 이 문제가 났다 — 배포는 됐는데 휴대폰에는 옛 화면이 남아 있었다.)
+//   버전을 올리면 새 캐시 이름이 만들어지고 activate 때 옛 캐시가 전부 삭제된다.
+const CACHE_VERSION = "v5";
 const STATIC_CACHE = `galpi-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
