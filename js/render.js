@@ -404,17 +404,40 @@ export function renderLibrary() {
     titleEl.className = "b-title";
     titleEl.textContent = r.title;
 
+    // 카드 하단 문구는 참여자 수에 따라 다르게 쓴다. 처음 온 사람이 카드를 "정보 표시"로만
+    // 읽고 지나가지 않도록, 아직 비어 있거나 한 명뿐인 책에서는 숫자 대신 사람 말로 상태를
+    // 알려주고 자리가 남아 있다는 걸 드러낸다. 두 명 이상 모인 책은 이미 읽을거리가 있으니
+    // 원래대로 별점과 참여자 수를 보여준다.
     var starsEl = document.createElement("div");
     starsEl.className = "b-stars";
-    if (rating) {
+    if (!rating) {
+      starsEl.classList.add("b-stars--invite");
+      starsEl.textContent = "첫 리뷰를 남겨보세요";
+      // 터치 기기에는 hover가 없어서 아래 행동 유도 문구를 열 방법이 없다. 참여가 필요한
+      // 이런 카드에서만 상시 노출하도록 CSS가 이 클래스를 잡는다(모든 카드에 항상 띄우면
+      // 좁은 화면에서 줄만 늘어난다).
+      card.classList.add("book-card--invite");
+    } else if (rating.count === 1) {
+      starsEl.classList.add("b-stars--invite");
+      starsEl.textContent = "아직 1명이 읽었어요";
+      card.classList.add("book-card--invite");
+    } else {
       starsEl.appendChild(buildStarRow(Math.round(rating.avg)));
       starsEl.appendChild(document.createTextNode(" " + rating.avg.toFixed(1) + " (" + rating.count + ")"));
-    } else {
-      starsEl.textContent = "평점 없음";
     }
+
+    // 마우스를 올리거나(PC) 누르는 동안(모바일) 나타나는 행동 유도 문구. 카드가 그냥
+    // 읽을거리가 아니라 "눌러서 참여하는 곳"이라는 신호를 준다. 링크 자체가 이미 상세로
+    // 가는 역할을 하고 위 aria-label이 책 정보를 읽어주므로, 이 줄은 화면에만 보이면
+    // 충분해서 스크린리더에서는 감춘다.
+    var cta = document.createElement("span");
+    cta.className = "b-cta";
+    cta.textContent = "별점 남기기 →";
+    cta.setAttribute("aria-hidden", "true");
 
     overlay.appendChild(titleEl);
     overlay.appendChild(starsEl);
+    overlay.appendChild(cta);
     card.appendChild(overlay);
 
     card.addEventListener("click", function (id) {

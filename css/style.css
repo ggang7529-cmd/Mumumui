@@ -977,6 +977,71 @@
     text-overflow: ellipsis;
   }
 
+  /* 참여자가 없거나 한 명뿐일 때 별점 자리에 들어가는 안내 문구(js/render.js). 별점보다
+     한 단계 작고 흐리게 둬서, 정보가 아니라 거드는 말로 읽히게 한다. */
+  .book-card .b-stars--invite {
+    font-size: 0.82rem;
+    opacity: 0.88;
+  }
+
+  /* 카드 위에 마우스를 올렸을 때(또는 키보드 포커스·터치로 누르는 동안) 아래에서 밀려
+     올라오는 행동 유도 문구. 평소에는 max-height 0으로 완전히 접어둬서 카드 정보가
+     가려지지 않고, 나타날 때만 오버레이가 그만큼 자라난다.
+     색은 테마 토큰을 쓰지 않고 고정값이다 — 이 자리는 표지 사진이든 단색 책등이든 항상
+     어두운 배경 위라서, 라이트 모드에서도 밝은 글자여야 읽힌다(.b-stars의 크림색과 같은
+     이유). 버건디 계열의 밝은 로즈로 골라 브랜드 색과 이어지게 했다. */
+  .book-card .b-cta {
+    display: block;
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(3px);
+    color: #F2C2BC;
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: max-height 0.18s ease, opacity 0.18s ease, transform 0.18s ease, margin-top 0.18s ease;
+  }
+
+  .book-card:active .b-cta,
+  .book-card:focus-visible .b-cta {
+    max-height: 1.6em;
+    margin-top: 0.3rem;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 마우스가 있는 기기에서만 hover로 연다. 터치 기기에서 hover 규칙을 그대로 두면 탭한
+     카드에 hover 상태가 남아 문구가 계속 떠 있는 경우가 있다(iOS Safari). */
+  @media (hover: hover) {
+    .book-card:hover .b-cta {
+      max-height: 1.6em;
+      margin-top: 0.3rem;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* 터치 기기에는 hover가 없다. :active도 기대기 어렵다 — 탭하면 곧바로 상세로 넘어가서
+     보일 틈이 없고, iOS에서는 조건에 따라 아예 적용되지 않기도 한다. 그래서 참여가 필요한
+     카드(리뷰 0~1개, js/render.js가 book-card--invite를 붙인다)에서만 처음부터 보여준다.
+     모든 카드에 띄우면 좁은 화면에서 줄만 늘어나고, 이미 리뷰가 쌓인 책은 눌러볼 이유가
+     문구 없이도 충분하다. */
+  @media (hover: none) {
+    .book-card--invite .b-cta {
+      max-height: 1.6em;
+      margin-top: 0.3rem;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* 움직임을 줄이도록 설정한 사용자에게는 밀려 올라오는 연출 없이 그냥 나타나게 한다. */
+  @media (prefers-reduced-motion: reduce) {
+    .book-card .b-cta { transition: none; transform: none; }
+  }
+
   .empty-note {
     color: var(--ink-faint);
     font-size: 0.9rem;
