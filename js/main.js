@@ -6,12 +6,31 @@ import {
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
-  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight
+  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
 export var AUTH_MODE = "nickname";
+
+// 한 줄 리뷰 입력창의 자리표시자 후보. 빈 칸 앞에서 무슨 말을 써야 할지 막막해하는 걸
+// 줄이려고 "이렇게 쓰면 된다"는 예시를 하나씩 돌려가며 보여준다.
+//
+// 전부 긍정적인 톤으로만 모아뒀다. 자리표시자는 화면에 늘 떠 있는 문구라 "아쉬웠다"류를
+// 섞으면 사이트 첫인상이 그쪽으로 기운다 — 실제 리뷰는 당연히 좋았든 아쉬웠든 자유롭게
+// 쓸 수 있고, 이건 어디까지나 예시일 뿐이다(입력하면 바로 사라진다).
+var REVIEW_PLACEHOLDERS = [
+  "다 읽고 나니 여운이 남는 책이에요",
+  "생각할 거리를 많이 준 책이에요",
+  "이번 달 최고의 발견이었어요",
+  "다시 읽고 싶은 책이에요",
+  "누군가에게 꼭 권하고 싶어요",
+  "읽는 내내 시간 가는 줄 몰랐어요"
+];
+
+function pickReviewPlaceholder() {
+  return REVIEW_PLACEHOLDERS[Math.floor(Math.random() * REVIEW_PLACEHOLDERS.length)];
+}
 
 // 아래 값을 본인의 Google Cloud 콘솔 OAuth 클라이언트 ID로 교체하세요 (AUTH_MODE가 "google"일 때만 쓰임).
 export var GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
@@ -35,6 +54,9 @@ export var state = {
   currentId: null,
   commentRating: 0,
   formRating: 0,
+  // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
+  commentMood: null,
+  formMood: null,
   selectedBook: null,
   searchQuery: "",
   sortMode: "latest",
@@ -89,7 +111,9 @@ export var dom = {
   latestHighlight: document.getElementById("latestHighlight"),
   headerIntro: document.getElementById("headerIntro"),
   introInvite: document.getElementById("introInvite"),
-  stickyHeader: document.getElementById("stickyHeader")
+  stickyHeader: document.getElementById("stickyHeader"),
+  fMoods: document.getElementById("fMoods"),
+  cMoods: document.getElementById("cMoods")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -117,6 +141,16 @@ function selectCommentRating(idx) {
 function selectFormRating(idx) {
   state.formRating = idx;
   renderStars(dom.fStars, state.formRating, true, selectFormRating);
+}
+
+function selectFormMood(id) {
+  state.formMood = id;
+  renderMoodPicker(dom.fMoods, state.formMood, selectFormMood);
+}
+
+function selectCommentMood(id) {
+  state.commentMood = id;
+  renderMoodPicker(dom.cMoods, state.commentMood, selectCommentMood);
 }
 
 function stopLibraryPolling() {
@@ -178,6 +212,10 @@ function openForm(prefillQuery) {
   dom.bookResults.hidden = true;
   dom.bookResults.innerHTML = "";
   renderStars(dom.fStars, 0, true, selectFormRating);
+  state.formMood = null;
+  renderMoodPicker(dom.fMoods, null, selectFormMood);
+  // 폼을 열 때마다 예시 문구를 하나 새로 뽑는다(같은 문구만 계속 보면 예시로 안 읽힌다).
+  document.getElementById("fText").placeholder = pickReviewPlaceholder();
   if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
   showView("form");
 
@@ -204,9 +242,12 @@ export function openDetail(id) {
   state.currentId = id;
   state.comments = [];
   state.commentRating = 0;
+  state.commentMood = null;
   state.openReplies = {};
   state.detailCoverAnimatePending = true;
   renderStars(dom.cStars, 0, true, selectCommentRating);
+  renderMoodPicker(dom.cMoods, null, selectCommentMood);
+  document.getElementById("commentInput").placeholder = pickReviewPlaceholder();
   if (AUTH_MODE === "nickname") document.getElementById("cNickname").value = getSavedNickname();
   renderDetail();
   showView("detail");
@@ -491,7 +532,11 @@ dom.reviewForm.addEventListener("submit", function (e) {
   }
 
   var text = document.getElementById("fText").value.trim();
-  if (!text) return;
+  // 감정 태그를 골랐다면 한 줄 리뷰는 비워둘 수 있다(별점은 예전과 똑같이 필수).
+  if (!text && !state.formMood) {
+    alert("한 줄 리뷰를 쓰거나 위에서 태그를 골라주세요.");
+    return;
+  }
   if (state.formRating === 0) {
     alert("별점을 선택해주세요.");
     return;
@@ -503,7 +548,8 @@ dom.reviewForm.addEventListener("submit", function (e) {
     method: "POST",
     body: {
       title: state.selectedBook.title, author: state.selectedBook.author, cover: state.selectedBook.cover,
-      isbn: state.selectedBook.isbn, contents: state.selectedBook.contents, text: text, rating: state.formRating, name: nickname
+      isbn: state.selectedBook.isbn, contents: state.selectedBook.contents, text: text, rating: state.formRating,
+      mood: state.formMood, name: nickname
     }
   })
     .then(function (data) {
@@ -513,7 +559,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
       state.books.unshift(normalizeBook(data.book));
       state.recentComments.unshift({
         bookId: data.book.id, bookTitle: data.book.title, bookAuthor: data.book.author,
-        text: data.book.text, rating: data.book.rating_sum, createdAt: data.book.created_at
+        text: data.book.text, mood: data.book.mood || null, rating: data.book.rating_sum, createdAt: data.book.created_at
       });
       var totalCount = state.books.length;
       showView("library");
@@ -567,7 +613,10 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
 
   var input = document.getElementById("commentInput");
   var text = input.value.replace(/[\r\n]+/g, " ").trim();
-  if (!text) return;
+  if (!text && !state.commentMood) {
+    alert("한 줄 감상을 쓰거나 위에서 태그를 골라주세요.");
+    return;
+  }
   if (state.commentRating === 0) {
     alert("별점을 선택해주세요.");
     return;
@@ -575,12 +624,18 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
 
   if (AUTH_MODE === "nickname") saveNickname(nickname);
 
-  api("/api/books/" + state.currentId + "/comments", { method: "POST", body: { text: text, rating: state.commentRating, name: nickname } })
+  api("/api/books/" + state.currentId + "/comments", {
+    method: "POST",
+    body: { text: text, rating: state.commentRating, mood: state.commentMood, name: nickname }
+  })
     .then(function () {
       gtag("event", "complete_review", { book_id: state.currentId });
       input.value = "";
+      input.placeholder = pickReviewPlaceholder();
       state.commentRating = 0;
+      state.commentMood = null;
       renderStars(dom.cStars, 0, true, selectCommentRating);
+      renderMoodPicker(dom.cMoods, null, selectCommentMood);
       renderAuthBox();
       refreshMyScore();
       return Promise.all([refreshBooks(), refreshComments()]);

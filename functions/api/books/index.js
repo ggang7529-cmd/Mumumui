@@ -5,6 +5,7 @@ import { checkRateLimit } from "../../_lib/rateLimit.js";
 // 옮겼다 — functions/api/admin/backfill-categories.js가 기존 책들에 소급으로 같은
 // 조회를 돌려야 해서, 여기 갇혀 있던 함수를 양쪽이 같이 쓸 수 있는 곳으로 뺐다.
 import { fetchLibraryCategory } from "../../_lib/libraryCategory.js";
+import { normalizeMoodId } from "../../../js/moodTags.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -12,7 +13,7 @@ export async function onRequestGet(context) {
   // (아래 onRequestPost), 이 값이 공개되면 그대로 X-Anon-Id에 넣어 그 사람의 한줄평을
   // 지울 수 있다. 클라이언트도 쓰지 않는 값이라 아예 select에서 뺀다.
   var rows = await env.DB.prepare(
-    "SELECT id, title, author, cover, isbn, contents, category, text, rating_sum, rating_count, comment_count, " +
+    "SELECT id, title, author, cover, isbn, contents, category, text, mood, rating_sum, rating_count, comment_count, " +
     "owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
@@ -41,9 +42,14 @@ export async function onRequestPost(context) {
   var cover = typeof body.cover === "string" ? body.cover : null;
   var isbn = String(body.isbn || "").trim().slice(0, 40);
   var contents = String(body.contents || "").trim().slice(0, 2000);
+  // 감정 태그는 선택 항목이다. 목록에 없는 값은 normalizeMoodId가 null로 떨어뜨린다.
+  var mood = normalizeMoodId(body.mood);
 
   if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
-  if (!title || !author || !text) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
+  if (!title || !author) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
+  // 한 줄 리뷰는 감정 태그를 골랐다면 비워둘 수 있다. 둘 다 없으면 남길 내용이 없는
+  // 셈이라 막는다. 별점은 예전과 똑같이 무조건 필수다.
+  if (!text && !mood) return json({ error: "한 줄 리뷰를 쓰거나 감정 태그를 골라주세요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
 
   if (isbn) {
@@ -61,19 +67,19 @@ export async function onRequestPost(context) {
   var now = Date.now();
   await env.DB.batch([
     env.DB.prepare(
-      "INSERT INTO books (id, title, author, cover, isbn, contents, category, text, rating_sum, rating_count, comment_count, " +
-      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, 1, ?10, ?11, NULL, ?12, ?12)"
-    ).bind(id, title, author, cover, isbn || null, contents || null, category || null, text, rating, uid, name, now),
+      "INSERT INTO books (id, title, author, cover, isbn, contents, category, text, mood, rating_sum, rating_count, comment_count, " +
+      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 1, 1, ?11, ?12, NULL, ?13, ?13)"
+    ).bind(id, title, author, cover, isbn || null, contents || null, category || null, text, mood, rating, uid, name, now),
     env.DB.prepare(
-      "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)"
-    ).bind(commentId, id, text, rating, uid, name, now)
+      "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at, mood) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8)"
+    ).bind(commentId, id, text, rating, uid, name, now, mood)
   ]);
 
   return json({
     book: {
       id: id, title: title, author: author, cover: cover, isbn: isbn || null, contents: contents || null,
-      category: category || null, text: text,
+      category: category || null, text: text, mood: mood,
       rating_sum: rating, rating_count: 1, comment_count: 1,
       // owner_uid는 목록 API와 마찬가지로 돌려주지 않는다 — 클라이언트가 쓰지 않고,
       // 응답 모양을 목록과 맞춰두는 편이 나중에 실수로 다시 새어나갈 여지를 줄인다.

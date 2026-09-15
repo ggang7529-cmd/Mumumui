@@ -2,6 +2,7 @@ import { getAnonUid } from "../../../_lib/identity.js";
 import { json, newId } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { fetchScoreMap } from "../../../_lib/scores.js";
+import { normalizeMoodId } from "../../../../js/moodTags.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -9,7 +10,7 @@ export async function onRequestGet(context) {
   var myUid = getAnonUid(context.request) || "";
 
   var rows = await env.DB.prepare(
-    "SELECT c.id, c.text, c.rating, c.author_uid, c.author_name, c.author_photo, c.created_at, c.parent_id, " +
+    "SELECT c.id, c.text, c.rating, c.mood, c.author_uid, c.author_name, c.author_photo, c.created_at, c.parent_id, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id AND user_id = ?2) AS liked_by_me " +
     "FROM comments c WHERE c.book_id = ?1 ORDER BY c.created_at ASC"
@@ -37,6 +38,7 @@ export async function onRequestGet(context) {
       id: c.id,
       text: c.text,
       rating: c.rating,
+      mood: c.mood,
       author_name: c.author_name,
       author_photo: c.author_photo,
       created_at: c.created_at,
@@ -70,8 +72,14 @@ export async function onRequestPost(context) {
   var text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
   var name = String(body.name || "").trim().slice(0, 10);
   var parentId = body.parentId ? String(body.parentId).trim() : null;
+  // 감정 태그는 한줄평(최상위 댓글)에만 있다. 답글에 넘어온 값은 아래에서 버린다.
+  var mood = parentId ? null : normalizeMoodId(body.mood);
   if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
-  if (!text) return json({ error: "내용을 입력해주세요." }, { status: 400 });
+  // 한줄평은 감정 태그를 골랐다면 본문을 비워둘 수 있다. 답글은 태그가 없으니 예전처럼
+  // 본문이 반드시 있어야 한다.
+  if (!text && !mood) {
+    return json({ error: parentId ? "내용을 입력해주세요." : "한 줄 감상을 쓰거나 감정 태그를 골라주세요." }, { status: 400 });
+  }
 
   var book = await env.DB.prepare("SELECT id FROM books WHERE id = ?1").bind(bookId).first();
   if (!book) return json({ error: "존재하지 않는 책이에요." }, { status: 404 });
@@ -92,9 +100,9 @@ export async function onRequestPost(context) {
   var now = Date.now();
   var statements = [
     env.DB.prepare(
-      "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at, parent_id) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8)"
-    ).bind(id, bookId, text, rating, uid, name, now, parentId)
+      "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at, parent_id, mood) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, ?9)"
+    ).bind(id, bookId, text, rating, uid, name, now, parentId, mood)
   ];
   if (!parentId) {
     statements.push(

@@ -21,7 +21,7 @@ export async function onRequestPatch(context) {
   }
 
   var comment = await env.DB.prepare(
-    "SELECT id, book_id, text, rating, author_uid, parent_id FROM comments WHERE id = ?1"
+    "SELECT id, book_id, text, rating, author_uid, parent_id, mood FROM comments WHERE id = ?1"
   ).bind(id).first();
   if (!comment) return json({ error: "존재하지 않는 댓글이에요." }, { status: 404 });
 
@@ -30,7 +30,9 @@ export async function onRequestPatch(context) {
   if (comment.author_uid !== uid) return json({ error: "수정 권한이 없어요." }, { status: 403 });
 
   var text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
-  if (!text) return json({ error: "내용을 입력해주세요." }, { status: 400 });
+  // 감정 태그만 고르고 본문 없이 남긴 한줄평이 있으므로, 원래 태그가 있으면 본문을
+  // 비운 채로도 저장할 수 있게 둔다. 태그 자체는 이 API가 건드리지 않고 그대로 남는다.
+  if (!text && !comment.mood) return json({ error: "내용을 입력해주세요." }, { status: 400 });
 
   var statements = [];
 

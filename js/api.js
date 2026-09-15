@@ -78,7 +78,7 @@ export function saveNotifSeenMap(map) {
 export function normalizeBook(row) {
   return {
     id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, contents: row.contents || "",
-    category: row.category || "", text: row.text,
+    category: row.category || "", text: row.text, mood: row.mood || null,
     ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
     // ownerUid는 더 이상 서버가 내려주지 않는다(남의 uid를 알면 그 사람 한줄평을 지울 수
     // 있어서). 화면에서도 쓰지 않던 값이라 함께 뺐다.
@@ -89,7 +89,7 @@ export function normalizeBook(row) {
 
 export function normalizeComment(row) {
   return {
-    id: row.id, text: row.text, rating: row.rating,
+    id: row.id, text: row.text, rating: row.rating, mood: row.mood || null,
     // 예전에는 authorUid를 받아와 내 uid와 직접 비교했는데, 그러려면 서버가 모든 사람의
     // uid를 내려줘야 했고 그게 곧 삭제 권한을 통째로 넘겨주는 꼴이었다. 이제 비교는
     // 서버가 하고 결과(mine)만 받는다.
@@ -137,7 +137,7 @@ export function searchBooks(q) {
 export function normalizeRecentComment(row) {
   return {
     bookId: row.book_id, bookTitle: row.title, bookAuthor: row.author,
-    text: row.text, rating: row.rating, createdAt: row.created_at
+    text: row.text, rating: row.rating, mood: row.mood || null, createdAt: row.created_at
   };
 }
 

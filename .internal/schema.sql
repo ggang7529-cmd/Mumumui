@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS books (
   contents TEXT,
   category TEXT,
   text TEXT NOT NULL,
+  mood TEXT,
   rating_sum INTEGER NOT NULL,
   rating_count INTEGER NOT NULL,
   comment_count INTEGER NOT NULL,
@@ -39,7 +40,8 @@ CREATE TABLE IF NOT EXISTS comments (
   author_name TEXT,
   author_photo TEXT,
   created_at INTEGER NOT NULL,
-  parent_id TEXT
+  parent_id TEXT,
+  mood TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_book_id ON comments (book_id);

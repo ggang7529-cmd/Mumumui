@@ -1,4 +1,5 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration } from "./main.js";
+import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
@@ -90,6 +91,38 @@ export function findBook(id) {
 // 다르게 한다(.star-icon.is-filled) — 모양이 어긋나지 않아 5칸이 나란히 맞는다.
 function buildStarIcon(filled) {
   return buildIcon("star", "star-icon" + (filled ? " is-filled" : ""));
+}
+
+// 감정 태그 고르기 줄. 별점(renderStars)과 같은 자리에서 같은 방식으로 쓰라고 모양을
+// 맞춰뒀다 — 선택된 것 하나만 표시하고, 같은 걸 다시 누르면 선택이 풀린다(선택 항목이라
+// 실수로 누른 걸 되돌릴 방법이 있어야 한다).
+export function renderMoodPicker(container, selectedId, onSelect) {
+  if (!container) return;
+  container.innerHTML = "";
+  MOOD_TAGS.forEach(function (tag) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    var isOn = tag.id === selectedId;
+    btn.className = "mood-chip" + (isOn ? " is-on" : "");
+    btn.textContent = tag.label + " " + tag.emoji;
+    // 하나만 고를 수 있으므로 라디오로 읽히게 한다.
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", isOn ? "true" : "false");
+    btn.addEventListener("click", function () {
+      onSelect(isOn ? null : tag.id);
+    });
+    container.appendChild(btn);
+  });
+}
+
+// 목록에 붙는 작은 태그 배지. 태그가 없으면 null을 돌려주니 호출부에서 그대로 건너뛰면 된다.
+export function buildMoodBadge(moodId) {
+  var tag = findMoodTag(moodId);
+  if (!tag) return null;
+  var badge = document.createElement("span");
+  badge.className = "c-mood";
+  badge.textContent = tag.emoji + " " + tag.label;
+  return badge;
 }
 
 export function renderStars(container, rating, interactive, onSelect) {
@@ -539,7 +572,16 @@ export function renderLatestHighlight() {
 
     var textEl = document.createElement("p");
     textEl.className = "latest-highlight-text";
-    textEl.textContent = "“" + r.text + "”";
+    // 태그만 고르고 본문 없이 남긴 한줄평이면 빈 따옴표("")만 남는다. 그럴 땐 따옴표를
+    // 빼고 태그 문구를 그대로 보여준다 — 남이 쓴 문장이 아니니 인용처럼 감싸지 않는다.
+    var highlightTag = findMoodTag(r.mood);
+    if (r.text) {
+      textEl.textContent = "“" + r.text + "”";
+    } else if (highlightTag) {
+      textEl.textContent = highlightTag.emoji + " " + highlightTag.label;
+    } else {
+      textEl.hidden = true;
+    }
 
     card.appendChild(label);
     card.appendChild(bookLine);
@@ -715,6 +757,7 @@ export function renderDetail() {
 
     sortedComments.forEach(function (c) {
       var item = document.createElement("li");
+      var moodBadge = buildMoodBadge(c.mood);
       var textSpan = document.createElement("span");
       textSpan.className = "c-text";
       textSpan.textContent = c.text;
@@ -747,6 +790,8 @@ export function renderDetail() {
       dateSpan.className = "c-date";
       dateSpan.textContent = formatDate(c.createdAt);
 
+      // 태그는 본문 앞에 온다. 본문 없이 태그만 남긴 한줄평이면 이 배지가 곧 내용이다.
+      if (moodBadge) item.appendChild(moodBadge);
       item.appendChild(textSpan);
       item.appendChild(authorSpan);
       item.appendChild(ratingSpan);
@@ -759,7 +804,9 @@ export function renderDetail() {
       var editDraft = Object.prototype.hasOwnProperty.call(state.openEdits, c.id)
         ? state.openEdits[c.id]
         : null;
-      textSpan.hidden = !!editDraft;
+      // 태그만 고르고 본문 없이 남긴 한줄평은 c-text가 빈 칸이다. 모바일에서 이 칸이
+      // flex-basis: 100%로 한 줄을 통째로 차지하므로, 비어 있으면 아예 감춘다.
+      textSpan.hidden = !!editDraft || !c.text;
       ratingSpan.hidden = !!editDraft;
 
       var editForm = null;

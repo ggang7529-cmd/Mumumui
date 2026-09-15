@@ -1,5 +1,6 @@
 import { fetchScoreMap } from "../_lib/scores.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
+import { findMoodTag } from "../../js/moodTags.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
 // index.html을 읽어 치환하는 방식이라 스프라이트가 이미 페이지 안에 들어 있다.
@@ -86,7 +87,7 @@ export async function onRequestGet(context) {
   var html = await indexRes.text();
 
   var book = await env.DB.prepare(
-    "SELECT id, title, author, cover, contents, text, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
+    "SELECT id, title, author, cover, contents, text, mood, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
   )
     .bind(id)
     .first();
@@ -148,10 +149,14 @@ export async function onRequestGet(context) {
       worstRating: 1,
     };
   }
-  if (book.text) {
+  // 감정 태그만 고르고 본문 없이 남긴 첫 한줄평이면 태그 문구를 대신 싣는다 — 안 그러면
+  // 링크 미리보기의 리뷰 항목이 통째로 빠진다.
+  var bookMoodTag = findMoodTag(book.mood);
+  var bookReviewBody = book.text || (bookMoodTag ? bookMoodTag.label : "");
+  if (bookReviewBody) {
     jsonLd.review = {
       "@type": "Review",
-      reviewBody: book.text,
+      reviewBody: bookReviewBody,
       author: { "@type": "Person", name: book.owner_name || "책갈피 사용자" },
       reviewRating:
         avgRating !== null
@@ -185,7 +190,7 @@ export async function onRequestGet(context) {
   var commentListHtml = "";
   try {
     var commentRows = await env.DB.prepare(
-      "SELECT text, rating, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL " +
+      "SELECT text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL " +
       "ORDER BY created_at DESC LIMIT 20"
     )
       .bind(id)
@@ -202,10 +207,14 @@ export async function onRequestGet(context) {
         var authorName = c.author_name || "책갈피 사용자";
         var score = scoreMap[c.author_name] || 0;
         var lvl = getLevel(score);
+        var moodTag = findMoodTag(c.mood);
+        var moodHtml = moodTag
+          ? '<span class="c-mood">' + escapeHtml(moodTag.emoji + " " + moodTag.label) + "</span> "
+          : "";
         return (
           "<li><strong>" + iconSvg(lvl.icon, "lv-icon lv-icon--" + lvl.icon) +
           escapeHtml(formatNicknameShort(authorName, score)) + "</strong> " +
-          starsHtml + " " + escapeHtml(c.text) + "</li>"
+          starsHtml + " " + moodHtml + escapeHtml(c.text) + "</li>"
         );
       }).join("");
     }

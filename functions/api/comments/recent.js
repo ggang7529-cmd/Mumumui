@@ -6,7 +6,7 @@ import { json } from "../../_lib/db.js";
 export async function onRequestGet(context) {
   var env = context.env;
   var rows = await env.DB.prepare(
-    "SELECT c.id, c.book_id, c.text, c.rating, c.created_at, b.title, b.author " +
+    "SELECT c.id, c.book_id, c.text, c.rating, c.mood, c.created_at, b.title, b.author " +
     "FROM comments c JOIN books b ON b.id = c.book_id " +
     "WHERE c.parent_id IS NULL ORDER BY c.created_at DESC LIMIT 5"
   ).all();

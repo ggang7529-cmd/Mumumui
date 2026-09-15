@@ -241,10 +241,16 @@
             <label>별점 (필수)</label>
             <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
           </div>
+          <!-- 감정 태그(선택). 버튼은 js/render.js renderMoodPicker가 js/moodTags.js의
+               목록으로 그린다. 하나만 고를 수 있어서 role="radiogroup"을 쓴다. -->
+          <div class="field">
+            <label>이런 책이었어요 (선택)</label>
+            <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
+          </div>
           <div class="field">
             <label for="fText">한 줄 리뷰</label>
-            <input type="text" id="fText" required maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
-            <p class="char-hint">최대 80자, 한 줄로 남겨주세요</p>
+            <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
+            <p class="char-hint">최대 80자, 한 줄로 남겨주세요. 위에서 태그를 골랐다면 비워둬도 괜찮아요</p>
           </div>
           <div class="form-actions">
             <button type="button" class="btn-ghost" id="cancelForm">취소</button>
@@ -288,12 +294,16 @@
               <label>별점 (필수)</label>
               <div class="star-picker" id="cStars" role="radiogroup" aria-label="댓글 별점"></div>
             </div>
+            <div class="field">
+              <label>이런 책이었어요 (선택)</label>
+              <div class="mood-picker" id="cMoods" role="radiogroup" aria-label="감정 태그"></div>
+            </div>
             <div class="comment-input-row">
-              <input type="text" id="commentInput" maxlength="60" required placeholder="이 책에 대한 한 줄 감상을 남겨보세요" autocomplete="off">
+              <input type="text" id="commentInput" maxlength="60" placeholder="이 책에 대한 한 줄 감상을 남겨보세요" autocomplete="off">
               <button type="submit">남기기</button>
             </div>
           </form>
-          <p class="char-hint" id="commentHint">별점을 선택하고 한 줄 감상을 남겨주세요 (최대 60자)</p>
+          <p class="char-hint" id="commentHint">별점은 필수예요. 태그만 골라도 남길 수 있어요 (최대 60자)</p>
           <div class="signin-prompt" id="commentSignin" hidden>
             <span id="commentSigninText">로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
             <div id="googleBtnComment"></div>
