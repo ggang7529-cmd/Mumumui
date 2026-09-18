@@ -19,6 +19,10 @@ Setup the user still needs to do in the Cloudflare/Kakao/data4library dashboards
 - Set the `ADMIN_KEY` Pages environment variable/secret (any password you choose) to enable deleting a book review. Book deletion is admin-only now (not the original poster) since comments pile up under a book — the delete button prompts for this password client-side and sends it as the `X-Admin-Key` header; `functions/api/books/[id]/index.js` checks it against `env.ADMIN_KEY`.
 - `GOOGLE_CLIENT_ID` / `SESSION_SECRET` and the matching Google OAuth client are only needed if/when switching back to `AUTH_MODE = "google"`.
 
+운영 도메인은 `https://book-galpi.com`입니다(2026-09-18에 `galpi.pages.dev`에서 옮김 — pages.dev 하위 도메인은 검색엔진이 임시 배포지로 취급해서 도메인 신뢰를 거의 못 받습니다). `functions/_middleware.js`가 옛 주소와 `www.`를 경로·쿼리를 살린 채 301로 넘깁니다. 미리보기 배포(`<해시>.galpi.pages.dev`)와 로컬은 일부러 그대로 통과시킵니다.
+
+도메인 문자열은 `index.html`(6곳)·`functions/book/[id].js`(3곳)·`functions/u/[name].js`(4곳)에 하드코딩돼 있습니다. 이 둘은 index.html의 그 문자열을 **찾아서 바꿔치기**하는 방식이라 한쪽만 고치면 치환이 조용히 실패해 링크 미리보기가 홈 것으로 나갑니다 — 반드시 같이 고치고, 페이지별 `og:title`이 1개만 나오는지로 확인하세요(치환 실패 시 2개가 됩니다). 반면 sitemap.xml·robots.txt·rss.xml과 책·프로필 canonical은 요청 origin을 그대로 쓰므로 손댈 것이 없습니다.
+
 API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.
 
 ## Workflow
