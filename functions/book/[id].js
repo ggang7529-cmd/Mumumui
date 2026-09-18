@@ -108,11 +108,11 @@ export async function onRequestGet(context) {
   var staticOgBlock =
     '<meta property="og:title" content="책갈피 - 읽은 책마다 별점과 한 줄 감상을 남겨보세요">\n' +
     '<meta property="og:description" content="닉네임만 입력하면 누구나 참여할 수 있는 책 리뷰 커뮤니티. 읽은 책을 등록하고 별점과 한 줄 감상을 남겨보세요.">\n' +
-    '<meta property="og:image" content="https://galpi.pages.dev/og-image.png">\n' +
+    '<meta property="og:image" content="https://book-galpi.com/og-image.png">\n' +
     '<meta property="og:image:width" content="1200">\n' +
     '<meta property="og:image:height" content="630">\n' +
     '<meta property="og:type" content="website">\n' +
-    '<meta property="og:url" content="https://galpi.pages.dev">\n' +
+    '<meta property="og:url" content="https://book-galpi.com">\n' +
     '<meta name="twitter:card" content="summary_large_image">';
 
   var coverUrl = book.cover ? upscaleCover(book.cover) : null;
@@ -225,7 +225,7 @@ export async function onRequestGet(context) {
       '<meta name="description" content="' + desc + '">'
     )
     .replace(
-      '<link rel="canonical" href="https://galpi.pages.dev/">',
+      '<link rel="canonical" href="https://book-galpi.com/">',
       '<link rel="canonical" href="' + pageUrl + '">'
     )
     .replace(staticOgBlock, metaTags)
