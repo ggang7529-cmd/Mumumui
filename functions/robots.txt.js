@@ -16,10 +16,14 @@ async function handle(context) {
   // 상관없지만, 규칙을 위에서부터 읽어 처음 맞는 것으로 결정하는 단순한 파서도 흔하다.
   // "Allow: /"를 먼저 두면 그런 파서에서 /api/가 허용으로 뒤집힌다(실제로 파이썬
   // RobotFileParser로 재현했다). 구체적인 규칙을 앞에 두면 양쪽 해석이 같아진다.
+  // Sitemap을 두 줄 둔다. rss.xml도 표준 사이트맵 형식으로 인정돼서(구글·네이버 모두
+  // RSS/Atom을 받는다), 전체 목록인 sitemap.xml과 별개로 "최근에 뭐가 올라왔는지"를
+  // 알려주는 통로가 하나 더 생긴다. 새 책이 올라왔을 때 더 빨리 가져가라는 뜻이다.
   var body =
     "User-agent: *\nDisallow: /api/\n" +
     "Allow: /\n\n" +
-    "Sitemap: " + origin + "/sitemap.xml\n";
+    "Sitemap: " + origin + "/sitemap.xml\n" +
+    "Sitemap: " + origin + "/rss.xml\n";
   return new Response(body, {
     headers: {
       "Content-Type": "text/plain; charset=UTF-8",
