@@ -6,7 +6,7 @@ import {
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
-  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker
+  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -58,6 +58,9 @@ export var state = {
   commentMood: null,
   formMood: null,
   selectedBook: null,
+  // 프로필 화면에서 보고 있는 닉네임과, 서버에서 받아온 그 사람의 기록. 아직 안 왔으면 null.
+  profileName: null,
+  profile: null,
   searchQuery: "",
   sortMode: "latest",
   categoryFilter: "",
@@ -113,7 +116,15 @@ export var dom = {
   introInvite: document.getElementById("introInvite"),
   stickyHeader: document.getElementById("stickyHeader"),
   fMoods: document.getElementById("fMoods"),
-  cMoods: document.getElementById("cMoods")
+  cMoods: document.getElementById("cMoods"),
+  profileView: document.getElementById("profileView"),
+  profileName: document.getElementById("profileName"),
+  profileSub: document.getElementById("profileSub"),
+  profileStats: document.getElementById("profileStats"),
+  profileShelf: document.getElementById("profileShelf"),
+  profileReviews: document.getElementById("profileReviews"),
+  profileBookCount: document.getElementById("profileBookCount"),
+  profileReviewCount: document.getElementById("profileReviewCount")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -179,7 +190,8 @@ export function showView(name) {
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
-  dom.homeBtn.hidden = name !== "detail" && name !== "random";
+  dom.profileView.hidden = name !== "profile";
+  dom.homeBtn.hidden = name !== "detail" && name !== "random" && name !== "profile";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
@@ -194,7 +206,10 @@ export function showView(name) {
 
   // 책 상세만 고유 URL(/book/:id)을 갖고, 나머지 화면(목록/글쓰기/랜덤/의견)은 모두 "/"로
   // 취급한다. 이미 같은 경로면 history를 더 쌓지 않는다 (뒤로가기가 자연스럽게 목록으로).
-  var path = (name === "detail" && state.currentId) ? "/book/" + encodeURIComponent(state.currentId) : "/";
+  // 책 상세(/book/:id)와 프로필(/u/:닉네임)만 고유 URL을 갖고, 나머지 화면은 모두 "/"다.
+  var path = "/";
+  if (name === "detail" && state.currentId) path = "/book/" + encodeURIComponent(state.currentId);
+  else if (name === "profile" && state.profileName) path = "/u/" + encodeURIComponent(state.profileName);
   if (window.location.pathname !== path) history.pushState(null, "", path);
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -236,6 +251,32 @@ export function startBookRegistration(prefillQuery) {
   if (!googleConfigured()) { alert("아직 Google 로그인이 설정되지 않았어요. 관리자에게 문의해주세요."); return; }
   if (!state.currentUser) { alert("먼저 오른쪽 위 'Google로 로그인' 버튼으로 로그인해주세요."); return; }
   openForm(prefillQuery);
+}
+
+// 닉네임 한 명분의 기록 화면으로 간다. 헤더의 내 닉네임과 한줄평의 남의 닉네임이 같은
+// 함수를 쓴다 — 보는 대상만 다르고 화면은 하나다.
+export function openProfile(nickname) {
+  var name = String(nickname || "").trim();
+  if (!name) return;
+  gtag("event", "view_profile");
+  state.profileName = name;
+  // 먼저 빈 화면을 띄워두고 채운다. 응답을 기다린 뒤에 화면을 바꾸면 누른 직후 아무 반응이
+  // 없어서 안 눌린 것처럼 느껴진다.
+  state.profile = null;
+  renderProfile();
+  showView("profile");
+
+  api("/api/nickname/" + encodeURIComponent(name) + "/reviews")
+    .then(function (data) {
+      // 기다리는 동안 다른 닉네임을 눌렀다면 늦게 온 응답은 버린다.
+      if (state.profileName !== name) return;
+      state.profile = data;
+      renderProfile();
+    })
+    .catch(function (e) {
+      if (state.profileName !== name) return;
+      dom.profileSub.textContent = "불러오지 못했어요: " + e.message;
+    });
 }
 
 export function openDetail(id) {
@@ -662,6 +703,11 @@ function bookIdFromPath(pathname) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+function nicknameFromPath(pathname) {
+  var m = pathname.match(/^\/u\/([^/]+)\/?$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 // 헤더가 두 줄로 접히는 폭(모바일·태블릿)에서 의미가 있는 스크롤 방향 기반 헤더
 // 숨김/노출 (css/style.css의 @media (max-width: 900px) .sticky-header.header-hidden
 // 규칙에서만 실제로 보이므로, PC 폭에서는 클래스가 붙어도 시각적으로 아무 효과가 없다
@@ -684,12 +730,16 @@ window.addEventListener("scroll", function () {
 
 window.addEventListener("popstate", function () {
   var id = bookIdFromPath(window.location.pathname);
-  if (id) openDetail(id);
-  else showView("library");
+  if (id) { openDetail(id); return; }
+  var who = nicknameFromPath(window.location.pathname);
+  if (who) { openProfile(who); return; }
+  showView("library");
 });
 
 var initialBookId = bookIdFromPath(window.location.pathname);
+var initialNickname = nicknameFromPath(window.location.pathname);
 if (initialBookId) openDetail(initialBookId);
+else if (initialNickname) openProfile(initialNickname);
 else showView("library");
 
 refreshBooks();

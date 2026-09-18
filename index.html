@@ -314,6 +314,28 @@
       </div>
     </section>
 
+    <!-- 닉네임 한 명분의 기록. 헤더의 내 닉네임을 누르거나, 한줄평에 뜬 남의 닉네임을
+         눌러서 들어온다. 내용은 js/render.js renderProfile이 채운다. -->
+    <section id="profileView" hidden>
+      <div class="panel profile-card">
+        <header class="profile-head">
+          <h2 class="profile-name" id="profileName"></h2>
+          <p class="profile-sub" id="profileSub"></p>
+        </header>
+        <dl class="profile-stats" id="profileStats"></dl>
+
+        <section class="profile-section">
+          <h3>등록한 책 <span class="count" id="profileBookCount"></span></h3>
+          <div class="shelf profile-shelf" id="profileShelf"></div>
+        </section>
+
+        <section class="profile-section">
+          <h3>남긴 한줄평 <span class="count" id="profileReviewCount"></span></h3>
+          <ul class="profile-reviews" id="profileReviews"></ul>
+        </section>
+      </div>
+    </section>
+
     <section id="randomView" hidden>
       <div class="panel random-panel">
         <h2>랜덤 책 추천</h2>

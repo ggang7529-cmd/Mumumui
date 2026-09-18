@@ -1,6 +1,7 @@
 import { fetchScoreMap } from "../_lib/scores.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
+import { escapeHtml } from "../_lib/html.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
 // index.html을 읽어 치환하는 방식이라 스프라이트가 이미 페이지 안에 들어 있다.
@@ -10,11 +11,6 @@ function iconSvg(name, className) {
     '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"></use></svg>';
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-  });
-}
 
 // 카카오 도서검색 썸네일(120x174짜리 kakaocdn 썸네일 프록시 URL)은 작아서 카톡 공유
 // 미리보기에도 그대로 쓰면 흐릿하다. js/render.js의 upscaleCover()와 같은 방식으로,

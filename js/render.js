@@ -1,8 +1,8 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
-  renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap
+  renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
 } from "./api.js";
 import { getLevel, formatNicknameShort, formatNicknameFull } from "./levels.js";
 
@@ -41,10 +41,24 @@ export function coverFor(title) {
 // "등급아이콘 레벨 닉네임" 축약형으로 표시한다 (예: 책아이콘 + "6 이과생").
 // 닉네임은 사용자 입력이므로 textContent로만 넣는다 — innerHTML로 조립하지 않는다.
 function buildAuthorChip(name, score, className) {
-  var span = document.createElement("span");
-  span.className = className;
+  var clean = (name || "").trim();
+  // 닉네임을 누르면 그 사람의 기록으로 간다. 처음 온 사람이 "여기 사람이 있구나"를 느끼는
+  // 거의 유일한 통로라서, 목록의 모든 닉네임을 통째로 눌리게 해뒀다.
+  //
+  // 닉네임이 빈 값이면(옛 기록 중 일부) 누를 곳이 없으므로 예전처럼 그냥 span으로 둔다.
+  var span = document.createElement(clean ? "button" : "span");
+  span.className = className + (clean ? " is-linked" : "");
+  if (clean) {
+    span.type = "button";
+    span.setAttribute("aria-label", clean + "님의 기록 보기");
+    span.addEventListener("click", function (e) {
+      // 한줄평 줄 전체가 클릭 대상인 곳이 있어 상위로 번지지 않게 막는다.
+      e.stopPropagation();
+      openProfile(clean);
+    });
+  }
   span.appendChild(buildIcon(getLevel(score).icon, "lv-icon lv-icon--" + getLevel(score).icon));
-  span.appendChild(document.createTextNode(formatNicknameShort((name || "").trim(), score)));
+  span.appendChild(document.createTextNode(formatNicknameShort(clean, score)));
   return span;
 }
 
@@ -236,8 +250,13 @@ export function renderAuthBox() {
   if (AUTH_MODE === "nickname") {
     var nickname = getSavedNickname();
     if (nickname) {
-      var savedChip = document.createElement("div");
-      savedChip.className = "user-chip";
+      // 내 기록으로 들어가는 입구. 별도 메뉴를 만드는 대신 이미 헤더에 떠 있는 내 닉네임을
+      // 그대로 누를 수 있게 했다 — 남의 닉네임을 누르는 것과 같은 동작이라 배울 게 없다.
+      var savedChip = document.createElement("button");
+      savedChip.type = "button";
+      savedChip.className = "user-chip is-linked";
+      savedChip.setAttribute("aria-label", nickname + "님의 기록 보기");
+      savedChip.addEventListener("click", function () { openProfile(nickname); });
       var savedName = document.createElement("span");
       savedName.className = "user-name";
       var myLevel = getLevel(state.myScore);
@@ -323,6 +342,99 @@ function updateCategoryFilterOptions() {
   else state.categoryFilter = "";
 }
 
+// 홈 서가와 프로필의 "등록한 책"이 같은 카드를 쓴다. 원래 renderLibrary 안에 그대로
+// 펼쳐져 있던 것을 옮겨만 놓았고 내용은 바꾸지 않았다.
+function buildBookCard(r) {
+    var rating = bookRating(r);
+    var card = document.createElement("a");
+    card.href = "/book/" + encodeURIComponent(r.id);
+    // 표지 이미지가 없으면 제목을 크게 조판한 "책등"으로 보여준다(css의 .book-card--typo).
+    card.className = r.cover ? "book-card" : "book-card book-card--typo";
+    card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
+      (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
+
+    // 표지 영역을 별도 컨테이너(.b-cover)로 감싸서, PC에서는 지금처럼 표지 위에 정보가
+    // 절대위치로 겹치고(css/style.css 기본 규칙) 모바일에서는 표지 "아래"에 다크 정보
+    // 카드로 분리되도록(같은 미디어쿼리, .b-overlay를 static으로 전환) CSS만으로 두 레이아웃을
+    // 다 표현한다. 표지 이미지가 없는 책도 색상 배경이 이 컨테이너 크기를 그대로 차지해야
+    // 하므로, img 유무와 무관하게 항상 이 컨테이너를 만든다.
+    var coverBox = document.createElement("div");
+    coverBox.className = "b-cover";
+    coverBox.style.setProperty("--cover", coverFor(r.title));
+    // 표지가 없을 때 CSS(.book-card--typo .b-cover::before)가 content: attr(data-title)로
+    // 읽어 책등에 제목을 찍는다.
+    coverBox.dataset.title = r.title;
+
+    if (r.cover) {
+      var img = document.createElement("img");
+      img.className = "b-cover-img";
+      img.src = upscaleCover(r.cover);
+      img.alt = r.title + " 표지";
+      coverBox.appendChild(img);
+    }
+
+    if (isNewBook(r)) {
+      var badge = document.createElement("span");
+      badge.className = "b-new-badge";
+      badge.textContent = "NEW";
+      coverBox.appendChild(badge);
+    }
+
+    card.appendChild(coverBox);
+
+    var overlay = document.createElement("div");
+    overlay.className = "b-overlay";
+
+    var titleEl = document.createElement("div");
+    titleEl.className = "b-title";
+    titleEl.textContent = r.title;
+
+    // 카드 하단 문구는 참여자 수에 따라 다르게 쓴다. 처음 온 사람이 카드를 "정보 표시"로만
+    // 읽고 지나가지 않도록, 아직 비어 있거나 한 명뿐인 책에서는 숫자 대신 사람 말로 상태를
+    // 알려주고 자리가 남아 있다는 걸 드러낸다. 두 명 이상 모인 책은 이미 읽을거리가 있으니
+    // 원래대로 별점과 참여자 수를 보여준다.
+    var starsEl = document.createElement("div");
+    starsEl.className = "b-stars";
+    if (!rating) {
+      starsEl.classList.add("b-stars--invite");
+      starsEl.textContent = "첫 리뷰를 남겨보세요";
+      // 터치 기기에는 hover가 없어서 아래 행동 유도 문구를 열 방법이 없다. 참여가 필요한
+      // 이런 카드에서만 상시 노출하도록 CSS가 이 클래스를 잡는다(모든 카드에 항상 띄우면
+      // 좁은 화면에서 줄만 늘어난다).
+      card.classList.add("book-card--invite");
+    } else if (rating.count === 1) {
+      starsEl.classList.add("b-stars--invite");
+      starsEl.textContent = "아직 1명이 읽었어요";
+      card.classList.add("book-card--invite");
+    } else {
+      starsEl.appendChild(buildStarRow(Math.round(rating.avg)));
+      starsEl.appendChild(document.createTextNode(" " + rating.avg.toFixed(1) + " (" + rating.count + ")"));
+    }
+
+    // 마우스를 올리거나(PC) 누르는 동안(모바일) 나타나는 행동 유도 문구. 카드가 그냥
+    // 읽을거리가 아니라 "눌러서 참여하는 곳"이라는 신호를 준다. 링크 자체가 이미 상세로
+    // 가는 역할을 하고 위 aria-label이 책 정보를 읽어주므로, 이 줄은 화면에만 보이면
+    // 충분해서 스크린리더에서는 감춘다.
+    var cta = document.createElement("span");
+    cta.className = "b-cta";
+    cta.textContent = "별점 남기기 →";
+    cta.setAttribute("aria-hidden", "true");
+
+    overlay.appendChild(titleEl);
+    overlay.appendChild(starsEl);
+    overlay.appendChild(cta);
+    card.appendChild(overlay);
+
+    card.addEventListener("click", function (id) {
+      return function (e) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openDetail(id);
+      };
+    }(r.id));
+
+    return card;
+}
 export function renderLibrary() {
   updateCategoryFilterOptions();
 
@@ -438,96 +550,117 @@ export function renderLibrary() {
   }
 
   visible.forEach(function (r) {
-    var rating = bookRating(r);
-    var card = document.createElement("a");
-    card.href = "/book/" + encodeURIComponent(r.id);
-    // 표지 이미지가 없으면 제목을 크게 조판한 "책등"으로 보여준다(css의 .book-card--typo).
-    card.className = r.cover ? "book-card" : "book-card book-card--typo";
-    card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
-      (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
+    dom.shelf.appendChild(buildBookCard(r));
+  });
+}
 
-    // 표지 영역을 별도 컨테이너(.b-cover)로 감싸서, PC에서는 지금처럼 표지 위에 정보가
-    // 절대위치로 겹치고(css/style.css 기본 규칙) 모바일에서는 표지 "아래"에 다크 정보
-    // 카드로 분리되도록(같은 미디어쿼리, .b-overlay를 static으로 전환) CSS만으로 두 레이아웃을
-    // 다 표현한다. 표지 이미지가 없는 책도 색상 배경이 이 컨테이너 크기를 그대로 차지해야
-    // 하므로, img 유무와 무관하게 항상 이 컨테이너를 만든다.
-    var coverBox = document.createElement("div");
-    coverBox.className = "b-cover";
-    coverBox.style.setProperty("--cover", coverFor(r.title));
-    // 표지가 없을 때 CSS(.book-card--typo .b-cover::before)가 content: attr(data-title)로
-    // 읽어 책등에 제목을 찍는다.
-    coverBox.dataset.title = r.title;
+// 닉네임 한 명분의 기록 화면. 서버가 이미 다 계산해서 내려주므로(functions/api/nickname/
+// [name]/reviews.js) 여기서는 그리기만 한다. state.profile이 비어 있으면 아직 불러오는
+// 중이라는 뜻이다.
+export function renderProfile() {
+  var data = state.profile;
+  var isMe = !!data && data.nickname === getSavedNickname();
 
-    if (r.cover) {
-      var img = document.createElement("img");
-      img.className = "b-cover-img";
-      img.src = upscaleCover(r.cover);
-      img.alt = r.title + " 표지";
-      coverBox.appendChild(img);
-    }
+  dom.profileName.textContent = data ? data.nickname : "";
+  if (!data) {
+    dom.profileSub.textContent = "불러오는 중...";
+    dom.profileStats.innerHTML = "";
+    dom.profileShelf.innerHTML = "";
+    dom.profileReviews.innerHTML = "";
+    dom.profileBookCount.textContent = "";
+    dom.profileReviewCount.textContent = "";
+    return;
+  }
 
-    if (isNewBook(r)) {
-      var badge = document.createElement("span");
-      badge.className = "b-new-badge";
-      badge.textContent = "NEW";
-      coverBox.appendChild(badge);
-    }
+  var lvl = getLevel(data.score);
+  dom.profileSub.textContent = (isMe ? "내 기록 · " : "") + lvl.name + " · " + data.score + "점";
 
-    card.appendChild(coverBox);
+  // 요약 숫자. 값이 없는 항목(아직 별점을 안 준 경우의 평균)은 아예 빼서 "-"가 줄줄이
+  // 늘어서지 않게 한다.
+  var s = data.summary;
+  var stats = [
+    ["등록한 책", s.bookCount + "권"],
+    ["남긴 한줄평", s.reviewCount + "개"],
+    ["받은 좋아요", s.likesReceived + "개"]
+  ];
+  if (s.avgRating !== null && s.avgRating !== undefined) stats.push(["평균 별점", s.avgRating.toFixed(1) + "점"]);
+  if (s.replyCount) stats.push(["남긴 답글", s.replyCount + "개"]);
 
-    var overlay = document.createElement("div");
-    overlay.className = "b-overlay";
+  dom.profileStats.innerHTML = "";
+  stats.forEach(function (pair) {
+    // dt/dd를 <dl>의 직계 자식으로 두면 그리드가 둘을 각각 한 칸씩 잡아서 "등록한 책 3권"이
+    // 가로로 흩어진다. 항목마다 div로 묶어 한 칸에 이름 위 값 아래로 세운다(HTML5에서 dl
+    // 안의 div 묶음은 정식 문법이다).
+    var cell = document.createElement("div");
+    var dt = document.createElement("dt");
+    dt.textContent = pair[0];
+    var dd = document.createElement("dd");
+    dd.textContent = pair[1];
+    cell.appendChild(dt);
+    cell.appendChild(dd);
+    dom.profileStats.appendChild(cell);
+  });
 
-    var titleEl = document.createElement("div");
-    titleEl.className = "b-title";
-    titleEl.textContent = r.title;
+  // 등록한 책 — 홈 서가와 같은 카드를 쓴다.
+  dom.profileBookCount.textContent = data.books.length ? "(" + data.books.length + ")" : "";
+  dom.profileShelf.innerHTML = "";
+  if (data.books.length === 0) {
+    var noBook = document.createElement("p");
+    noBook.className = "empty-note";
+    noBook.textContent = isMe ? "아직 등록한 책이 없어요." : "아직 등록한 책이 없어요";
+    dom.profileShelf.appendChild(noBook);
+  } else {
+    data.books.forEach(function (row) {
+      dom.profileShelf.appendChild(buildBookCard(normalizeBook(row)));
+    });
+  }
 
-    // 카드 하단 문구는 참여자 수에 따라 다르게 쓴다. 처음 온 사람이 카드를 "정보 표시"로만
-    // 읽고 지나가지 않도록, 아직 비어 있거나 한 명뿐인 책에서는 숫자 대신 사람 말로 상태를
-    // 알려주고 자리가 남아 있다는 걸 드러낸다. 두 명 이상 모인 책은 이미 읽을거리가 있으니
-    // 원래대로 별점과 참여자 수를 보여준다.
-    var starsEl = document.createElement("div");
-    starsEl.className = "b-stars";
-    if (!rating) {
-      starsEl.classList.add("b-stars--invite");
-      starsEl.textContent = "첫 리뷰를 남겨보세요";
-      // 터치 기기에는 hover가 없어서 아래 행동 유도 문구를 열 방법이 없다. 참여가 필요한
-      // 이런 카드에서만 상시 노출하도록 CSS가 이 클래스를 잡는다(모든 카드에 항상 띄우면
-      // 좁은 화면에서 줄만 늘어난다).
-      card.classList.add("book-card--invite");
-    } else if (rating.count === 1) {
-      starsEl.classList.add("b-stars--invite");
-      starsEl.textContent = "아직 1명이 읽었어요";
-      card.classList.add("book-card--invite");
-    } else {
-      starsEl.appendChild(buildStarRow(Math.round(rating.avg)));
-      starsEl.appendChild(document.createTextNode(" " + rating.avg.toFixed(1) + " (" + rating.count + ")"));
-    }
+  // 남긴 한줄평 — 어느 책에 남긴 건지가 핵심이라 책 제목을 앞에 둔다.
+  dom.profileReviewCount.textContent = data.reviews.length ? "(" + data.reviews.length + ")" : "";
+  dom.profileReviews.innerHTML = "";
+  if (data.reviews.length === 0) {
+    var noReview = document.createElement("li");
+    noReview.className = "empty-note";
+    noReview.textContent = isMe ? "아직 남긴 한줄평이 없어요." : "아직 남긴 한줄평이 없어요";
+    dom.profileReviews.appendChild(noReview);
+  } else {
+    data.reviews.forEach(function (r) {
+      var li = document.createElement("li");
 
-    // 마우스를 올리거나(PC) 누르는 동안(모바일) 나타나는 행동 유도 문구. 카드가 그냥
-    // 읽을거리가 아니라 "눌러서 참여하는 곳"이라는 신호를 준다. 링크 자체가 이미 상세로
-    // 가는 역할을 하고 위 aria-label이 책 정보를 읽어주므로, 이 줄은 화면에만 보이면
-    // 충분해서 스크린리더에서는 감춘다.
-    var cta = document.createElement("span");
-    cta.className = "b-cta";
-    cta.textContent = "별점 남기기 →";
-    cta.setAttribute("aria-hidden", "true");
-
-    overlay.appendChild(titleEl);
-    overlay.appendChild(starsEl);
-    overlay.appendChild(cta);
-    card.appendChild(overlay);
-
-    card.addEventListener("click", function (id) {
-      return function (e) {
+      var bookLink = document.createElement("a");
+      bookLink.className = "pr-book";
+      bookLink.href = "/book/" + encodeURIComponent(r.book_id);
+      bookLink.textContent = r.book_title;
+      bookLink.addEventListener("click", function (e) {
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        openDetail(id);
-      };
-    }(r.id));
+        openDetail(r.book_id);
+      });
+      li.appendChild(bookLink);
 
-    dom.shelf.appendChild(card);
-  });
+      var stars = document.createElement("span");
+      stars.className = "pr-rating";
+      for (var i = 1; i <= 5; i++) stars.appendChild(buildStarIcon(i <= r.rating));
+      li.appendChild(stars);
+
+      var badge = buildMoodBadge(r.mood);
+      if (badge) li.appendChild(badge);
+
+      if (r.text) {
+        var textEl = document.createElement("span");
+        textEl.className = "pr-text";
+        textEl.textContent = r.text;
+        li.appendChild(textEl);
+      }
+
+      var date = document.createElement("span");
+      date.className = "pr-date";
+      date.textContent = formatDate(r.created_at);
+      li.appendChild(date);
+
+      dom.profileReviews.appendChild(li);
+    });
+  }
 }
 
 // 정렬탭의 "최신순" 목록과 별개로, 홈 상단 설명 영역에 방금 등록된 한줄평 1~2개를
