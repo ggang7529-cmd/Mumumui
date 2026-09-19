@@ -1202,6 +1202,70 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 
+  /* 모바일 프로필 서가는 칸 수를 3으로 못박는다.
+     minmax(150px, ...)를 쓰면 패널 안쪽 가용 폭이 360px 아래로 내려가는 순간 한 칸으로
+     떨어져서 표지 하나가 화면을 통째로 먹는다(실측: 360px 기기에서 291×436). 여기는
+     "이 사람이 뭘 읽었나"를 훑는 자리라 표지가 크기보다 여러 권이 한눈에 보이는 게 낫다.
+     홈 서가(.shelf)는 지금 2칸 그대로 둔다 — 거기선 카드 하나하나가 읽을거리다. */
+  @media (max-width: 640px) {
+    .profile-shelf {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    /* 카드가 78~115px로 작아지므로 그 안의 글자도 같이 줄인다. 크기를 안 줄이면 제목이
+       서너 줄로 접히면서 표지를 다 덮는다. */
+    .profile-shelf .b-overlay {
+      padding: 0.5rem 0.4rem 0.4rem;
+    }
+
+    .profile-shelf .book-card .b-title {
+      font-size: 0.72rem;
+      line-height: 1.25;
+      margin: 0 0 0.2rem;
+    }
+
+    /* 카드 폭이 78~115px이라 이 줄에 들어갈 수 있는 건 별점과 숫자뿐이다. */
+    .profile-shelf .book-card .b-stars {
+      font-size: 0.56rem;
+      gap: 0.08em;
+    }
+
+    /* "첫 리뷰를 남겨보세요" / "아직 1명이 읽었어요"는 홈 서가에서 참여를 권하려고 넣은
+       문구다. 여기서는 폭이 모자라 잘려 나오기만 하고(360px 기기에서 "아직 1명이 읽었아-"),
+       남의 서재를 훑는 자리라 권유가 앞설 이유도 없다. 홈에서는 그대로 나온다. */
+    .profile-shelf .book-card .b-stars--invite {
+      display: none;
+    }
+
+    /* 표지가 없는 책은 제목을 책등처럼 크게 조판하는데(.book-card--typo), 그 크기도
+       같이 줄여야 좁은 칸에서 제목이 카드를 넘어간다. */
+    .profile-shelf .book-card--typo .b-cover::before {
+      inset: 0 0 2rem 0;
+      padding: 0.5rem 0.45rem;
+      font-size: 0.78rem;
+      line-height: 1.25;
+    }
+
+    /* "별점 남기기 →"는 이 폭에 들어가지 않고, 프로필은 남의 기록을 구경하는 자리라
+       행동 유도가 앞설 이유도 없다. 홈 서가에서는 그대로 뜬다.
+       .book-card--invite 쪽을 같이 짚는 이유: 터치 기기에서 그 클래스가 CTA를 상시
+       노출시키므로, 한 줄만 적으면 참여가 필요한 카드에서만 다시 튀어나온다. */
+    .profile-shelf .book-card .b-cta,
+    .profile-shelf .book-card--invite .b-cta {
+      display: none;
+    }
+  }
+
+  /* 아주 좁은 화면(구형 iPhone SE 등 320px)에서는 3칸을 나누면 카드가 78px밖에 안 돼
+     "4.6 (5)"조차 넘친다. 잘린 숫자를 보여주느니 표지와 제목만 남긴다 — 별점은 책을
+     누르면 바로 나온다. */
+  @media (max-width: 340px) {
+    .profile-shelf .book-card .b-stars {
+      display: none;
+    }
+  }
+
   .profile-reviews {
     list-style: none;
     margin: 0;
