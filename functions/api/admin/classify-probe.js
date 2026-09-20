@@ -30,6 +30,18 @@ function pickIsbns(url, dbRows) {
   }).filter(function (r) { return r.isbn13; });
 }
 
+// 값이 긴 문자열 필드만 골라 길이와 앞머리를 돌려준다. 소개글·목차처럼 실제로 쓸 만한
+// 필드가 어느 이름으로 오는지 응답을 보고 판단하기 위한 것이다.
+function longTextFields(doc) {
+  return Object.keys(doc)
+    .filter(function (k) { return typeof doc[k] === "string" && doc[k].trim().length > 40; })
+    .map(function (k) {
+      var v = doc[k].trim();
+      return { field: k, length: v.length, head: v.slice(0, 70) };
+    })
+    .sort(function (a, b) { return b.length - a.length; });
+}
+
 async function probeSeoji(env, isbn13) {
   if (!env.SEOJI_API_KEY) return { configured: false };
   var url = "https://www.nl.go.kr/seoji/SearchApi.do" +
@@ -55,6 +67,11 @@ async function probeSeoji(env, isbn13) {
       kdc: doc ? doc.KDC : null,
       eaAddCode: doc ? doc.EA_ADD_CODE : null,
       subject: doc ? doc.SUBJECT : null,
+      // 긴 글이 담긴 필드를 길이와 함께 따로 뽑는다. 카카오가 주는 책 소개가 260자짜리
+      // 발췌라, 더 긴 소개를 주는 출처가 있는지 보려는 것이다. 어느 필드가 소개글인지
+      // 문서를 믿지 않고 실제 응답에서 찾으려고 필드명을 박아두지 않았다 — raw를 그대로
+      // 돌려주는 이 라우트의 방침과 같은 이유다.
+      longFields: doc ? longTextFields(doc) : null,
       raw: doc || null
     };
   } catch (e) {
@@ -74,8 +91,10 @@ async function probeGoogleBooks(isbn13) {
       found: !!info,
       categories: info ? info.categories || null : null,
       title: info ? info.title : null,
-      // description은 길어서 응답만 키우고 분류 판단에는 쓸모가 없어 뺀다. 대신 어떤
-      // 필드들이 오는지는 이름만 남겨서 확인할 수 있게 한다.
+      // 전문을 그대로 실으면 응답만 커지므로 길이와 앞머리만 남긴다. 카카오 발췌(약 260자)
+      // 보다 긴 소개를 주는 출처를 찾는 게 목적이라 길이가 곧 답이다.
+      descriptionLength: info && info.description ? info.description.length : 0,
+      descriptionHead: info && info.description ? info.description.slice(0, 80) : null,
       fieldNames: info ? Object.keys(info) : null
     };
   } catch (e) {
