@@ -42,41 +42,83 @@ function longTextFields(doc) {
     .sort(function (a, b) { return b.length - a.length; });
 }
 
-async function probeSeoji(env, isbn13) {
-  if (!env.SEOJI_API_KEY) return { configured: false };
-  var url = "https://www.nl.go.kr/seoji/SearchApi.do" +
-    "?cert_key=" + encodeURIComponent(env.SEOJI_API_KEY) +
-    "&result_style=json&page_no=1&page_size=1&isbn=" + encodeURIComponent(isbn13);
-  try {
-    var res = await fetch(url);
-    if (!res.ok) return { configured: true, ok: false, reason: "http-" + res.status };
-    var text = await res.text();
-    var data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      // 인증키가 틀리면 JSON 대신 에러 HTML/XML을 돌려주는 경우가 있어, 그때 뭐가
-      // 왔는지 알 수 있게 앞부분만 잘라 그대로 넘긴다.
-      return { configured: true, ok: false, reason: "invalid-json", bodyHead: text.slice(0, 200) };
+// 국립중앙도서관 계열 OpenAPI. 어느 주소·파라미터 조합이 맞는지 문서가 아니라 실제
+// 응답으로 가린다 — 발급받은 키가 어느 서비스 것인지(서지정보인지 소장자료 검색인지)
+// 확실하지 않고, 이 샌드박스에서는 nl.go.kr에 접근이 막혀 미리 확인할 수도 없어서다.
+// 응답이 오는 조합이 확인되면 그것만 남기고 나머지는 지운다.
+var NL_ENDPOINTS = [
+  {
+    name: "서지정보(seoji.nl.go.kr)",
+    build: function (key, isbn13) {
+      return "https://seoji.nl.go.kr/landingPage/SearchApi.do" +
+        "?cert_key=" + encodeURIComponent(key) +
+        "&result_style=json&page_no=1&page_size=1&isbn=" + encodeURIComponent(isbn13);
     }
-    var doc = data.docs && data.docs[0];
-    return {
-      configured: true,
-      ok: true,
-      found: !!doc,
-      kdc: doc ? doc.KDC : null,
-      eaAddCode: doc ? doc.EA_ADD_CODE : null,
-      subject: doc ? doc.SUBJECT : null,
-      // 긴 글이 담긴 필드를 길이와 함께 따로 뽑는다. 카카오가 주는 책 소개가 260자짜리
-      // 발췌라, 더 긴 소개를 주는 출처가 있는지 보려는 것이다. 어느 필드가 소개글인지
-      // 문서를 믿지 않고 실제 응답에서 찾으려고 필드명을 박아두지 않았다 — raw를 그대로
-      // 돌려주는 이 라우트의 방침과 같은 이유다.
-      longFields: doc ? longTextFields(doc) : null,
-      raw: doc || null
-    };
-  } catch (e) {
-    return { configured: true, ok: false, reason: "network-error", detail: String(e && e.message) };
+  },
+  {
+    name: "서지정보(www.nl.go.kr 구주소)",
+    build: function (key, isbn13) {
+      return "https://www.nl.go.kr/seoji/SearchApi.do" +
+        "?cert_key=" + encodeURIComponent(key) +
+        "&result_style=json&page_no=1&page_size=1&isbn=" + encodeURIComponent(isbn13);
+    }
+  },
+  {
+    name: "소장자료 검색(NL/search)",
+    build: function (key, isbn13) {
+      return "https://www.nl.go.kr/NL/search/openApi/search.do" +
+        "?key=" + encodeURIComponent(key) +
+        "&apiType=json&srchTarget=total&kwd=" + encodeURIComponent(isbn13);
+    }
   }
+];
+
+// 응답에서 책 한 권에 해당하는 객체를 찾아낸다. 서비스마다 감싸는 모양이 달라서
+// 알려진 경로를 차례로 훑고, 못 찾으면 null을 준다(그때는 bodyHead로 눈으로 본다).
+function firstDoc(data) {
+  if (!data || typeof data !== "object") return null;
+  if (Array.isArray(data.docs) && data.docs[0]) return data.docs[0];
+  if (data.result && Array.isArray(data.result) && data.result[0]) return data.result[0];
+  if (data.response && data.response.docs && data.response.docs[0]) return data.response.docs[0];
+  return null;
+}
+
+async function probeNlApis(env, isbn13) {
+  if (!env.SEOJI_API_KEY) return { configured: false };
+
+  var attempts = [];
+  for (var i = 0; i < NL_ENDPOINTS.length; i++) {
+    var ep = NL_ENDPOINTS[i];
+    var entry = { endpoint: ep.name };
+    try {
+      var res = await fetch(ep.build(env.SEOJI_API_KEY, isbn13));
+      entry.status = res.status;
+      entry.contentType = res.headers.get("content-type") || null;
+      var text = await res.text();
+      entry.bytes = text.length;
+      var data = null;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // 키가 틀리거나 주소가 다르면 JSON 대신 에러 HTML/XML이 온다. 눈으로 확인할 수
+        // 있게 앞부분만 남긴다.
+        entry.parsed = false;
+        entry.bodyHead = text.slice(0, 220);
+      }
+      if (data) {
+        entry.parsed = true;
+        var doc = firstDoc(data);
+        entry.found = !!doc;
+        entry.longFields = doc ? longTextFields(doc) : null;
+        entry.fieldNames = doc ? Object.keys(doc) : null;
+        if (!doc) entry.bodyHead = text.slice(0, 220);
+      }
+    } catch (e) {
+      entry.error = String(e && e.message);
+    }
+    attempts.push(entry);
+  }
+  return { configured: true, attempts: attempts };
 }
 
 // 도서관 정보나루(data4library). 운영 경로(functions/_lib/libraryCategory.js)는 분류
@@ -160,12 +202,11 @@ export async function onRequestGet(context) {
 
   var results = [];
   for (var i = 0; i < targets.length; i++) {
-    var seoji = await probeSeoji(env, targets[i].isbn13);
+    var seoji = await probeNlApis(env, targets[i].isbn13);
     var library = await probeLibrary(env, targets[i].isbn13);
     var google = await probeGoogleBooks(targets[i].isbn13);
     // raw는 필드명 확인이 목적이라 첫 번째 책 것만 남긴다. 5권 전부 담으면 응답이
     // 쓸데없이 커지고, 필드 구조는 어차피 다 같다.
-    if (i > 0 && seoji.raw) seoji.raw = undefined;
     if (i > 0 && google.fieldNames) google.fieldNames = undefined;
     if (i > 0 && library.fieldNames) library.fieldNames = undefined;
     results.push({
