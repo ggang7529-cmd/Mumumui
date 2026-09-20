@@ -79,6 +79,36 @@ async function probeSeoji(env, isbn13) {
   }
 }
 
+// 도서관 정보나루(data4library). 운영 경로(functions/_lib/libraryCategory.js)는 분류
+// (class_nm)만 뽑아 쓰고 나머지를 버리므로, 여기서는 같은 주소를 직접 불러 책 항목의
+// 긴 글 필드를 전부 드러낸다 — 소개글을 주는지 보려는 것이다.
+async function probeLibrary(env, isbn13) {
+  if (!env.LIBRARY_API_KEY) return { configured: false };
+  var url = "https://data4library.kr/api/srchDtlList" +
+    "?authKey=" + encodeURIComponent(env.LIBRARY_API_KEY) +
+    "&isbn13=" + encodeURIComponent(isbn13) + "&format=json";
+  try {
+    var res = await fetch(url);
+    if (!res.ok) return { configured: true, ok: false, reason: "http-" + res.status };
+    var data = await res.json();
+    // 키가 틀려도 HTTP 200으로 오면서 본문에 에러를 담는 경우가 있다.
+    if (data.response && data.response.error) {
+      return { configured: true, ok: false, reason: "api-error", detail: data.response.error };
+    }
+    var book = data.response && data.response.detail && data.response.detail.book;
+    return {
+      configured: true,
+      ok: true,
+      found: !!book,
+      classNm: book ? book.class_nm || null : null,
+      longFields: book ? longTextFields(book) : null,
+      fieldNames: book ? Object.keys(book) : null
+    };
+  } catch (e) {
+    return { configured: true, ok: false, reason: "network-error", detail: String(e && e.message) };
+  }
+}
+
 async function probeGoogleBooks(isbn13) {
   var url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + encodeURIComponent(isbn13);
   try {
@@ -131,15 +161,18 @@ export async function onRequestGet(context) {
   var results = [];
   for (var i = 0; i < targets.length; i++) {
     var seoji = await probeSeoji(env, targets[i].isbn13);
+    var library = await probeLibrary(env, targets[i].isbn13);
     var google = await probeGoogleBooks(targets[i].isbn13);
     // raw는 필드명 확인이 목적이라 첫 번째 책 것만 남긴다. 5권 전부 담으면 응답이
     // 쓸데없이 커지고, 필드 구조는 어차피 다 같다.
     if (i > 0 && seoji.raw) seoji.raw = undefined;
     if (i > 0 && google.fieldNames) google.fieldNames = undefined;
+    if (i > 0 && library.fieldNames) library.fieldNames = undefined;
     results.push({
       title: targets[i].title,
       isbn13: targets[i].isbn13,
       seoji: seoji,
+      library: library,
       googleBooks: google
     });
   }
