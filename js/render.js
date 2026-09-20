@@ -1,5 +1,6 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
+import { formatContents } from "./bookContents.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
@@ -736,46 +737,27 @@ export function renderLatestHighlight() {
   });
 }
 
-// 책 소개(카카오 API의 contents)를 기본 접힌 상태(PC 3줄/모바일 2줄, css/style.css 참고)로
-// 보여주고, 실제로 잘려서 넘치는 경우에만 "더 보기" 버튼을 노출한다. 렌더 시점엔 상세
-// 화면이 아직 hidden 상태라 레이아웃이 없으므로, showView가 화면을 보여준 직후(다음
-// 페인트 전) requestAnimationFrame에서 overflow 여부를 측정한다.
+// 책 소개(카카오 API의 contents)를 보여준다.
+//
+// 예전엔 PC 3줄 / 모바일 2줄로 접고 "더 보기" 버튼을 달았는데, 카카오가 주는 소개가
+// 260자 남짓이라 접을 만큼 길지 않았다. 버튼 한 번을 더 누르게 할 이유가 없어서 접는
+// 걸 없애고 한 번에 다 보여준다. 대신 발췌라서 문장이 끊긴 자리에는 formatContents가
+// "…"를 붙인다(js/bookContents.js).
 function updateBookContents(r) {
   var $section = document.getElementById("bookContentsSection");
   var $text = document.getElementById("bookContentsText");
-  var $toggle = document.getElementById("bookContentsToggle");
-  var contents = (r.contents || "").trim();
+  var contents = formatContents(r.contents);
 
   if (!contents) {
     $section.hidden = true;
     return;
   }
 
-  // 좋아요/댓글/알림 폴링(8~20초 간격)이 배경에서 돌 때마다 renderDetail →
-  // updateBookContents가 다시 호출된다. 같은 책의 내용이 그대로라면 사용자가 눌러둔
-  // "더 보기" 펼침 상태를 그대로 유지해야 한다 — 매 폴링마다 접힌 상태로 되돌아가면
-  // 읽는 도중 화면이 저절로 접혀버리는 버그가 된다. 다른 책으로 이동했을 때만(내용이
-  // 달라졌을 때만) 접힌 상태로 초기화한다.
-  var sameContent = !$section.hidden && $text.textContent === contents;
-  var wasExpanded = sameContent && $text.classList.contains("expanded");
-
   $section.hidden = false;
-  $text.textContent = contents;
-
-  if (wasExpanded) {
-    $text.classList.add("expanded");
-    $toggle.hidden = false;
-    $toggle.textContent = "접기";
-    return;
-  }
-
-  $text.classList.remove("expanded");
-  $toggle.hidden = true;
-  $toggle.textContent = "더 보기";
-
-  requestAnimationFrame(function () {
-    $toggle.hidden = $text.scrollHeight <= $text.clientHeight + 1;
-  });
+  // 폴링(8~20초)으로 이 함수가 반복 호출되는데, 같은 값을 매번 다시 넣으면 텍스트 노드가
+  // 교체되면서 사용자가 드래그해둔 선택이 풀린다. 달라졌을 때만 쓴다.
+  if ($text.textContent !== contents) $text.textContent = contents;
+}
 }
 
 export function renderDetail() {

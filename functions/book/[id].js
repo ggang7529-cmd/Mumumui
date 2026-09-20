@@ -1,6 +1,7 @@
 import { fetchScoreMap } from "../_lib/scores.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
+import { formatContents } from "../../js/bookContents.js";
 import { escapeHtml } from "../_lib/html.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
@@ -251,7 +252,7 @@ export async function onRequestGet(context) {
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
     .replace(
       '<p class="book-contents-text" id="bookContentsText"></p>',
-      '<p class="book-contents-text" id="bookContentsText">' + escapeHtml(book.contents || "") + "</p>"
+      '<p class="book-contents-text" id="bookContentsText">' + escapeHtml(formatContents(book.contents)) + "</p>"
     )
     .replace(
       '<section class="book-contents" id="bookContentsSection" hidden>',

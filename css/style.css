@@ -1821,39 +1821,19 @@
     background: var(--accent);
   }
 
+  /* 접지 않고 한 번에 다 보여준다. 카카오가 주는 소개가 260자 남짓이라 접을 만큼 길지
+     않았고, "더 보기"를 한 번 더 누르게 할 이유가 없었다. 발췌라 문장이 끊긴 자리에는
+     js/bookContents.js의 formatContents가 "…"를 붙인다. */
   .book-contents-text {
     margin: 0;
     color: var(--ink-soft);
     font-size: 0.92rem;
     line-height: 1.55;
     white-space: pre-line;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
-
-  .book-contents-text.expanded {
-    -webkit-line-clamp: unset;
-    overflow: visible;
-  }
-
-  .book-contents-toggle {
-    background: none;
-    border: none;
-    color: var(--accent);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.4rem 0 0;
-    cursor: pointer;
-  }
-
-  .book-contents-toggle:hover { text-decoration: underline; }
 
   @media (max-width: 640px) {
     .book-contents-text {
-      -webkit-line-clamp: 2;
       font-size: 0.88rem;
     }
   }
