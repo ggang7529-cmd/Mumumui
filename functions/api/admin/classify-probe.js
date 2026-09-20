@@ -200,6 +200,16 @@ export async function onRequestGet(context) {
   var targets = pickIsbns(url, rows);
   if (targets.length === 0) return json({ error: "조회할 ISBN이 없어요." }, { status: 400 });
 
+  // 어떤 이름의 환경변수가 실제로 이 배포본에 들어와 있는지 확인용. 값은 절대 싣지 않고
+  // 있음/없음만 돌려준다. Pages는 변수를 추가해도 기존 배포본에는 적용되지 않아서(새로
+  // 배포해야 반영된다) "넣었는데 안 잡힌다"가 자주 생기고, 이름을 잘못 적은 경우와
+  // 구분이 안 돼서 둘 다 여기서 가려낸다.
+  var envPresent = {};
+  ["SEOJI_API_KEY", "NL_API_KEY", "SEOJI_KEY", "NL_OPENAPI_KEY",
+   "LIBRARY_API_KEY", "KAKAO_REST_API_KEY", "ADMIN_KEY"].forEach(function (n) {
+    envPresent[n] = !!env[n];
+  });
+
   var results = [];
   for (var i = 0; i < targets.length; i++) {
     var seoji = await probeNlApis(env, targets[i].isbn13);
@@ -218,5 +228,5 @@ export async function onRequestGet(context) {
     });
   }
 
-  return json({ probed: results.length, results: results });
+  return json({ probed: results.length, envPresent: envPresent, results: results });
 }
