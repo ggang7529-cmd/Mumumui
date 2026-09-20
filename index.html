@@ -166,9 +166,16 @@
         </div>
         <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
         <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
-        <button class="btn-accent-outline" id="recommendBtn" type="button">나를 위한 추천</button>
         <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
-        <button class="btn-primary new-review-btn" id="newReviewBtn" type="button">
+        <!-- PC 폭에서 강조 버튼 둘을 같은 줄에 나란히 놓기 위한 줄바꿈용 빈 칸.
+             헤더 버튼을 다 합치면 한 줄에 안 들어가 어차피 두 줄이 되는데, 그냥 두면
+             "나를 위한 추천"과 "+ 책장에 추가하기"가 서로 다른 줄로 갈라진다. -->
+        <span class="header-actions-break" aria-hidden="true"></span>
+        <button class="btn-primary stacked-btn" id="recommendBtn" type="button">
+          <span class="stacked-btn-hint">뭘 읽을지 고민된다면</span>
+          <span class="stacked-btn-label">나를 위한 추천</span>
+        </button>
+        <button class="btn-primary new-review-btn stacked-btn" id="newReviewBtn" type="button">
           <span class="new-review-btn-hint">찾는 책이 없나요?</span>
           <span class="new-review-btn-label">+ 책장에 추가하기</span>
         </button>

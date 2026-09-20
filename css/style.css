@@ -307,9 +307,10 @@
 
     .header-actions #feedbackBtn { order: 20; }
     .header-actions #homeBtn { order: 21; }
-    .header-actions #recommendBtn { order: 22; }
-    .header-actions #randomBtn { order: 23; }
-    .header-actions #newReviewBtn { order: 24; }
+    .header-actions #randomBtn { order: 22; }
+    /* 23은 위 .header-actions-break가 쓴다(줄바꿈). */
+    .header-actions #recommendBtn { order: 24; }
+    .header-actions #newReviewBtn { order: 25; }
 
     .header-actions .btn-accent-outline,
     .header-actions .btn-random,
@@ -443,7 +444,11 @@
     font-weight: 500;
   }
 
-  .new-review-btn {
+  /* 두 줄짜리 강조 버튼 — 윗줄에 작은 권유 문구, 아랫줄에 행동. "+ 책장에 추가하기"와
+     "나를 위한 추천"이 이 모양을 함께 쓴다. 기록하는 것과 추천받는 것이 이 서비스의 두
+     축이라 한 쌍으로 읽혀야 해서, 같은 채움색·같은 크기로 나란히 둔다. (추천 버튼은
+     처음에 외곽선 버튼이어서 의견 보내기와 같은 무게로 보였다.) */
+  .stacked-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -451,6 +456,7 @@
     line-height: 1.15;
   }
 
+  .stacked-btn-hint,
   .new-review-btn-hint {
     font-size: 0.68rem;
     font-weight: 400;
@@ -500,6 +506,24 @@
   }
 
   /* auth */
+
+  /* 폭 100%짜리 빈 칸으로 강제 줄바꿈을 만든다 — 뒤따르는 강조 버튼 둘이 함께 다음
+     줄로 내려가 나란히 붙는다. 좁은 화면(≤900px)에서는 site-header 쪽 order 배치가
+     따로 있어서 이 칸을 숨긴다. */
+  .header-actions-break {
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  /* 좁은 화면에서도 같은 역할을 한다. 여기서는 header-actions가 display:contents라
+     자식들이 site-header의 flex 아이템으로 직접 들어가므로, 아래 order 배치에 맞춰
+     강조 버튼 둘 바로 앞 순서를 준다 — 그래야 둘이 한 줄을 반씩 나눠 갖는다. */
+  @media (max-width: 900px) {
+    .header-actions-break {
+      order: 23;
+      height: 0.5rem;
+    }
+  }
 
   .header-actions {
     display: flex;
