@@ -1,10 +1,10 @@
 import { getAnonUid } from "../../_lib/identity.js";
 import { json, newId } from "../../_lib/db.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
-// 도서관 정보나루(data4library.kr) 조회 로직은 functions/_lib/libraryCategory.js로
-// 옮겼다 — functions/api/admin/backfill-categories.js가 기존 책들에 소급으로 같은
-// 조회를 돌려야 해서, 여기 갇혀 있던 함수를 양쪽이 같이 쓸 수 있는 곳으로 뺐다.
-import { fetchLibraryCategory } from "../../_lib/libraryCategory.js";
+// 책 분류 조회 로직은 functions/_lib/bookClass.js에 있다 — functions/api/admin/
+// backfill-categories.js가 기존 책들에 소급으로 같은 조회를 돌려야 해서 양쪽이 같이
+// 쓸 수 있는 곳에 둔다.
+import { fetchBookClass } from "../../_lib/bookClass.js";
 import { normalizeMoodId } from "../../../js/moodTags.js";
 
 export async function onRequestGet(context) {
@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
   // (아래 onRequestPost), 이 값이 공개되면 그대로 X-Anon-Id에 넣어 그 사람의 한줄평을
   // 지울 수 있다. 클라이언트도 쓰지 않는 값이라 아예 select에서 뺀다.
   var rows = await env.DB.prepare(
-    "SELECT id, title, author, cover, isbn, contents, category, text, mood, rating_sum, rating_count, comment_count, " +
+    "SELECT id, title, author, cover, isbn, contents, category, class_no, text, mood, rating_sum, rating_count, comment_count, " +
     "owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
@@ -60,16 +60,21 @@ export async function onRequestPost(context) {
   var dupTitle = await env.DB.prepare("SELECT id FROM books WHERE lower(title) = lower(?1)").bind(title).first();
   if (dupTitle) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
 
-  var category = (await fetchLibraryCategory(env, isbn)).slice(0, 200);
+  // 분류는 두 가지를 같이 저장한다. category는 드롭다운에 그대로 띄우는 대분류 이름
+  // ("문학"), class_no는 나중에 "비슷한 책"을 고를 때 쓸 상세 분류번호("813.7")다.
+  var bookClass = await fetchBookClass(env, isbn);
+  var category = bookClass.categoryName.slice(0, 200);
+  var classNo = bookClass.classNo.slice(0, 40);
 
   var id = newId();
   var commentId = newId();
   var now = Date.now();
   await env.DB.batch([
     env.DB.prepare(
-      "INSERT INTO books (id, title, author, cover, isbn, contents, category, text, mood, rating_sum, rating_count, comment_count, " +
-      "owner_uid, owner_name, owner_photo, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 1, 1, ?11, ?12, NULL, ?13, ?13)"
-    ).bind(id, title, author, cover, isbn || null, contents || null, category || null, text, mood, rating, uid, name, now),
+      "INSERT INTO books (id, title, author, cover, isbn, contents, category, class_no, text, mood, rating_sum, rating_count, " +
+      "comment_count, owner_uid, owner_name, owner_photo, created_at, updated_at) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 1, 1, ?12, ?13, NULL, ?14, ?14)"
+    ).bind(id, title, author, cover, isbn || null, contents || null, category || null, classNo || null, text, mood, rating, uid, name, now),
     env.DB.prepare(
       "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at, mood) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8)"
@@ -79,7 +84,7 @@ export async function onRequestPost(context) {
   return json({
     book: {
       id: id, title: title, author: author, cover: cover, isbn: isbn || null, contents: contents || null,
-      category: category || null, text: text, mood: mood,
+      category: category || null, class_no: classNo || null, text: text, mood: mood,
       rating_sum: rating, rating_count: 1, comment_count: 1,
       // owner_uid는 목록 API와 마찬가지로 돌려주지 않는다 — 클라이언트가 쓰지 않고,
       // 응답 모양을 목록과 맞춰두는 편이 나중에 실수로 다시 새어나갈 여지를 줄인다.

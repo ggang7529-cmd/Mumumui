@@ -78,7 +78,7 @@ export function saveNotifSeenMap(map) {
 export function normalizeBook(row) {
   return {
     id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, contents: row.contents || "",
-    category: row.category || "", text: row.text, mood: row.mood || null,
+    category: row.category || "", classNo: row.class_no || "", text: row.text, mood: row.mood || null,
     ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
     // ownerUid는 더 이상 서버가 내려주지 않는다(남의 uid를 알면 그 사람 한줄평을 지울 수
     // 있어서). 화면에서도 쓰지 않던 값이라 함께 뺐다.

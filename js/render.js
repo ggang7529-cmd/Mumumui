@@ -1,6 +1,7 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { formatContents } from "./bookContents.js";
+import { kdcOrder } from "./kdc.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
@@ -311,9 +312,10 @@ export function renderAuthBox() {
   }
 }
 
-// 도서관 정보나루가 주는 분류(class_nm)는 "문학 > 한국문학 > 소설"처럼 KDC 계층 전체를
-// " > "로 이어붙인 문자열이다. 필터 옵션이 지나치게 세분화되지 않도록 최상위 한 단계만
-// 잘라 쓴다.
+// category에는 KDC 대분류 이름("문학")만 들어 있다 — 국립중앙도서관 조회 시점에
+// functions/_lib/bookClass.js가 대분류로 줄여서 저장한다. 다만 예전에 도서관 정보나루로
+// 채우려 했던 시절의 행에는 "문학 > 한국문학 > 소설" 같은 경로가 남아 있을 수 있어,
+// 그런 값은 여기서 최상위 한 단계만 잘라 같은 옵션으로 묶는다.
 function genreOf(category) {
   if (!category) return "";
   return category.split(">")[0].trim();
@@ -325,7 +327,12 @@ function updateCategoryFilterOptions() {
     var g = genreOf(r.category);
     if (g && genres.indexOf(g) === -1) genres.push(g);
   });
-  genres.sort(function (a, b) { return a.localeCompare(b, "ko"); });
+  // 가나다순이 아니라 KDC 번호 순(총류 → 철학 → … → 역사)으로 놓는다. 서점 서가와
+  // 순서가 같아 훑어보기 쉽고, 책이 늘어나도 옵션 자리가 들쭉날쭉 바뀌지 않는다.
+  genres.sort(function (a, b) {
+    var d = kdcOrder(a) - kdcOrder(b);
+    return d !== 0 ? d : a.localeCompare(b, "ko");
+  });
 
   var current = dom.categoryFilter.value;
   dom.categoryFilter.innerHTML = "";

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS books (
   isbn TEXT,
   contents TEXT,
   category TEXT,
+  class_no TEXT,
   text TEXT NOT NULL,
   mood TEXT,
   rating_sum INTEGER NOT NULL,
