@@ -11,7 +11,7 @@
 //   브라우저가 업데이트를 감지하지 못해 main.js의 "새로고침" 안내 배너도 안 뜬다.
 //   (실제로 v4에서 이 문제가 났다 — 배포는 됐는데 휴대폰에는 옛 화면이 남아 있었다.)
 //   버전을 올리면 새 캐시 이름이 만들어지고 activate 때 옛 캐시가 전부 삭제된다.
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const STATIC_CACHE = `galpi-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 

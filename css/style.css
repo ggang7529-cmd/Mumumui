@@ -1574,21 +1574,14 @@
     color: var(--btn-fill-ink);
   }
 
-  /* 목록에 붙는 태그 배지.
-     알약(999px) + 강조색으로 뒀더니 한줄평 줄에서 혼자 튀었다. 닉네임이 이미 강조색
-     굵은 글씨라 배지까지 같은 색이면 둘이 시선을 다투고, 사이트 전체가 "각진 종이"
-     규칙(패널·버튼 모두 2px)인데 여기만 둥근 알약이었다.
-     그래서 모서리를 2px로 맞추고 색을 한 단계 낮춰, 본문 옆에 조용히 붙은 꼬리표로
-     읽히게 한다. 채운 알약은 고르는 버튼(.mood-chip.is-on) 몫으로 남긴다. */
+  /* 목록에 붙는 태그. 테두리·배경·색을 전부 걷어내고 본문(.c-text)과 똑같은 평문으로
+     둔다. 네모든 알약이든 상자를 두르는 순간 그 줄만 UI 부품처럼 보여서, 바로 위아래의
+     직접 쓴 한줄평과 따로 놀았다. 실제로도 이건 "사용자가 고른 리뷰 내용"이지 조작
+     요소가 아니라, 본문과 같은 급으로 보이는 게 맞다.
+     태그라는 표시는 앞에 붙는 이모지 하나로 충분하다(js/render.js buildMoodBadge).
+     font-size·color를 지정하지 않는 건 일부러다 — 한줄평 목록과 프로필의 리뷰 목록은
+     기준 크기가 달라서, 물려받게 둬야 양쪽에서 각각 본문과 같아진다. */
   .c-mood {
-    display: inline-block;
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 0.08rem 0.4rem;
-    background: var(--paper-soft);
-    color: var(--ink-soft);
-    font-size: 0.8rem;
-    line-height: 1.5;
     white-space: nowrap;
   }
 

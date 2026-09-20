@@ -131,15 +131,14 @@ export function renderMoodPicker(container, selectedId, onSelect) {
 
 // 목록에 붙는 작은 태그 배지. 태그가 없으면 null을 돌려주니 호출부에서 그대로 건너뛰면 된다.
 //
-// 이모지는 일부러 뺀다. 이 사이트는 아이콘을 선형 SVG 한 벌로 통일해뒀는데(index.html의
-// 스프라이트), 한줄평 목록에만 컬러 이모지가 섞이니 그 줄만 따로 노는 것처럼 보였다.
-// 고르는 버튼(.mood-chip)에는 남겨둔다 — 거기선 눈으로 훑어 찾는 데 도움이 된다.
+// 앞에 이모지를 붙이는 게 이 줄이 "고른 태그"라는 유일한 표시다. 예전엔 테두리를 둘러
+// 구분했는데, 상자를 두르니 바로 위아래의 직접 쓴 한줄평과 따로 노는 게 더 커 보였다.
 export function buildMoodBadge(moodId) {
   var tag = findMoodTag(moodId);
   if (!tag) return null;
   var badge = document.createElement("span");
   badge.className = "c-mood";
-  badge.textContent = tag.label;
+  badge.textContent = tag.emoji + " " + tag.label;
   return badge;
 }
 
@@ -715,7 +714,7 @@ export function renderLatestHighlight() {
     if (r.text) {
       textEl.textContent = "“" + r.text + "”";
     } else if (highlightTag) {
-      textEl.textContent = highlightTag.label;
+      textEl.textContent = highlightTag.emoji + " " + highlightTag.label;
     } else {
       textEl.hidden = true;
     }

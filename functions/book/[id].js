@@ -205,7 +205,7 @@ export async function onRequestGet(context) {
         var lvl = getLevel(score);
         var moodTag = findMoodTag(c.mood);
         var moodHtml = moodTag
-          ? '<span class="c-mood">' + escapeHtml(moodTag.label) + "</span> "
+          ? '<span class="c-mood">' + escapeHtml(moodTag.emoji + " " + moodTag.label) + "</span> "
           : "";
         return (
           "<li><strong>" + iconSvg(lvl.icon, "lv-icon lv-icon--" + lvl.icon) +
