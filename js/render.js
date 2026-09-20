@@ -674,6 +674,70 @@ export function renderProfile() {
   }
 }
 
+// "나를 위한 추천" 화면.
+//
+// 카드는 홈 서가와 같은 buildBookCard를 그대로 쓰고, 여기서만 저자 한 줄과 "왜 이 책이
+// 골라졌는지"를 덧붙인다. 카드 자체를 고치지 않고 만들어진 카드에 덧붙이는 방식이라
+// 홈·프로필 서가는 영향을 받지 않는다.
+export function renderRecommend() {
+  var data = state.recommend;
+  var books = (data && data.books) || [];
+  var name = (data && data.nickname) || getSavedNickname();
+
+  dom.recommendTitle.textContent = name ? name + "님을 위한 추천" : "나를 위한 추천";
+  dom.recommendShelf.innerHTML = "";
+
+  // 아직 응답 전. 빈 화면에 "추천할 책이 없다"고 단정해버리면 잠깐 잘못된 안내가 보인다.
+  if (!state.recommendReady) {
+    dom.recommendSub.textContent = "고르는 중...";
+    dom.recommendEmpty.hidden = true;
+    return;
+  }
+
+  // 근거가 없는 경우 — 닉네임이 아예 없거나(첫 방문), 있어도 별점을 하나도 안 남겼거나.
+  var seedCount = data ? data.seedCount : 0;
+  if (!seedCount) {
+    dom.recommendSub.textContent = "";
+    dom.recommendEmptyText.textContent =
+      "아직 취향을 파악할 데이터가 없어요. 몇 권 등록하고 별점을 남겨보시면 맞춤 추천을 보여드릴게요.";
+    dom.recommendEmpty.hidden = false;
+    return;
+  }
+
+  dom.recommendSub.textContent =
+    "별점을 남긴 " + seedCount + "권의 저자와 분류를 바탕으로 골랐어요.";
+
+  // 근거는 있는데 걸리는 책이 없는 경우. 자리를 채우려고 아무 책이나 넣지 않는다.
+  if (books.length === 0) {
+    dom.recommendEmptyText.textContent =
+      "아직 비슷한 책을 찾지 못했어요. 책이 더 쌓이면 다시 골라볼게요.";
+    dom.recommendEmpty.hidden = false;
+    return;
+  }
+
+  dom.recommendEmpty.hidden = true;
+  books.forEach(function (row) {
+    var card = buildBookCard(normalizeBook(row));
+    var overlay = card.querySelector(".b-overlay");
+    if (!overlay) return;
+
+    var author = document.createElement("div");
+    author.className = "b-author";
+    author.textContent = row.author;
+    // 제목 바로 아래에 둔다(별점 줄 위).
+    overlay.insertBefore(author, overlay.children[1] || null);
+
+    if (row.reason) {
+      var why = document.createElement("div");
+      why.className = "b-why";
+      why.textContent = row.reasonDetail ? row.reason + " · " + row.reasonDetail : row.reason;
+      overlay.appendChild(why);
+    }
+
+    dom.recommendShelf.appendChild(card);
+  });
+}
+
 // 정렬탭의 "최신순" 목록과 별개로, 홈 상단 설명 영역에 방금 등록된 한줄평 1~2개를
 // 별도로 하이라이트해서 보여준다. 책 등록 시에도 첫 리뷰가 댓글로 함께 저장되므로
 // (functions/api/books/index.js), 최신 댓글 목록 하나만 보면 "새로 등록된 책"과

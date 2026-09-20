@@ -6,7 +6,8 @@ import {
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
-  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile
+  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
+  renderRecommend
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -61,6 +62,10 @@ export var state = {
   // 프로필 화면에서 보고 있는 닉네임과, 서버에서 받아온 그 사람의 기록. 아직 안 왔으면 null.
   profileName: null,
   profile: null,
+  // "나를 위한 추천" 화면의 응답. 아직 안 왔으면 null, 닉네임이 없어 아예 조회를 못 한
+  // 경우는 recommendReady만 true가 되고 recommend는 null로 남는다.
+  recommend: null,
+  recommendReady: false,
   searchQuery: "",
   sortMode: "latest",
   categoryFilter: "",
@@ -117,6 +122,12 @@ export var dom = {
   stickyHeader: document.getElementById("stickyHeader"),
   fMoods: document.getElementById("fMoods"),
   cMoods: document.getElementById("cMoods"),
+  recommendView: document.getElementById("recommendView"),
+  recommendTitle: document.getElementById("recommendTitle"),
+  recommendSub: document.getElementById("recommendSub"),
+  recommendShelf: document.getElementById("recommendShelf"),
+  recommendEmpty: document.getElementById("recommendEmpty"),
+  recommendEmptyText: document.getElementById("recommendEmptyText"),
   profileView: document.getElementById("profileView"),
   profileName: document.getElementById("profileName"),
   profileSub: document.getElementById("profileSub"),
@@ -191,7 +202,8 @@ export function showView(name) {
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
   dom.profileView.hidden = name !== "profile";
-  dom.homeBtn.hidden = name !== "detail" && name !== "random" && name !== "profile";
+  dom.recommendView.hidden = name !== "recommend";
+  dom.homeBtn.hidden = name !== "detail" && name !== "random" && name !== "profile" && name !== "recommend";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
@@ -210,6 +222,7 @@ export function showView(name) {
   var path = "/";
   if (name === "detail" && state.currentId) path = "/book/" + encodeURIComponent(state.currentId);
   else if (name === "profile" && state.profileName) path = "/u/" + encodeURIComponent(state.profileName);
+  else if (name === "recommend") path = "/recommend";
   if (window.location.pathname !== path) history.pushState(null, "", path);
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -276,6 +289,39 @@ export function openProfile(nickname) {
     .catch(function (e) {
       if (state.profileName !== name) return;
       dom.profileSub.textContent = "불러오지 못했어요: " + e.message;
+    });
+}
+
+// "나를 위한 추천" 화면. 이 브라우저에 저장된 닉네임(책·한줄평을 남길 때 쓴 그 이름)으로
+// 조회한다. 닉네임이 아직 없으면 서버를 부를 것도 없이 안내 화면만 띄운다.
+export function openRecommend() {
+  gtag("event", "view_recommend");
+  state.recommend = null;
+  state.recommendReady = false;
+  renderRecommend();
+  showView("recommend");
+
+  var name = getSavedNickname();
+  if (!name) {
+    // 아직 아무것도 안 남긴 첫 방문자. "불러오는 중"으로 두면 영영 안 끝나는 것처럼 보인다.
+    state.recommendReady = true;
+    renderRecommend();
+    return;
+  }
+
+  api("/api/recommend/" + encodeURIComponent(name))
+    .then(function (data) {
+      // 기다리는 동안 다른 화면으로 옮겨갔다면 늦게 온 응답으로 화면을 덮지 않는다.
+      if (state.view !== "recommend") return;
+      state.recommend = data;
+      state.recommendReady = true;
+      renderRecommend();
+    })
+    .catch(function (e) {
+      if (state.view !== "recommend") return;
+      state.recommendReady = true;
+      renderRecommend();
+      dom.recommendSub.textContent = "불러오지 못했어요: " + e.message;
     });
 }
 
@@ -488,6 +534,10 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
 });
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
+document.getElementById("recommendBtn").addEventListener("click", function () { openRecommend(); });
+// 추천할 근거가 없을 때 뜨는 "책 기록하러 가기" 버튼. 헤더의 "+ 책장에 추가하기"와 같은
+// 진입점을 써서 로그인 모드일 때의 확인 절차가 한쪽에만 빠지는 일이 없게 한다.
+document.getElementById("recommendCta").addEventListener("click", function () { startBookRegistration(); });
 
 document.getElementById("notifBtn").addEventListener("click", function (e) {
   e.stopPropagation();
@@ -722,11 +772,16 @@ window.addEventListener("scroll", function () {
   lastScrollY = currentY;
 }, { passive: true });
 
+function isRecommendPath(pathname) {
+  return /^\/recommend\/?$/.test(pathname);
+}
+
 window.addEventListener("popstate", function () {
   var id = bookIdFromPath(window.location.pathname);
   if (id) { openDetail(id); return; }
   var who = nicknameFromPath(window.location.pathname);
   if (who) { openProfile(who); return; }
+  if (isRecommendPath(window.location.pathname)) { openRecommend(); return; }
   showView("library");
 });
 
@@ -734,6 +789,7 @@ var initialBookId = bookIdFromPath(window.location.pathname);
 var initialNickname = nicknameFromPath(window.location.pathname);
 if (initialBookId) openDetail(initialBookId);
 else if (initialNickname) openProfile(initialNickname);
+else if (isRecommendPath(window.location.pathname)) openRecommend();
 else showView("library");
 
 refreshBooks();

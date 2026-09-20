@@ -166,6 +166,7 @@
         </div>
         <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
         <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
+        <button class="btn-accent-outline" id="recommendBtn" type="button">나를 위한 추천</button>
         <button class="btn-random" id="randomBtn" type="button">랜덤 책 추천</button>
         <button class="btn-primary new-review-btn" id="newReviewBtn" type="button">
           <span class="new-review-btn-hint">찾는 책이 없나요?</span>
@@ -342,6 +343,22 @@
           <h3>남긴 한줄평 <span class="count" id="profileReviewCount"></span></h3>
           <ul class="profile-reviews" id="profileReviews"></ul>
         </section>
+      </div>
+    </section>
+
+    <!-- 나를 위한 추천. 내가 별점을 남긴 책의 저자·분류를 근거로 아직 안 본 책을 고른다.
+         목록은 js/render.js renderRecommend가 채우고, 카드는 홈 서가와 같은 것을 쓴다. -->
+    <section id="recommendView" hidden>
+      <div class="panel recommend-panel">
+        <header class="recommend-head">
+          <h2 class="recommend-title" id="recommendTitle"></h2>
+          <p class="recommend-sub" id="recommendSub"></p>
+        </header>
+        <div class="shelf recommend-shelf" id="recommendShelf"></div>
+        <div class="recommend-empty" id="recommendEmpty" hidden>
+          <p class="recommend-empty-text" id="recommendEmptyText"></p>
+          <button type="button" class="btn-primary" id="recommendCta">책 기록하러 가기</button>
+        </div>
       </div>
     </section>
 
