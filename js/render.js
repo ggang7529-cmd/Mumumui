@@ -758,7 +758,6 @@ function updateBookContents(r) {
   // 교체되면서 사용자가 드래그해둔 선택이 풀린다. 달라졌을 때만 쓴다.
   if ($text.textContent !== contents) $text.textContent = contents;
 }
-}
 
 export function renderDetail() {
   var r = findBook(state.currentId);

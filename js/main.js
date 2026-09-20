@@ -617,12 +617,6 @@ dom.reviewForm.addEventListener("submit", function (e) {
     });
 });
 
-document.getElementById("bookContentsToggle").addEventListener("click", function () {
-  var $text = document.getElementById("bookContentsText");
-  var expanded = $text.classList.toggle("expanded");
-  this.textContent = expanded ? "접기" : "더 보기";
-});
-
 document.getElementById("deleteBtn").addEventListener("click", function () {
   var r = findBook(state.currentId);
   if (!r) return;
