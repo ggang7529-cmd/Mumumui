@@ -1,6 +1,6 @@
 import { json } from "../../_lib/db.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
-import { extractIsbn13, lookupBookClass } from "../../_lib/bookClass.js";
+import { extractIsbn13, lookupBookClass, lookupClassByTitle } from "../../_lib/bookClass.js";
 
 // 이미 등록된 책들에 소급으로 분류를 채운다. 관리자만 실행할 수 있다.
 //
@@ -40,17 +40,26 @@ export async function onRequestPost(context) {
   }
 
   var candidates = await env.DB.prepare(
-    "SELECT id, title, isbn FROM books WHERE " + PENDING + " ORDER BY RANDOM() LIMIT ?1"
+    "SELECT id, title, author, isbn FROM books WHERE " + PENDING + " ORDER BY RANDOM() LIMIT ?1"
   ).bind(BATCH_SIZE).all();
 
   var rows = candidates.results || [];
   var updated = 0;
+  var updatedByTitle = 0;
   var noResult = 0;
   var samples = [];
 
   for (var i = 0; i < rows.length; i++) {
     var isbn13 = extractIsbn13(rows[i].isbn);
     var result = await lookupBookClass(env, isbn13);
+
+    // ISBN으로 분류가 안 나오면 앞 제목으로 한 번 더 찾는다. "안나 카레니나 세트"처럼
+    // 판매용으로 묶은 세트는 그 ISBN이 도서관 장서로 등록되는 일이 드물지만, 낱권은
+    // 거의 반드시 등록돼 있다(functions/_lib/bookClass.js 주석 참고).
+    if (!result.ok || (!result.categoryName && !result.classNo)) {
+      result = await lookupClassByTitle(env, rows[i].title, rows[i].author);
+    }
+
     var classNo = result.ok ? String(result.classNo || "").slice(0, 40) : "";
     var category = result.ok ? String(result.categoryName || "").slice(0, 200) : "";
 
@@ -60,6 +69,7 @@ export async function onRequestPost(context) {
       await env.DB.prepare("UPDATE books SET class_no = ?1, category = ?2 WHERE id = ?3")
         .bind(classNo, category || null, rows[i].id).run();
       updated++;
+      if (result.byTitle) updatedByTitle++;
     } else {
       noResult++;
       if (samples.length < SAMPLE_LIMIT) {
@@ -69,7 +79,11 @@ export async function onRequestPost(context) {
           isbn13: isbn13,
           // 도서관 목록에 그 책이 없는 것과, 찾았는데 분류만 비어 있는 것을 구분한다.
           reason: result.ok ? "no-class-value" : result.reason,
-          detail: result.detail
+          detail: result.detail,
+          // 제목 조회까지 갔을 때만 채워진다. 어떤 제목으로 찾았는지, 그리고 응답 필드
+          // 이름이 예상과 달라 제목 검증이 헛돈 것은 아닌지 눈으로 확인하려는 값이다.
+          searched: result.searched,
+          docKeys: result.docKeys
         });
       }
     }
@@ -82,6 +96,7 @@ export async function onRequestPost(context) {
   return json({
     processedThisBatch: rows.length,
     updated: updated,
+    updatedByTitle: updatedByTitle,
     noResult: noResult,
     remaining: remainingRow ? remainingRow.n : 0,
     sampleFailures: samples

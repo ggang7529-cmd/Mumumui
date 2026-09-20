@@ -62,7 +62,8 @@ export async function onRequestPost(context) {
 
   // 분류는 두 가지를 같이 저장한다. category는 드롭다운에 그대로 띄우는 대분류 이름
   // ("문학"), class_no는 나중에 "비슷한 책"을 고를 때 쓸 상세 분류번호("813.7")다.
-  var bookClass = await fetchBookClass(env, isbn);
+  // 제목·저자도 넘긴다. ISBN으로 못 찾는 세트 상품일 때 앞 제목으로 한 번 더 찾는다.
+  var bookClass = await fetchBookClass(env, isbn, title, author);
   var category = bookClass.categoryName.slice(0, 200);
   var classNo = bookClass.classNo.slice(0, 40);
 
