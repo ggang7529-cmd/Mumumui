@@ -1574,15 +1574,20 @@
     color: var(--btn-fill-ink);
   }
 
-  /* 목록에 붙는 태그 배지. 채운 알약은 고르는 버튼(.mood-chip.is-on) 몫이라, 읽기용인
-     여기서는 옅은 테두리만 둘러 본문보다 앞서 보이지 않게 한다. */
+  /* 목록에 붙는 태그 배지.
+     알약(999px) + 강조색으로 뒀더니 한줄평 줄에서 혼자 튀었다. 닉네임이 이미 강조색
+     굵은 글씨라 배지까지 같은 색이면 둘이 시선을 다투고, 사이트 전체가 "각진 종이"
+     규칙(패널·버튼 모두 2px)인데 여기만 둥근 알약이었다.
+     그래서 모서리를 2px로 맞추고 색을 한 단계 낮춰, 본문 옆에 조용히 붙은 꼬리표로
+     읽히게 한다. 채운 알약은 고르는 버튼(.mood-chip.is-on) 몫으로 남긴다. */
   .c-mood {
     display: inline-block;
     border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.1rem 0.5rem;
-    color: var(--accent);
-    font-size: 0.78rem;
+    border-radius: 2px;
+    padding: 0.08rem 0.4rem;
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+    font-size: 0.8rem;
     line-height: 1.5;
     white-space: nowrap;
   }
