@@ -61,8 +61,29 @@ export async function lookupBookIntro(env, isbn) {
 
   if (!doc) return { ok: false, reason: "not-in-seoji" };
 
-  var introUrl = String(doc.BOOK_INTRODUCTION_URL || "").trim();
-  if (!introUrl) return { ok: false, reason: "no-intro-url" };
+  // SEOJI는 어느 책이든 39개 필드를 전부 돌려주고 값이 있는 것만 채운다. 소개가 담길 수
+  // 있는 자리가 네 군데라(본문이 바로 오는 필드 둘, 파일 주소로 오는 필드 둘) 순서대로
+  // 훑는다. 실측으로 확인한 것: 세 종교 이야기는 BOOK_INTRODUCTION_URL에만,
+  // 사피엔스는 어디에도 없고 목차(BOOK_TB_CNT_URL)만 있었다.
+  var inlineFields = ["BOOK_INTRODUCTION", "BOOK_SUMMARY"];
+  for (var a = 0; a < inlineFields.length; a++) {
+    var inline = String(doc[inlineFields[a]] || "").trim();
+    if (inline.length > 40) {
+      return { ok: true, intro: inline, source: inlineFields[a] };
+    }
+  }
+
+  var urlFields = ["BOOK_INTRODUCTION_URL", "BOOK_SUMMARY_URL"];
+  var introUrl = "";
+  var usedField = null;
+  for (var b = 0; b < urlFields.length; b++) {
+    var cand = String(doc[urlFields[b]] || "").trim();
+    if (cand) { introUrl = cand; usedField = urlFields[b]; break; }
+  }
+  // 목차만 있는 책이 흔한지 세어두면, 소개 대신 목차를 쓸지 판단할 근거가 된다.
+  var hasToc = !!String(doc.BOOK_TB_CNT_URL || doc.BOOK_TB_CNT || "").trim();
+
+  if (!introUrl) return { ok: false, reason: "no-intro-url", hasToc: hasToc };
   // 응답에 담긴 주소를 그대로 따라가는 것이라, 국립중앙도서관 도메인인지 확인하고 간다.
   if (!/^https?:\/\/([a-z0-9-]+\.)*nl\.go\.kr\//i.test(introUrl)) {
     return { ok: false, reason: "unexpected-host", detail: introUrl.slice(0, 80) };
@@ -73,7 +94,7 @@ export async function lookupBookIntro(env, isbn) {
     if (!fileRes.ok) return { ok: false, reason: "intro-http-" + fileRes.status };
     var intro = decodeText(await fileRes.arrayBuffer()).trim();
     if (!intro) return { ok: false, reason: "empty-intro" };
-    return { ok: true, intro: intro, introUrl: introUrl };
+    return { ok: true, intro: intro, introUrl: introUrl, source: usedField };
   } catch (e) {
     return { ok: false, reason: "intro-network-error", detail: String(e && e.message) };
   }

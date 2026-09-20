@@ -37,15 +37,19 @@ export async function onRequestGet(context) {
       kakaoLength: kakaoLen,
       seojiLength: got.ok ? got.intro.length : 0,
       reason: got.ok ? null : got.reason,
+      source: got.ok ? got.source : null,
+      hasToc: got.ok ? true : !!got.hasToc,
       // 길이만으로는 같은 글인지 알 수 없어, 실제로 더 나은지 눈으로 볼 수 있게 끝부분만 남긴다.
       seojiTail: got.ok ? got.intro.slice(-60) : null
     });
   }
 
+  var tocOnly = items.filter(function (it) { return !it.seojiLength && it.hasToc; }).length;
   var total = await env.DB.prepare("SELECT COUNT(*) AS n FROM books").first();
   return json({
     checked: items.length,
     withIntro: gained,
+    tocOnly: tocOnly,
     booksTotal: (total && total.n) || 0,
     items: items
   });
