@@ -11,7 +11,7 @@
 //   브라우저가 업데이트를 감지하지 못해 main.js의 "새로고침" 안내 배너도 안 뜬다.
 //   (실제로 v4에서 이 문제가 났다 — 배포는 됐는데 휴대폰에는 옛 화면이 남아 있었다.)
 //   버전을 올리면 새 캐시 이름이 만들어지고 activate 때 옛 캐시가 전부 삭제된다.
-const CACHE_VERSION = "v13";
+const CACHE_VERSION = "v14";
 const STATIC_CACHE = `galpi-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
@@ -22,6 +22,7 @@ const PRECACHE_ASSETS = [
   "/js/render.js",
   "/js/moodTags.js",
   "/js/bookContents.js",
+  "/js/levels.js",
   "/favicon.svg",
   "/apple-touch-icon.png",
   "/img/icons/icon-192.png",
@@ -30,13 +31,32 @@ const PRECACHE_ASSETS = [
   OFFLINE_URL,
 ];
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting())
+// 프리캐시는 cache.addAll 대신 파일을 하나씩 받아 넣는다. 이유가 둘이다.
+//
+// 1) addAll은 목록 중 하나라도 실패하면 install 전체가 실패한다. install이 실패하면
+//    새 워커가 영영 활성화되지 못하고, 이미 방문한 적 있는 사람은 옛 캐시에 갇힌 채
+//    아무리 새로고침해도 옛 파일을 계속 받는다. 파일 하나가 404인 대가로 사이트
+//    전체가 옛 버전에 묶이는 건 너무 크다 — 실패한 파일은 그냥 건너뛰고, 그 파일은
+//    나중에 fetch 핸들러가 네트워크에서 받아 캐시에 넣는다.
+// 2) 그냥 fetch하면 브라우저 HTTP 캐시를 거치므로, 배포로 내용이 바뀌었어도 옛 사본이
+//    그대로 새 캐시에 복사될 수 있다. 버전을 올린 의미가 없어지므로 cache: "reload"로
+//    네트워크에서 다시 받는다.
+async function precache() {
+  const cache = await caches.open(STATIC_CACHE);
+  await Promise.all(
+    PRECACHE_ASSETS.map(async (url) => {
+      try {
+        const res = await fetch(new Request(url, { cache: "reload" }));
+        if (res.ok) await cache.put(url, res);
+      } catch (e) {
+        // 네트워크가 불안정한 첫 방문 등. 위 1)의 이유로 install을 실패시키지 않는다.
+      }
+    })
   );
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -98,7 +118,10 @@ self.addEventListener("fetch", (event) => {
 
   if (STATIC_ASSET_RE.test(url.pathname)) {
     event.respondWith(
-      caches.match(request).then((cached) => {
+      // 캐시 이름을 지정하지 않으면 caches.match는 "모든" 캐시를 뒤진다. 옛 버전 캐시가
+      // 어떤 이유로든 지워지지 않고 남아 있으면 거기 있는 옛 파일이 그대로 나갈 수 있어,
+      // 지금 버전의 캐시에서만 찾도록 못박는다.
+      caches.match(request, { cacheName: STATIC_CACHE }).then((cached) => {
         const network = fetch(request)
           .then((response) => {
             if (response.ok) {
