@@ -64,10 +64,23 @@ export function baseTitle(title) {
   return t.length >= 2 ? t : original;
 }
 
+// 소장자료 검색의 titleInfo/authorInfo는 값만 오지 않는다. 검색어를 강조하는 태그가
+// 섞여 오고("<span class=...>오리지널스</span>"), 앞머리에 자료 형태 표시가 붙기도
+// 한다("[전자책] …"). 처음엔 이걸 모르고 글자만 비교해서, 세트가 아닌 평범한 제목까지
+// 전부 불일치로 떨어졌다. 비교 전에 태그·엔티티·앞머리 대괄호를 걷어낸다.
+function cleanField(s) {
+  return String(s || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&[a-z]+;|&#\d+;/gi, " ")
+    .replace(/^\s*(?:[\[【(（][^\]】)）]*[\]】)）]\s*)+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // 비교용으로 공백·문장부호를 없앤다. 도서관 기록의 제목은 "안나 카레니나 = Anna Karenina"
-// 처럼 원제나 부제가 붙어 오는 일이 많아서, 글자만 남겨놓고 앞부분이 겹치는지를 본다.
+// 처럼 원제나 부제가 붙어 오는 일이 많아서, 글자만 남겨놓고 겹치는지를 본다.
 function squash(s) {
-  return String(s || "").toLowerCase().replace(/[\s·,~\-–—=:;.!?"'’“”()\[\]【】（）]/g, "");
+  return cleanField(s).toLowerCase().replace(/[\s·,~\-–—=:;.!?"'’“”()\[\]【】（）]/g, "");
 }
 
 // 응답 필드 이름이 문서마다 조금씩 다르게 적혀 있어서 후보를 순서대로 훑는다.
@@ -81,8 +94,8 @@ function pick(doc, keys) {
   return "";
 }
 
-function docTitle(doc) { return pick(doc, ["titleInfo", "title", "TITLE_INFO", "title_info"]); }
-function docAuthor(doc) { return pick(doc, ["authorInfo", "author", "AUTHOR_INFO", "author_info"]); }
+function docTitle(doc) { return cleanField(pick(doc, ["titleInfo", "title", "TITLE_INFO", "title_info"])); }
+function docAuthor(doc) { return cleanField(pick(doc, ["authorInfo", "author", "AUTHOR_INFO", "author_info"])); }
 
 // 분류값 뽑기. 드롭다운에 쓸 이름은 kdcCode1s(대분류 숫자)를 js/kdc.js의 표로 옮겨
 // 만든다. 숫자가 없으면 classNo(상세 분류번호)의 첫 자리로 대신한다. kdcName1s를 그대로
@@ -147,33 +160,59 @@ export async function lookupClassByTitle(env, title, author) {
 
   var wantTitle = squash(base);
   var wantAuthor = squash(author);
-  var fallback = null;
+  var best = null;
+  var bestScore = 0;
+  var sampleTitle = "";
   var keys = null;
 
   for (var i = 0; i < found.docs.length && i < TITLE_CANDIDATES; i++) {
     var doc = found.docs[i];
     if (!keys) keys = Object.keys(doc).slice(0, 14);
+    var theirTitle = docTitle(doc);
+    if (!sampleTitle) sampleTitle = theirTitle.slice(0, 60);
 
-    var got = squash(docTitle(doc));
-    if (!got || got.indexOf(wantTitle) !== 0) continue;
+    var got = squash(theirTitle);
+    if (!got) continue;
+
+    // 우리 제목으로 "시작"하는 기록이 가장 믿을 만하다(부제·원제가 뒤에 붙는 형태).
+    // 그게 없을 때만 제목이 어딘가 "포함"된 기록을 쓴다 — 도서관 기록이 "대활자본
+    // 오리지널스"처럼 앞에 수식을 달고 있는 경우가 있어서다.
+    var score = 0;
+    if (got.indexOf(wantTitle) === 0) score = 2;
+    else if (got.indexOf(wantTitle) !== -1) score = 1;
+    if (!score) continue;
 
     var cls = classOf(doc);
     if (!cls.categoryName && !cls.classNo) continue;
 
-    // 저자가 겹치면 바로 채택한다. 도서관 기록의 저자는 "지은이: 레프 톨스토이 ;
-    // 옮긴이: …"처럼 역할 표기가 섞여 있어 완전 일치를 기대할 수 없으니 포함 여부만 본다.
+    // 저자가 겹치면 같은 등급 안에서 우선한다. 도서관 기록의 저자는 "지은이: 레프
+    // 톨스토이 ; 옮긴이: …"처럼 역할 표기가 섞여 있어 완전 일치를 기대할 수 없으니
+    // 포함 여부만 본다. 번역서는 저자 표기가 크게 달라 저자가 안 겹쳐도 버리지 않는다.
     var theirAuthor = squash(docAuthor(doc));
     if (wantAuthor && theirAuthor && (theirAuthor.indexOf(wantAuthor) !== -1 || wantAuthor.indexOf(theirAuthor) !== -1)) {
-      return { ok: true, matchedTitle: docTitle(doc), byTitle: true, categoryName: cls.categoryName, classNo: cls.classNo };
+      score += 0.5;
     }
-    // 저자가 안 겹쳐도 제목이 맞으면 후보로 잡아둔다(번역서는 저자 표기가 크게 다르다).
-    if (!fallback) fallback = { ok: true, matchedTitle: docTitle(doc), byTitle: true, categoryName: cls.categoryName, classNo: cls.classNo };
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = { ok: true, matchedTitle: theirTitle, byTitle: true, categoryName: cls.categoryName, classNo: cls.classNo };
+    }
   }
 
-  if (fallback) return fallback;
-  // 제목이 맞는 게 하나도 없을 때, 응답에 어떤 필드가 오는지 몇 개 남긴다 — 필드 이름이
-  // 예상과 다르면 제목 검증이 통째로 헛돌게 되는데 그걸 눈으로 확인할 방법이 필요하다.
-  return { ok: false, reason: found.docs.length ? "title-mismatch" : "not-found", searched: base, docKeys: keys };
+  if (best) return best;
+
+  // 맞는 게 하나도 없을 때, 응답에 어떤 필드가 오는지와 실제 제목이 어떻게 생겼는지를
+  // 남긴다 — 필드 이름이나 값 모양이 예상과 다르면 검증이 통째로 헛도는데, 그걸 눈으로
+  // 확인할 방법이 필요하다.
+  return {
+    ok: false,
+    reason: found.docs.length ? "title-mismatch" : "not-found",
+    searched: base,
+    docKeys: keys,
+    // 불일치로 떨어졌을 때 도서관 기록의 제목이 실제로 어떻게 생겼는지 한 건 보여준다.
+    // 필드 이름만 봐서는 "값이 왜 안 맞는지"를 알 수 없었다(태그가 섞여 오던 건이 그랬다).
+    sampleTitle: sampleTitle
+  };
 }
 
 // 책 등록 경로에서 쓰는 조용한 버전. ISBN으로 먼저 찾고, 분류가 안 나오면 앞 제목으로
