@@ -91,7 +91,12 @@ export async function onRequestPost(context) {
           // 제목 조회까지 갔을 때만 채워진다. 어떤 제목으로 찾았는지, 그리고 응답 필드
           // 이름이 예상과 달라 제목 검증이 헛돈 것은 아닌지 눈으로 확인하려는 값이다.
           searched: result.searched,
-          docKeys: result.docKeys
+          docKeys: result.docKeys,
+          // 조회는 성공했는데 저장까지 못 간 경우, 분류 이름만 잡혔는지 아니면 정말
+          // 아무것도 없었는지 구분하려고 찾은 값을 그대로 싣는다. 이 필드가 응답에
+          // 있다는 것 자체가 새 코드가 배포됐다는 표시이기도 하다.
+          foundCategory: (result.categoryName || null),
+          foundClassNo: (result.classNo || null)
         });
       }
     }
