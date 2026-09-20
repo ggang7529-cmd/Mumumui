@@ -23,7 +23,14 @@ var BATCH_SIZE = 25;
 // 문제로 조회 자체가 안 되고 있는지"를 구분할 수 있다. 전부 담으면 응답이 커지니 앞쪽만.
 var SAMPLE_LIMIT = 5;
 
-var PENDING = "isbn IS NOT NULL AND isbn != '' AND (class_no IS NULL OR class_no = '')";
+// 아직 분류가 하나도 없는 책이 대상이다. 처음엔 class_no만 봤는데, 도서관 기록에
+// 대분류 숫자(kdcCode1s)는 있고 상세 분류번호(classNo)는 비어 있는 경우가 있어서
+// ("신곡 세트"가 그랬다) 쓸 수 있는 분류 이름을 받고도 실패로 버렸다. 둘 중 하나라도
+// 채워졌으면 더 볼 것이 없으므로 대상에서 뺀다 — 안 그러면 그 책이 영원히 후보로
+// 남아 매번 같은 조회를 반복한다.
+var PENDING =
+  "isbn IS NOT NULL AND isbn != '' " +
+  "AND (class_no IS NULL OR class_no = '') AND (category IS NULL OR category = '')";
 
 export async function onRequestPost(context) {
   var env = context.env;
@@ -63,9 +70,10 @@ export async function onRequestPost(context) {
     var classNo = result.ok ? String(result.classNo || "").slice(0, 40) : "";
     var category = result.ok ? String(result.categoryName || "").slice(0, 200) : "";
 
-    // class_no가 비어 있으면 UPDATE해봐야 다음 호출의 대상에서 빠지지 않는다. 분류번호가
-    // 잡힌 책만 기록하고, 나머지는 실패로 센다.
-    if (classNo) {
+    // 둘 중 하나라도 잡혔으면 기록한다. 드롭다운은 category만 쓰므로 분류번호가 없어도
+    // 화면에서는 아쉬울 것이 없고, class_no는 나중에 "비슷한 책"을 고를 때 쓸 값이라
+    // 비어 있으면 그 책만 추천 후보에서 빠질 뿐이다.
+    if (classNo || category) {
       await env.DB.prepare("UPDATE books SET class_no = ?1, category = ?2 WHERE id = ?3")
         .bind(classNo, category || null, rows[i].id).run();
       updated++;
@@ -77,7 +85,7 @@ export async function onRequestPost(context) {
           id: rows[i].id,
           title: rows[i].title,
           isbn13: isbn13,
-          // 도서관 목록에 그 책이 없는 것과, 찾았는데 분류만 비어 있는 것을 구분한다.
+          // 도서관 목록에 그 책이 없는 것과, 찾았는데 분류가 통째로 비어 있는 것을 구분한다.
           reason: result.ok ? "no-class-value" : result.reason,
           detail: result.detail,
           // 제목 조회까지 갔을 때만 채워진다. 어떤 제목으로 찾았는지, 그리고 응답 필드
