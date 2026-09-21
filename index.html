@@ -365,6 +365,18 @@
         <div class="recommend-empty" id="recommendEmpty" hidden>
           <p class="recommend-empty-text" id="recommendEmptyText"></p>
           <button type="button" class="btn-primary" id="recommendCta">책 기록하러 가기</button>
+
+          <!-- 닉네임은 책·한줄평을 남길 때만 이 브라우저에 저장된다. 그래서 기기를 바꾸거나
+               저장소가 지워지면 기록은 서버에 그대로 있는데 "내가 누구인지"만 잃어버린다.
+               이름을 다시 알려줄 입구가 여기 말고는 없어서 이 자리에 둔다. -->
+          <form class="recommend-claim" id="recommendClaim">
+            <label class="recommend-claim-label" id="recommendClaimLabel" for="recommendNickname">이미 기록을 남기신 적 있나요?</label>
+            <div class="recommend-claim-row">
+              <input type="text" id="recommendNickname" maxlength="10" placeholder="닉네임" autocomplete="nickname" aria-describedby="recommendClaimMsg">
+              <button type="submit" class="btn-ghost">이어서 보기</button>
+            </div>
+            <p class="recommend-claim-msg" id="recommendClaimMsg" role="status"></p>
+          </form>
         </div>
       </div>
     </section>

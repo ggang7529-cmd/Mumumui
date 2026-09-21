@@ -691,6 +691,7 @@ export function renderRecommend() {
   if (!state.recommendReady) {
     dom.recommendSub.textContent = "고르는 중...";
     dom.recommendEmpty.hidden = true;
+    dom.recommendClaim.hidden = true;
     return;
   }
 
@@ -700,9 +701,19 @@ export function renderRecommend() {
     dom.recommendSub.textContent = "";
     dom.recommendEmptyText.textContent =
       "아직 취향을 파악할 데이터가 없어요. 몇 권 등록하고 별점을 남겨보시면 맞춤 추천을 보여드릴게요.";
+    // 닉네임으로 기록을 다시 집어오는 입구는 이 경우에만 보여준다. 이름이 저장돼 있는데도
+    // 별점이 없다면 다른 이름으로 남겼을 수 있으니 문구만 바꿔 같은 칸을 쓴다.
+    dom.recommendClaimLabel.textContent = name
+      ? "다른 닉네임으로 남기셨나요?"
+      : "이미 기록을 남기신 적 있나요?";
+    dom.recommendClaimMsg.textContent = "";
+    dom.recommendClaim.hidden = false;
     dom.recommendEmpty.hidden = false;
     return;
   }
+
+  // 여기부터는 누구인지 알아낸 뒤라 입력칸이 필요 없다.
+  dom.recommendClaim.hidden = true;
 
   dom.recommendSub.textContent =
     "별점을 남긴 " + seedCount + "권의 저자와 분류를 바탕으로 골랐어요.";

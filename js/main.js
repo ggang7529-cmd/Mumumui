@@ -128,6 +128,10 @@ export var dom = {
   recommendShelf: document.getElementById("recommendShelf"),
   recommendEmpty: document.getElementById("recommendEmpty"),
   recommendEmptyText: document.getElementById("recommendEmptyText"),
+  recommendClaim: document.getElementById("recommendClaim"),
+  recommendClaimLabel: document.getElementById("recommendClaimLabel"),
+  recommendNickname: document.getElementById("recommendNickname"),
+  recommendClaimMsg: document.getElementById("recommendClaimMsg"),
   profileView: document.getElementById("profileView"),
   profileName: document.getElementById("profileName"),
   profileSub: document.getElementById("profileSub"),
@@ -538,6 +542,40 @@ document.getElementById("recommendBtn").addEventListener("click", function () { 
 // 추천할 근거가 없을 때 뜨는 "책 기록하러 가기" 버튼. 헤더의 "+ 책장에 추가하기"와 같은
 // 진입점을 써서 로그인 모드일 때의 확인 절차가 한쪽에만 빠지는 일이 없게 한다.
 document.getElementById("recommendCta").addEventListener("click", function () { startBookRegistration(); });
+
+// 닉네임으로 내 기록을 다시 집어오는 입구. 닉네임은 글을 남길 때만 이 브라우저에
+// 저장되므로, 기기를 바꾸거나 저장소가 지워지면 기록은 서버에 그대로 있는데 이름만
+// 잃어버린다. 그때 여기에 이름을 적으면 다시 이어진다.
+//
+// 적어넣은 이름을 곧바로 저장하지는 않는다. 그 이름으로 남긴 별점이 실제로 있을 때만
+// 저장한다 — 오타를 신원으로 굳혀버리면 이후 화면들(헤더 닉네임, 내 기록, 레벨 점수)이
+// 전부 빈 사람을 가리키게 되고, 사용자는 왜 그런지 알 방법이 없다.
+dom.recommendClaim.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var name = dom.recommendNickname.value.trim().slice(0, 10);
+  if (!name) { dom.recommendNickname.focus(); return; }
+
+  dom.recommendClaimMsg.textContent = "찾는 중...";
+  api("/api/recommend/" + encodeURIComponent(name))
+    .then(function (data) {
+      if (!data.seedCount) {
+        dom.recommendClaimMsg.textContent = "\"" + name + "\" 닉네임으로 남긴 별점이 없어요. 오타가 없는지 확인해주세요.";
+        return;
+      }
+      saveNickname(name);
+      renderAuthBox();      // 헤더의 닉네임 칩도 곧바로 그 이름으로 바뀐다
+      refreshMyScore();
+      gtag("event", "recommend_claim_nickname");
+      dom.recommendClaimMsg.textContent = "";
+      dom.recommendNickname.value = "";
+      state.recommend = data;
+      state.recommendReady = true;
+      renderRecommend();
+    })
+    .catch(function (err) {
+      dom.recommendClaimMsg.textContent = "불러오지 못했어요: " + err.message;
+    });
+});
 
 document.getElementById("notifBtn").addEventListener("click", function (e) {
   e.stopPropagation();
