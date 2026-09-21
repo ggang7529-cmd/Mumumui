@@ -3,6 +3,7 @@ import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
 import { formatContents } from "../../js/bookContents.js";
 import { escapeHtml } from "../_lib/html.js";
+import { extractIsbn13 } from "../_lib/bookClass.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
 // index.html을 읽어 치환하는 방식이라 스프라이트가 이미 페이지 안에 들어 있다.
@@ -84,7 +85,7 @@ export async function onRequestGet(context) {
   var html = await indexRes.text();
 
   var book = await env.DB.prepare(
-    "SELECT id, title, author, cover, contents, text, mood, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
+    "SELECT id, title, author, cover, isbn, contents, text, mood, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
   )
     .bind(id)
     .first();
@@ -135,13 +136,22 @@ export async function onRequestGet(context) {
     name: book.title,
     author: { "@type": "Person", name: book.author },
   };
+  jsonLd.url = canonicalUrl;
   if (coverUrl) jsonLd.image = coverUrl;
   if (book.contents) jsonLd.description = book.contents;
+  // isbn은 이 책이 어떤 책인지 검색엔진이 다른 출처와 대조할 수 있게 해주는 값이라,
+  // 있으면 같이 싣는다. 카카오가 isbn10과 isbn13을 공백으로 붙여 주므로 13자리만 쓴다.
+  var isbn13 = extractIsbn13(book.isbn);
+  if (isbn13) jsonLd.isbn = isbn13;
   if (avgRating !== null) {
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: avgRating,
-      reviewCount: book.rating_count,
+      // reviewCount가 아니라 ratingCount를 쓴다. 구글 기준으로 reviewCount는 "글이 달린
+      // 리뷰 수", ratingCount는 "별점을 매긴 수"인데, 우리는 감정 태그만 고르고 글 없이
+      // 별점만 남길 수 있어서(books.mood) rating_count는 후자에 해당한다. 예전에는 이걸
+      // reviewCount로 내보내 실제보다 부풀려진 숫자를 말하고 있었다.
+      ratingCount: book.rating_count,
       bestRating: 5,
       worstRating: 1,
     };
