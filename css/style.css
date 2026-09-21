@@ -1410,6 +1410,23 @@
     text-align: center;
   }
 
+  /* 등록은 "찾는 책이 없을 때"의 다음 단계라 버튼 대신 글자 링크로 둔다. */
+  .recommend-empty-alt {
+    display: block;
+    margin: 0.85rem auto 0;
+    background: none;
+    border: none;
+    padding: 0.2rem;
+    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .recommend-empty-alt:hover { color: var(--ink); }
+
   /* 닉네임으로 내 기록을 다시 집어오는 칸. 위 등록 버튼과 성격이 다른 행동이라(새로
      쓰기 vs 이미 쓴 것 되찾기) 선으로 한 칸 떼어놓는다. */
   .recommend-claim {

@@ -539,9 +539,12 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
 document.getElementById("recommendBtn").addEventListener("click", function () { openRecommend(); });
-// 추천할 근거가 없을 때 뜨는 "책 기록하러 가기" 버튼. 헤더의 "+ 책장에 추가하기"와 같은
-// 진입점을 써서 로그인 모드일 때의 확인 절차가 한쪽에만 빠지는 일이 없게 한다.
-document.getElementById("recommendCta").addEventListener("click", function () { startBookRegistration(); });
+// 추천할 근거가 없을 때 뜨는 두 버튼. 기본은 책장으로 보내는 것이다 — 이미 등록된 책에
+// 별점만 남겨도 추천은 돌아가므로, 등록을 먼저 요구할 이유가 없다.
+document.getElementById("recommendCta").addEventListener("click", function () { showView("library"); });
+// 찾는 책이 없을 때의 다음 단계. 헤더의 "+ 책장에 추가하기"와 같은 진입점을 써서
+// 로그인 모드일 때의 확인 절차가 한쪽에만 빠지는 일이 없게 한다.
+document.getElementById("recommendAddCta").addEventListener("click", function () { startBookRegistration(); });
 
 // 닉네임으로 내 기록을 다시 집어오는 입구. 닉네임은 글을 남길 때만 이 브라우저에
 // 저장되므로, 기기를 바꾸거나 저장소가 지워지면 기록은 서버에 그대로 있는데 이름만

@@ -364,7 +364,11 @@
         <div class="shelf recommend-shelf" id="recommendShelf"></div>
         <div class="recommend-empty" id="recommendEmpty" hidden>
           <p class="recommend-empty-text" id="recommendEmptyText"></p>
-          <button type="button" class="btn-primary" id="recommendCta">책 기록하러 가기</button>
+          <!-- 기본 행동은 "둘러보고 별점 남기기"다. 책 등록은 찾는 책이 없을 때만 필요한
+               다음 단계라 작은 글씨로 뒤에 둔다 — 앞에 큰 버튼으로 두면 "책부터 등록해야
+               하는 서비스"로 읽힌다. -->
+          <button type="button" class="btn-primary" id="recommendCta">책장 둘러보기</button>
+          <button type="button" class="recommend-empty-alt" id="recommendAddCta">찾는 책이 없다면 직접 등록하기</button>
 
           <!-- 닉네임은 책·한줄평을 남길 때만 이 브라우저에 저장된다. 그래서 기기를 바꾸거나
                저장소가 지워지면 기록은 서버에 그대로 있는데 "내가 누구인지"만 잃어버린다.

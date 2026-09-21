@@ -699,8 +699,10 @@ export function renderRecommend() {
   var seedCount = data ? data.seedCount : 0;
   if (!seedCount) {
     dom.recommendSub.textContent = "";
+    // 문구가 "책을 등록해야 한다"로 읽히면 안 된다. 실제로는 이미 등록된 책에 별점만
+    // 남겨도 추천이 돌아간다(추천의 근거는 등록이 아니라 별점이다).
     dom.recommendEmptyText.textContent =
-      "아직 취향을 파악할 데이터가 없어요. 몇 권 등록하고 별점을 남겨보시면 맞춤 추천을 보여드릴게요.";
+      "책을 등록하지 않아도 괜찮아요. 이미 책장에 있는 책에 별점만 남겨주시면, 그걸로 취향을 읽어 골라드릴게요.";
     // 닉네임으로 기록을 다시 집어오는 입구는 이 경우에만 보여준다. 이름이 저장돼 있는데도
     // 별점이 없다면 다른 이름으로 남겼을 수 있으니 문구만 바꿔 같은 칸을 쓴다.
     dom.recommendClaimLabel.textContent = name
