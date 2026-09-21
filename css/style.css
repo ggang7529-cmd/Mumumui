@@ -325,6 +325,13 @@
       text-align: center;
     }
 
+    /* 테두리가 있는 버튼(.btn-accent-outline)과 없는 버튼이 같은 줄에 서면 그 1px씩
+       때문에 위아래가 2px 어긋난다. 없는 쪽에 투명 테두리를 줘 같은 높이를 차지하게 한다. */
+    .header-actions .btn-random,
+    .header-actions .btn-primary {
+      border: 1px solid transparent;
+    }
+
     /* 터치 타겟 확대: 애플/구글 권장 최소 크기(44px)에 맞춘다. */
     .notif-bell {
       width: 44px;
@@ -522,6 +529,29 @@
     .header-actions-break {
       order: 23;
       height: 0.5rem;
+    }
+  }
+
+  /* PC 폭에서 헤더 첫 줄(의견 보내기 · 랜덤 책 추천)의 높이를 맞춘다.
+     테두리가 있는 버튼(.btn-accent-outline, 1px)과 없는 버튼(.btn-random)의 안쪽 여백과
+     글자 크기가 서로 달라서 높이가 39px / 42px로 3px 어긋났다. 세로 중심은 맞아 있어도
+     위아래 선이 안 맞으니 줄이 삐뚤어 보인다. 상자 규격을 한 벌로 통일한다.
+     테두리 없는 쪽에도 투명 테두리를 줘서 같은 두께를 차지하게 한다.
+
+     min-width로 감싼 이유: 좁은 화면에는 이미 @media (max-width: 900px) 안에 헤더 버튼
+     전용 규격(글자 0.82rem 등)이 따로 있는데, 그 규칙이 스타일시트 앞쪽에 있어서 감싸지
+     않으면 같은 우선순위의 이 규칙이 뒤에서 덮어써 버린다. */
+  @media (min-width: 901px) {
+    .header-actions .btn-accent-outline,
+    .header-actions .btn-random {
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      border: 1px solid transparent;
+    }
+
+    .header-actions .btn-accent-outline {
+      border-color: var(--accent);
     }
   }
 
