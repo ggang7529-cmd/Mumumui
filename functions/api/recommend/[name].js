@@ -30,9 +30,10 @@ function nicknameParam(raw) {
   return value.trim().slice(0, 10);
 }
 
-// 한 번에 3권만 보여준다. 8권까지 내보내 봤더니 화면이 그냥 또 하나의 책 목록처럼 읽혀서,
-// "고른 것"이라는 느낌이 나도록 줄였다.
-var MAX_RESULTS = 3;
+// 한 번에 2권만 보여준다. 8권 → 3권 → 2권으로 줄여왔다. 여러 권을 늘어놓으면 "고른 것"이
+// 아니라 또 하나의 책 목록처럼 읽히고, 모바일에서 3권은 한 줄에 2권 + 다음 줄에 1권으로
+// 어정쩡하게 끊긴다. 2권이면 어느 폭에서든 한 줄로 떨어진다.
+var MAX_RESULTS = 2;
 
 // 내가 준 별점이 그 책을 취향의 근거로 얼마나 믿을지를 정한다. 1~2점을 준 책은 "이런 건
 // 싫었다"는 신호라 근거에서 거의 빼고, 5점은 그대로 다 쓴다.
@@ -124,6 +125,7 @@ export async function onRequestGet(context) {
 
     var score = 0;
     var reason = null;
+    var reasonKind = null;
     var reasonRank = 0;
     var reasonDetail = "";
 
@@ -156,6 +158,9 @@ export async function onRequestGet(context) {
       score += pair * ref.weight;
       if (rank > reasonRank) {
         reasonRank = rank;
+        // kind는 화면이 어떤 근거를 보여줄지 고를 때 쓴다 — 한글 문구를 비교하면 문구를
+        // 다듬는 순간 조용히 깨진다.
+        reasonKind = rank === 3 ? "author" : "class";
         reason = rank === 3 ? "같은 작가" : "비슷한 분류";
         reasonDetail = detail;
       }
@@ -170,6 +175,7 @@ export async function onRequestGet(context) {
     score += avg * 0.05 + Math.min(book.comment_count || 0, 5) * 0.02;
 
     book.reason = reason;
+    book.reasonKind = reasonKind;
     book.reasonDetail = reasonDetail;
     scored.push({ book: book, score: score });
   }

@@ -756,7 +756,9 @@ export function renderRecommend() {
     // 제목 바로 아래에 둔다(별점 줄 위).
     overlay.insertBefore(author, overlay.children[1] || null);
 
-    if (row.reason) {
+    // 근거 줄은 "같은 작가 · 김훈"처럼 구체적일 때만 보여준다. "비슷한 분류 · 사회과학"은
+    // 카드에서 딱히 알려주는 게 없어서(분류는 어차피 홈 필터에 있다) 줄만 늘렸다.
+    if (row.reasonKind === "author" && row.reason) {
       var why = document.createElement("div");
       why.className = "b-why";
       why.textContent = row.reasonDetail ? row.reason + " · " + row.reasonDetail : row.reason;
