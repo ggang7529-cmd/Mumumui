@@ -256,7 +256,12 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-start;
+      /* 줄마다 오른쪽 기준으로 모은다. 브랜드만 margin-right:auto로 왼쪽에 고정하면,
+         같은 줄의 나머지(벨·닉네임 묶음)는 오른쪽 끝에 붙고, 아래 줄로 내려간 닉네임
+         묶음도 그 줄에서 오른쪽으로 간다 — 한 줄에 같이 놓이는 폭에서는 벨과 닉네임이
+         서로 붙어 오른쪽에 모인다. 예전엔 각자에게 margin-left:auto를 줬는데, 둘이 한
+         줄에 놓이면 남은 공간이 반씩 나뉘어 벨이 가운데 떠 보였다. */
+      justify-content: flex-end;
       row-gap: 0;
       column-gap: 0.5rem;
       padding: 0.5rem 0;
@@ -274,7 +279,10 @@
       display: contents;
     }
 
-    .brand { order: 1; }
+    .brand {
+      order: 1;
+      margin-right: auto;
+    }
     /* 알림 벨을 닉네임보다 앞에 둔다. 닉네임 칩은 등급 이름까지 달고 있어 폭이 큰데,
        뒤에 "내 기록" 버튼까지 붙으면서 좁은 화면에서 한 줄에 다 못 들어간다. 벨이
        뒤에 있으면 벨만 혼자 다음 줄로 밀려나 빈 줄처럼 보였다 — 순서를 바꿔 넘칠 때
@@ -290,11 +298,8 @@
        여백이 생기게 한다. 닉네임이 저장되어 있으면 auth-box에 그 여백을
        주고, 아직 없으면(auth-box가 비어 사라진 상태) 바로 다음 알림 벨이
        대신 그 여백을 떠안는다. */
-    /* 닉네임·벨 묶음을 오른쪽으로 붙여 브랜드와의 사이에만 큰 여백이 생기게 한다.
-       이제 벨이 앞에 오므로 여백은 벨이 떠안는다. */
-    .header-actions .notif-box {
-      margin-left: auto;
-    }
+    /* 오른쪽 정렬은 위 .site-header의 justify-content가 맡는다 — 여기서 따로 auto
+       여백을 주면 그 줄의 남은 공간을 나눠 가져 정렬이 어긋난다. */
 
     /* 폭 100%짜리 빈 아이템으로 강제 줄바꿈을 만든다 — 이 아이템은 항상
        자기 혼자 한 줄을 차지하므로, order가 더 큰(20번대) 버튼들은 전부
@@ -580,22 +585,25 @@
     flex: none;
     margin-left: 0.45rem;
     background: none;
-    border: 1px solid var(--line);
+    /* 옅은 회색 테두리로는 눈에 안 띄어서, 사이트의 외곽선 버튼과 같은 브랜드 색을 쓴다.
+       헤더의 큰 버튼들과는 크기로 차이를 둔다(글씨 0.76rem). */
+    border: 1px solid var(--accent);
     border-radius: 999px;
     /* 손가락으로 누르는 곳이라 글씨 크기에 비해 여백을 넉넉히 준다. 그래도 옆 닉네임
        칩(26px)보다 조금 클 뿐이라 헤더 높이는 그대로다. */
-    padding: 0.3rem 0.6rem;
-    color: var(--ink-faint);
+    padding: 0.3rem 0.65rem;
+    color: var(--accent);
     font-family: inherit;
-    font-size: 0.72rem;
+    font-size: 0.76rem;
+    font-weight: 600;
     line-height: 1.5;
     white-space: nowrap;
     cursor: pointer;
   }
 
   .my-records-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--paper-raised);
   }
 
   .user-chip {
