@@ -270,6 +270,17 @@ export function renderAuthBox() {
       savedName.appendChild(document.createTextNode(formatNicknameFull(nickname, state.myScore)));
       savedChip.appendChild(savedName);
       $box.appendChild(savedChip);
+
+      // 닉네임 자체도 누르면 내 기록으로 가지만, 그 사실을 알리는 신호가 커서와 호버
+      // 밑줄뿐이라 호버가 없는 모바일에서는 아무도 모른다. 옆에 작은 버튼을 따로 둬서
+      // "여기 눌러서 볼 수 있다"를 글자로 말해준다.
+      var myRecords = document.createElement("button");
+      myRecords.type = "button";
+      myRecords.className = "my-records-btn";
+      myRecords.textContent = "내 기록";
+      myRecords.setAttribute("aria-label", nickname + "님의 기록 보기");
+      myRecords.addEventListener("click", function () { openProfile(nickname); });
+      $box.appendChild(myRecords);
     }
     return;
   }
