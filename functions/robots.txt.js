@@ -1,6 +1,7 @@
+import { canonicalOrigin } from "./_lib/origin.js";
 // GET/HEAD 둘 다 이 함수가 받는다 — 이유는 functions/sitemap.xml.js 주석 참고.
 async function handle(context) {
-  var origin = new URL(context.request.url).origin;
+  var origin = canonicalOrigin(context.request);
   // 네이버 웹마스터 가이드가 짚는 항목들을 의도적으로 이 형태로 둔다.
   //
   // - 파비콘, /js/, /css/는 일부러 막지 않는다. 검색 로봇은 이들을 문서의 일부로 보고

@@ -1,3 +1,4 @@
+import { canonicalOrigin } from "./_lib/origin.js";
 function escapeXml(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c];
@@ -11,7 +12,7 @@ var ITEM_LIMIT = 20;
 // GET/HEAD 둘 다 이 함수가 받는다 — 이유는 functions/sitemap.xml.js 주석 참고.
 async function handle(context) {
   var env = context.env;
-  var origin = new URL(context.request.url).origin;
+  var origin = canonicalOrigin(context.request);
 
   var books = [];
   try {

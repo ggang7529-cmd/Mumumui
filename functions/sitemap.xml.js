@@ -1,3 +1,4 @@
+import { canonicalOrigin } from "./_lib/origin.js";
 // 잘못된 값에는 예외 대신 null을 준다. new Date(x).toISOString()은 x가 undefined거나
 // NaN이거나 Date가 표현할 수 있는 범위를 벗어나면 RangeError를 던진다. 예전에는 이
 // 함수를 try/catch 바깥에서 부르고 있어서, 책 한 권의 타임스탬프만 이상해도 사이트맵
@@ -31,7 +32,7 @@ function escapeXml(s) {
 // 본문은 런타임이 HEAD일 때 알아서 떼어낸다.
 async function handle(context) {
   var env = context.env;
-  var origin = new URL(context.request.url).origin;
+  var origin = canonicalOrigin(context.request);
 
   var books = [];
   try {

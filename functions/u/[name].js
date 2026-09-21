@@ -1,4 +1,5 @@
 import { escapeHtml } from "../_lib/html.js";
+import { canonicalOrigin } from "../_lib/origin.js";
 
 // /u/:닉네임 — 프로필 화면의 고유 주소.
 //
@@ -51,7 +52,7 @@ export async function onRequestGet(context) {
   var desc = bookCount || reviewCount
     ? safeName + "님이 등록한 책 " + bookCount + "권과 남긴 한줄평 " + reviewCount + "개를 구경해보세요."
     : safeName + "님의 책갈피 기록을 구경해보세요.";
-  var pageUrl = escapeHtml(reqUrl.origin + "/u/" + encodeURIComponent(name));
+  var pageUrl = escapeHtml(canonicalOrigin(context.request) + "/u/" + encodeURIComponent(name));
 
   // 홈에 정적으로 박혀 있는 og 블록을 통째로 갈아끼운다. 뒤에 덧붙이면 태그가 중복돼
   // 크롤러가 어느 쪽을 쓸지 보장할 수 없다 (functions/book/[id].js와 같은 이유).

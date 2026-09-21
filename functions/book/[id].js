@@ -3,6 +3,7 @@ import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
 import { formatContents } from "../../js/bookContents.js";
 import { escapeHtml } from "../_lib/html.js";
+import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
@@ -99,7 +100,7 @@ export async function onRequestGet(context) {
     ? escapeHtml(descSource.length > 155 ? descSource.slice(0, 155).trim() + "…" : descSource)
     : escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
   // 쿼리 파라미터가 붙어도 같은 콘텐츠이므로, og:url/canonical은 쿼리 없는 정규 URL로 고정한다.
-  var canonicalUrl = reqUrl.origin + "/book/" + encodeURIComponent(id);
+  var canonicalUrl = canonicalOrigin(context.request) + "/book/" + encodeURIComponent(id);
   var pageUrl = escapeHtml(canonicalUrl);
   var avgRating = book.rating_count > 0 ? Math.round((book.rating_sum / book.rating_count) * 10) / 10 : null;
 

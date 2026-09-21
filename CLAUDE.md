@@ -23,7 +23,7 @@ Setup the user still needs to do in the Cloudflare/Kakao/국립중앙도서관 d
 
 운영 도메인은 `https://book-galpi.com`입니다(2026-09-18에 `galpi.pages.dev`에서 옮김 — pages.dev 하위 도메인은 검색엔진이 임시 배포지로 취급해서 도메인 신뢰를 거의 못 받습니다). `functions/_middleware.js`가 옛 주소와 `www.`를 경로·쿼리를 살린 채 301로 넘깁니다. 미리보기 배포(`<해시>.galpi.pages.dev`)와 로컬은 일부러 그대로 통과시킵니다.
 
-도메인 문자열은 `index.html`(6곳)·`functions/book/[id].js`(3곳)·`functions/u/[name].js`(4곳)에 하드코딩돼 있습니다. 이 둘은 index.html의 그 문자열을 **찾아서 바꿔치기**하는 방식이라 한쪽만 고치면 치환이 조용히 실패해 링크 미리보기가 홈 것으로 나갑니다 — 반드시 같이 고치고, 페이지별 `og:title`이 1개만 나오는지로 확인하세요(치환 실패 시 2개가 됩니다). 반면 sitemap.xml·robots.txt·rss.xml과 책·프로필 canonical은 요청 origin을 그대로 쓰므로 손댈 것이 없습니다.
+도메인 문자열은 `index.html`(6곳)·`functions/book/[id].js`(3곳)·`functions/u/[name].js`(4곳)에 하드코딩돼 있습니다. 이 둘은 index.html의 그 문자열을 **찾아서 바꿔치기**하는 방식이라 한쪽만 고치면 치환이 조용히 실패해 링크 미리보기가 홈 것으로 나갑니다 — 반드시 같이 고치고, 페이지별 `og:title`이 1개만 나오는지로 확인하세요(치환 실패 시 2개가 됩니다). 반면 sitemap.xml·robots.txt·rss.xml과 책·프로필 canonical은 요청 호스트를 그대로 쓰므로 도메인을 바꿔도 손댈 것이 없습니다 — 다만 프로토콜은 `functions/_lib/origin.js`의 `canonicalOrigin()`이 https로 못박습니다(로컬 127.0.0.1/localhost만 예외). 요청 origin을 그대로 쓰던 시절엔 크롤러가 http로 한 번 들어오면 우리가 http 주소를 적어 내보내고 그게 다시 크롤링돼, 구글 서치 콘솔이 `http://book-galpi.com/sitemap.xml`을 리디렉션 오류로 잡았습니다(2026-09-18 크롤링).
 
 API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.
 
