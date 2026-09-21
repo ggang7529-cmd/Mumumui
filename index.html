@@ -320,7 +320,9 @@
               <button type="submit">남기기</button>
             </div>
           </form>
-          <p class="char-hint" id="commentHint">별점만 필수예요 (한 줄 감상은 최대 60자)</p>
+          <!-- "별점만 필수"라고 적어뒀었는데 사실이 아니다 — 닉네임도 필수고, 별점 없이
+               감정 태그만 고르는 것도 안 된다. 잘못된 안내를 지우고 글자 수만 남긴다. -->
+          <p class="char-hint" id="commentHint">한 줄 감상은 최대 60자</p>
           <div class="signin-prompt" id="commentSignin" hidden>
             <span id="commentSigninText">로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
             <div id="googleBtnComment"></div>
