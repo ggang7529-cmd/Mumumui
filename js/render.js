@@ -2,6 +2,7 @@ import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, ope
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { formatContents } from "./bookContents.js";
 import { kdcOrder } from "./kdc.js";
+import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
@@ -695,14 +696,29 @@ export function renderRecommend() {
     return;
   }
 
-  // 근거가 없는 경우 — 닉네임이 아예 없거나(첫 방문), 있어도 별점을 하나도 안 남겼거나.
   var seedCount = data ? data.seedCount : 0;
+  var minRatings = (data && data.minRatings) || MIN_RATINGS_FOR_RECOMMEND;
+
+  // 별점은 남겼는데 아직 모자란 경우. 그냥 "데이터가 없다"고 하면 얼마나 더 해야 하는지
+  // 알 수 없어 막힌 느낌만 남는다. 지금 몇 개인지와 몇 개가 남았는지를 같이 보여준다.
+  if (seedCount > 0 && seedCount < minRatings) {
+    dom.recommendSub.textContent = "";
+    dom.recommendEmptyText.textContent =
+      "지금 별점 " + seedCount + "개 · " + (minRatings - seedCount) +
+      "개만 더 남기면 맞춤 추천을 보여드릴게요. 이미 책장에 있는 책에 별점만 눌러도 됩니다.";
+    dom.recommendClaim.hidden = true;   // 누구인지는 이미 알고 있다
+    dom.recommendEmpty.hidden = false;
+    return;
+  }
+
+  // 근거가 아예 없는 경우 — 닉네임이 없거나(첫 방문), 있어도 별점을 하나도 안 남겼거나.
   if (!seedCount) {
     dom.recommendSub.textContent = "";
     // 문구가 "책을 등록해야 한다"로 읽히면 안 된다. 실제로는 이미 등록된 책에 별점만
     // 남겨도 추천이 돌아간다(추천의 근거는 등록이 아니라 별점이다).
     dom.recommendEmptyText.textContent =
-      "책을 등록하지 않아도 괜찮아요. 이미 책장에 있는 책에 별점만 남겨주시면, 그걸로 취향을 읽어 골라드릴게요.";
+      "책을 등록하지 않아도 괜찮아요. 이미 책장에 있는 책에 별점 " + minRatings +
+      "개만 남겨주시면, 그걸로 취향을 읽어 골라드릴게요.";
     // 닉네임으로 기록을 다시 집어오는 입구는 이 경우에만 보여준다. 이름이 저장돼 있는데도
     // 별점이 없다면 다른 이름으로 남겼을 수 있으니 문구만 바꿔 같은 칸을 쓴다.
     dom.recommendClaimLabel.textContent = name

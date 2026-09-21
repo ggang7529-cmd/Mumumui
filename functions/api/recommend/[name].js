@@ -1,4 +1,5 @@
 import { json } from "../../_lib/db.js";
+import { MIN_RATINGS_FOR_RECOMMEND } from "../../../js/recommendRules.js";
 
 // /api/recommend/:닉네임 — 그 사람이 별점을 남긴 책들을 바탕으로 아직 안 본 책을 고른다.
 //
@@ -91,10 +92,10 @@ export async function onRequestGet(context) {
   seeds.forEach(function (s) { seen[s.id] = true; });
   owned.forEach(function (b) { seen[b.id] = true; });
 
-  if (seeds.length === 0) {
-    // 별점을 하나도 안 남긴 사람. 화면이 "데이터가 없어서 못 고른다"와 "골랐는데 후보가
-    // 없다"를 다르게 안내해야 하므로 seedCount를 함께 내려준다.
-    return json({ nickname: name, seedCount: 0, books: [] });
+  // 근거가 모자라면 계산하지 않고 개수만 돌려준다. 화면이 "아직 몇 개 더 필요하다"와
+  // "골랐는데 후보가 없다"를 다르게 안내해야 하므로 seedCount를 함께 내려준다.
+  if (seeds.length < MIN_RATINGS_FOR_RECOMMEND) {
+    return json({ nickname: name, seedCount: seeds.length, minRatings: MIN_RATINGS_FOR_RECOMMEND, books: [] });
   }
 
   // 근거 책들을 미리 다듬어 둔다(후보마다 다시 계산하지 않도록).
@@ -181,6 +182,7 @@ export async function onRequestGet(context) {
   return json({
     nickname: name,
     seedCount: seeds.length,
+    minRatings: MIN_RATINGS_FOR_RECOMMEND,
     books: scored.slice(0, MAX_RESULTS).map(function (row) { return row.book; })
   });
 }
