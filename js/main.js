@@ -207,7 +207,9 @@ export function showView(name) {
   dom.feedbackView.hidden = name !== "feedback";
   dom.profileView.hidden = name !== "profile";
   dom.recommendView.hidden = name !== "recommend";
-  dom.homeBtn.hidden = name !== "detail" && name !== "random" && name !== "profile" && name !== "recommend";
+  // 목록(홈)이 아닌 모든 화면에서 "홈으로"를 띄운다. 책 등록 화면에는 폼 아래에 "취소"가
+  // 있지만, 그건 폼을 스크롤해 끝까지 내려가야 보인다 — 화면 위에서 바로 빠져나올 길이 없었다.
+  dom.homeBtn.hidden = name === "library";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
