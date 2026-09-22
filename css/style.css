@@ -2610,20 +2610,6 @@
     padding: 0.55rem 0.7rem;
   }
 
-  /* 좁은 화면에서는 입력창과 "남기기" 버튼을 위아래로 쌓는다. 한 줄에 같이 두면 버튼이
-     차지하는 폭만큼 입력창이 좁아져서, 자리표시자로 넣어둔 예시 문구가 끝에서 잘렸다
-     ("이번 달 최고의 발견이었어…"). 예시를 끝까지 읽혀야 "이렇게 쓰면 되는구나"가 전달된다. */
-  @media (max-width: 640px) {
-    .comment-input-row {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .comment-input-row button {
-      padding: 0.65rem 1rem;
-    }
-  }
-
   /* 모바일 iOS Safari에서 16px 미만 입력창은 포커스 시 자동 확대되므로 16px 유지 */
   @media (max-width: 640px) {
     #commentInput {
@@ -2644,6 +2630,31 @@
   }
 
   .comment-input-row button:hover { background: var(--accent-soft); }
+
+  /* 좁은 화면에서는 입력창과 "남기기" 버튼을 위아래로 쌓는다. 한 줄에 같이 두면 버튼이
+     차지하는 폭만큼 입력창이 좁아져서, 자리표시자로 넣어둔 예시 문구가 끝에서 잘렸다
+     ("이번 달 최고의 발견이었어…"). 예시를 끝까지 읽혀야 "이렇게 쓰면 되는구나"가 전달된다.
+     이 블록은 반드시 위 .comment-input-row button 규칙 "뒤"에 있어야 한다 — 미디어 쿼리는
+     우선순위를 올려주지 않아서, 앞에 두면 기본 규칙의 padding: 0 1rem이 이겨 버튼이
+     글자 높이만큼 얇아진다(한 줄이던 시절엔 입력창 높이에 맞춰 늘어나 가려져 있던 문제다).
+     높이는 손가락으로 누르는 최소 크기(44px) 기준으로 잡는다. */
+  @media (max-width: 640px) {
+    .comment-input-row {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .comment-input-row button {
+      padding: 0.7rem 1rem;
+      min-height: 46px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    #commentInput {
+      min-height: 46px;
+    }
+  }
 
   .char-hint {
     font-size: 0.72rem;
