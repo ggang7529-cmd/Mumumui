@@ -529,6 +529,23 @@
     height: 0;
   }
 
+  /* 닉네임 묶음(닉네임 · 내 기록 · 알림)만 첫 줄에 두고 버튼들을 아래 줄로 내린다.
+     버튼과 닉네임이 한 줄에 섞여 있으면 어디까지가 "내 정보"인지 읽히지 않는다. */
+  .header-top-break {
+    flex-basis: 100%;
+    height: 0.5rem;
+  }
+
+  /* 버튼 넷을 한 줄에 둘 수 있게 되어(닉네임이 자리를 비켜줬다) 강조 버튼 둘을 붙여주던
+     줄바꿈은 PC에서 더 필요 없다. 좁은 화면에서는 여전히 필요해서 거기서만 살려둔다. */
+  @media (min-width: 901px) {
+    .header-actions-break { display: none; }
+  }
+
+  @media (max-width: 900px) {
+    .header-top-break { display: none; }
+  }
+
   /* 좁은 화면에서도 같은 역할을 한다. 여기서는 header-actions가 display:contents라
      자식들이 site-header의 flex 아이템으로 직접 들어가므로, 아래 order 배치에 맞춰
      강조 버튼 둘 바로 앞 순서를 준다 — 그래야 둘이 한 줄을 반씩 나눠 갖는다. */
