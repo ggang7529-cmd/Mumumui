@@ -1,7 +1,6 @@
 import { fetchScoreMap } from "../_lib/scores.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
-import { formatContents } from "../../js/bookContents.js";
 import { escapeHtml } from "../_lib/html.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
@@ -92,17 +91,33 @@ export async function onRequestGet(context) {
     .first();
   if (!book) return new Response(html, { status: 404, headers: { "Content-Type": "text/html; charset=UTF-8" } });
 
+  // 평균 별점은 메타 설명·JSON-LD·화면 세 곳이 함께 쓰므로 여기서 한 번만 구한다.
+  var avgRating = book.rating_count > 0 ? Math.round((book.rating_sum / book.rating_count) * 10) / 10 : null;
+
   var title = escapeHtml(book.title) + " - 리뷰 및 별점 | 책갈피";
-  // 책 소개(contents)가 있으면 그걸 메타 설명으로 쓰는 게 제목+저자 조합보다 검색결과에서
-  // 더 유용하다. 검색엔진 스니펫 길이 관례에 맞춰 155자 근처에서 자른다.
-  var descSource = book.contents ? book.contents.trim() : "";
-  var desc = descSource
-    ? escapeHtml(descSource.length > 155 ? descSource.slice(0, 155).trim() + "…" : descSource)
-    : escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
+
+  // 메타 설명(검색 결과에 뜨는 문구)은 이 책에 남은 한줄평으로 만든다.
+  //
+  // 예전에는 카카오가 주는 책 소개(contents)를 썼는데, 그건 출판사 홍보 문구라 교보·예스24·
+  // 알라딘에도 똑같이 있다. 검색엔진 입장에서는 여러 사이트에 중복된 문장이라 스니펫으로 잘
+  // 쓰이지도 않고, 쓰인들 우리를 고를 이유가 되지 못한다. 반면 한줄평은 이 사이트에만 있는
+  // 문장이다. contents 자체는 DB와 아래 JSON-LD에 그대로 남는다 — 거기서는 "책"을 설명하는
+  // 자리라 출판사 소개가 맞다.
+  var moodTagForDesc = findMoodTag(book.mood);
+  var reviewLine = (book.text || "").trim() || (moodTagForDesc ? moodTagForDesc.label : "");
+  var desc;
+  if (reviewLine) {
+    var head = '"' + (reviewLine.length > 90 ? reviewLine.slice(0, 90).trim() + "…" : reviewLine) + '"';
+    var tail = avgRating !== null
+      ? " · 별점 " + avgRating.toFixed(1) + (book.rating_count > 1 ? " (" + book.rating_count + "명)" : "")
+      : "";
+    desc = escapeHtml(head + tail + " — " + book.title + " 한줄평, 책갈피");
+  } else {
+    desc = escapeHtml(book.title) + "(" + escapeHtml(book.author) + ") 리뷰 - 책갈피에서 확인해보세요";
+  }
   // 쿼리 파라미터가 붙어도 같은 콘텐츠이므로, og:url/canonical은 쿼리 없는 정규 URL로 고정한다.
   var canonicalUrl = canonicalOrigin(context.request) + "/book/" + encodeURIComponent(id);
   var pageUrl = escapeHtml(canonicalUrl);
-  var avgRating = book.rating_count > 0 ? Math.round((book.rating_sum / book.rating_count) * 10) / 10 : null;
 
   // 홈(index.html)에는 사이트 기본 og 태그가 정적으로 박혀 있다. 여기서 metaTags를
   // <title> 뒤에 그냥 덧붙이면 og:title/description/image/type/url이 중복돼서 크롤러가
@@ -261,14 +276,6 @@ export async function onRequestGet(context) {
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
-    .replace(
-      '<p class="book-contents-text" id="bookContentsText"></p>',
-      '<p class="book-contents-text" id="bookContentsText">' + escapeHtml(formatContents(book.contents)) + "</p>"
-    )
-    .replace(
-      '<section class="book-contents" id="bookContentsSection" hidden>',
-      book.contents ? '<section class="book-contents" id="bookContentsSection">' : '<section class="book-contents" id="bookContentsSection" hidden>'
-    )
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<section id="detailView" hidden>', '<section id="detailView">');

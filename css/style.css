@@ -2024,48 +2024,6 @@
 
   .btn-ghost-danger:hover { border-color: var(--accent); color: var(--accent); }
 
-  .book-contents {
-    margin-top: 1.2rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .book-contents h3 {
-    position: relative;
-    font-family: "Gowun Batang", serif;
-    font-weight: 700;
-    font-size: var(--t-section);
-    margin: 0 0 0.6rem;
-    padding-top: 0.7rem;
-  }
-
-  .book-contents h3::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1.6rem;
-    height: 2px;
-    background: var(--accent);
-  }
-
-  /* 접지 않고 한 번에 다 보여준다. 카카오가 주는 소개가 260자 남짓이라 접을 만큼 길지
-     않았고, "더 보기"를 한 번 더 누르게 할 이유가 없었다. 발췌라 문장이 끊긴 자리에는
-     js/bookContents.js의 formatContents가 "…"를 붙인다. */
-  .book-contents-text {
-    margin: 0;
-    color: var(--ink-soft);
-    font-size: 0.92rem;
-    line-height: 1.55;
-    white-space: pre-line;
-  }
-
-  @media (max-width: 640px) {
-    .book-contents-text {
-      font-size: 0.88rem;
-    }
-  }
-
   .comments {
     margin-top: 2.25rem;
   }

@@ -1,6 +1,5 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
-import { formatContents } from "./bookContents.js";
 import { kdcOrder } from "./kdc.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
 import {
@@ -853,28 +852,6 @@ export function renderLatestHighlight() {
   });
 }
 
-// 책 소개(카카오 API의 contents)를 보여준다.
-//
-// 예전엔 PC 3줄 / 모바일 2줄로 접고 "더 보기" 버튼을 달았는데, 카카오가 주는 소개가
-// 260자 남짓이라 접을 만큼 길지 않았다. 버튼 한 번을 더 누르게 할 이유가 없어서 접는
-// 걸 없애고 한 번에 다 보여준다. 대신 발췌라서 문장이 끊긴 자리에는 formatContents가
-// "…"를 붙인다(js/bookContents.js).
-function updateBookContents(r) {
-  var $section = document.getElementById("bookContentsSection");
-  var $text = document.getElementById("bookContentsText");
-  var contents = formatContents(r.contents);
-
-  if (!contents) {
-    $section.hidden = true;
-    return;
-  }
-
-  $section.hidden = false;
-  // 폴링(8~20초)으로 이 함수가 반복 호출되는데, 같은 값을 매번 다시 넣으면 텍스트 노드가
-  // 교체되면서 사용자가 드래그해둔 선택이 풀린다. 달라졌을 때만 쓴다.
-  if ($text.textContent !== contents) $text.textContent = contents;
-}
-
 export function renderDetail() {
   var r = findBook(state.currentId);
   if (!r) {
@@ -927,7 +904,6 @@ export function renderDetail() {
     $detailHeaderInfo.classList.add("info-in");
   }
 
-  updateBookContents(r);
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
 

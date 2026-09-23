@@ -25,6 +25,8 @@ Setup the user still needs to do in the Cloudflare/Kakao/국립중앙도서관 d
 
 도메인 문자열은 `index.html`(6곳)·`functions/book/[id].js`(3곳)·`functions/u/[name].js`(4곳)에 하드코딩돼 있습니다. 이 둘은 index.html의 그 문자열을 **찾아서 바꿔치기**하는 방식이라 한쪽만 고치면 치환이 조용히 실패해 링크 미리보기가 홈 것으로 나갑니다 — 반드시 같이 고치고, 페이지별 `og:title`이 1개만 나오는지로 확인하세요(치환 실패 시 2개가 됩니다). 반면 sitemap.xml·robots.txt·rss.xml과 책·프로필 canonical은 요청 호스트를 그대로 쓰므로 도메인을 바꿔도 손댈 것이 없습니다 — 다만 프로토콜은 `functions/_lib/origin.js`의 `canonicalOrigin()`이 https로 못박습니다(로컬 127.0.0.1/localhost만 예외). 요청 origin을 그대로 쓰던 시절엔 크롤러가 http로 한 번 들어오면 우리가 http 주소를 적어 내보내고 그게 다시 크롤링돼, 구글 서치 콘솔이 `http://book-galpi.com/sitemap.xml`을 리디렉션 오류로 잡았습니다(2026-09-18 크롤링).
 
+카카오가 주는 책 소개(`books.contents`)는 **화면에 그리지 않습니다**(2026-09-23에 뺌). 출판사 홍보 문구라 교보·예스24·알라딘에도 똑같이 실려 있어서, 이 사이트에서만 볼 수 있는 한줄평 위로 밀고 올라오는 값이 아니었습니다. 컬럼 자체는 DB에 그대로 두고, `functions/book/[id].js`의 JSON-LD `description`에서만 계속 씁니다 — 거기는 "책"이라는 개체를 설명하는 자리라 출판사 소개가 맞습니다. 대신 `<meta name="description">`/`og:description`은 그 책의 한줄평(없으면 감정 태그 문구) + 평균 별점으로 만듭니다. 중복 문장이라 스니펫으로 잘 쓰이지도 않던 것을, 우리에게만 있는 문장으로 바꾼 것입니다.
+
 API routes live under `functions/api/`; shared helpers (session signing, Google token verification, JSON helpers) are in `functions/_lib/`, which Pages Functions' router ignores (leading underscore) so it's safe for non-route code.
 
 ## Workflow
