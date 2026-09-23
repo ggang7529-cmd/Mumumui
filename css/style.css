@@ -1003,12 +1003,14 @@
      카드만 밝게 떠 보인다. 색을 테마별로 따로 두는 대신 여기서 한 단계 눌러준다. */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .b-cover,
+    :root:not([data-theme="light"]) .pr-cover,
     :root:not([data-theme="light"]) .detail-cover {
       filter: brightness(0.82) saturate(0.92);
     }
   }
 
   :root[data-theme="dark"] .b-cover,
+  :root[data-theme="dark"] .pr-cover,
   :root[data-theme="dark"] .detail-cover {
     filter: brightness(0.82) saturate(0.92);
   }
@@ -1381,11 +1383,39 @@
 
   .profile-reviews li {
     display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* 표지 칸 — 서가 카드(.b-cover)와 같은 그림을 줄 높이에 맞춰 작게 넣는다. 표지가 없는
+     책은 이미지 없이 책등 색(--cover)만 남아 색 타일이 된다. */
+  .pr-cover {
+    flex: none;
+    width: 30px;
+    height: 44px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--cover, var(--accent));
+  }
+
+  .pr-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 표지를 뺀 나머지(제목·별점·한줄평·날짜)를 감싼다. 줄바꿈은 여기서 일어나므로 좁은
+     화면에서도 표지는 왼쪽에 한 칸 그대로 있고 글만 그 오른쪽에 쌓인다. */
+  .pr-main {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.7rem 0;
-    border-bottom: 1px solid var(--line);
   }
 
   .profile-reviews li:last-child { border-bottom: none; }
@@ -1433,6 +1463,9 @@
     .pr-book { flex-basis: 100%; }
     .pr-text { flex-basis: 100%; }
     .pr-date { margin-left: 0; }
+    /* 줄이 세 단으로 쌓이면 행이 표지보다 훨씬 높아진다. 가운데 정렬로 두면 표지가 행
+       한복판에 혼자 떠 있어서, 제목 첫 줄에 맞춰 위로 올린다. */
+    .profile-reviews li { align-items: flex-start; }
   }
 
   /* ── 나를 위한 추천 화면 ───────────────────────────────────────────── */

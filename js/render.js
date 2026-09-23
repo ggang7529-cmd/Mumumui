@@ -637,7 +637,7 @@ export function renderProfile() {
     });
   }
 
-  // 남긴 한줄평 — 어느 책에 남긴 건지가 핵심이라 책 제목을 앞에 둔다.
+  // 남긴 한줄평 — 어느 책에 남긴 건지가 핵심이라 표지와 책 제목을 앞에 둔다.
   dom.profileReviewCount.textContent = data.reviews.length ? "(" + data.reviews.length + ")" : "";
   dom.profileReviews.innerHTML = "";
   if (data.reviews.length === 0) {
@@ -649,37 +649,69 @@ export function renderProfile() {
     data.reviews.forEach(function (r) {
       var li = document.createElement("li");
 
+      function goToBook(e) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openDetail(r.book_id);
+      }
+
+      // 표지를 작게 앞에 둔다 — 제목만 줄줄이 있으면 어떤 책이었는지 눈으로 훑기 어렵다.
+      // 표지가 없는 책(직접 등록한 옛 기록)은 서가 카드와 같은 책등 색 타일로 자리를
+      // 채운다. 빈칸으로 두면 목록의 왼쪽 선이 들쭉날쭉해진다.
+      var cover = document.createElement("a");
+      cover.className = "pr-cover";
+      cover.href = "/book/" + encodeURIComponent(r.book_id);
+      cover.style.setProperty("--cover", coverFor(r.book_title || ""));
+      // 바로 옆 제목 링크가 같은 곳으로 가므로, 스크린리더·키보드에는 같은 링크가 두 번
+      // 잡히지 않게 숨긴다. 마우스로는 그림을 눌러도 들어가지는 편이 자연스럽다.
+      cover.tabIndex = -1;
+      cover.setAttribute("aria-hidden", "true");
+      if (r.book_cover) {
+        var coverImg = document.createElement("img");
+        // 30px 남짓으로 그릴 자리라 upscaleCover로 원본을 끌어오지 않는다 — 카카오가 주는
+        // 썸네일 그대로가 훨씬 가볍고, 이 크기에서는 차이가 보이지 않는다.
+        coverImg.src = r.book_cover;
+        coverImg.alt = "";
+        coverImg.loading = "lazy";
+        cover.appendChild(coverImg);
+      }
+      cover.addEventListener("click", goToBook);
+      li.appendChild(cover);
+
+      // 표지를 뺀 나머지는 한 덩어리로 묶는다. 좁은 화면에서 제목·한줄평이 줄바꿈될 때
+      // 표지 오른쪽으로 가지런히 쌓이게 하려는 것으로, 묶지 않으면 표지만 첫 줄에 혼자
+      // 남고 제목이 그 아래로 떨어진다.
+      var main = document.createElement("div");
+      main.className = "pr-main";
+
       var bookLink = document.createElement("a");
       bookLink.className = "pr-book";
       bookLink.href = "/book/" + encodeURIComponent(r.book_id);
       bookLink.textContent = r.book_title;
-      bookLink.addEventListener("click", function (e) {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        e.preventDefault();
-        openDetail(r.book_id);
-      });
-      li.appendChild(bookLink);
+      bookLink.addEventListener("click", goToBook);
+      main.appendChild(bookLink);
 
       var stars = document.createElement("span");
       stars.className = "pr-rating";
       for (var i = 1; i <= 5; i++) stars.appendChild(buildStarIcon(i <= r.rating));
-      li.appendChild(stars);
+      main.appendChild(stars);
 
       var badge = buildMoodBadge(r.mood);
-      if (badge) li.appendChild(badge);
+      if (badge) main.appendChild(badge);
 
       if (r.text) {
         var textEl = document.createElement("span");
         textEl.className = "pr-text";
         textEl.textContent = r.text;
-        li.appendChild(textEl);
+        main.appendChild(textEl);
       }
 
       var date = document.createElement("span");
       date.className = "pr-date";
       date.textContent = formatDate(r.created_at);
-      li.appendChild(date);
+      main.appendChild(date);
 
+      li.appendChild(main);
       dom.profileReviews.appendChild(li);
     });
   }
