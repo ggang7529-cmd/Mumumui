@@ -687,7 +687,12 @@ dom.reviewForm.addEventListener("submit", function (e) {
     }
   })
     .then(function (data) {
+      // complete_review는 "한 줄 기록이 하나 남았다"는 총합이라 예전부터 쌓인 것과 이어지게
+      // 그대로 둔다. 다만 이 이벤트는 새 책 등록과 기존 책 한줄평 두 곳에서 나가서, 그것만
+      // 보면 click_add_book(등록 시도) 대비 완료율을 낼 수 없다 — 한줄평은 등록 버튼을
+      // 거치지 않기 때문이다. 어느 쪽인지 알 수 있게 경로별 이벤트를 따로 하나 더 보낸다.
       gtag("event", "complete_review", { book_id: data.book.id });
+      gtag("event", "complete_book_add", { book_id: data.book.id });
       renderAuthBox();
       refreshMyScore();
       state.books.unshift(normalizeBook(data.book));
@@ -757,7 +762,10 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
     body: { text: text, rating: state.commentRating, mood: state.commentMood, name: nickname }
   })
     .then(function () {
+      // 총합(complete_review)과 경로별(complete_comment)을 같이 보낸다 — 위 새 책 등록
+      // 경로와 같은 이유다.
       gtag("event", "complete_review", { book_id: state.currentId });
+      gtag("event", "complete_comment", { book_id: state.currentId });
       input.value = "";
       input.placeholder = pickReviewPlaceholder();
       state.commentRating = 0;
