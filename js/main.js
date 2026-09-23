@@ -202,6 +202,16 @@ function startDetailPolling() {
 }
 
 export function showView(name) {
+  // 책 등록·추천·랜덤·의견·프로필로 넘어갈 때 홈의 검색어를 비운다. 그러지 않으면 갔다가
+  // 돌아왔을 때 아까 친 검색어가 그대로 걸린 목록이 나와서, 책이 몇 권 없는 것처럼 보인다.
+  //
+  // 책 상세(detail)는 일부러 뺐다 — 검색해서 찾은 책을 열어보고 뒤로 나오는 건 한 흐름이라,
+  // 거기서 검색어를 지우면 보던 자리를 잃는다.
+  if (name !== "library" && name !== "detail" && state.searchQuery) {
+    state.searchQuery = "";
+    if (dom.searchInput) dom.searchInput.value = "";
+  }
+
   state.view = name;
   dom.libraryView.hidden = name !== "library";
   dom.libraryToolbar.hidden = name !== "library";
