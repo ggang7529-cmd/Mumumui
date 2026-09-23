@@ -756,8 +756,16 @@ export function renderRecommend() {
   }
 
   dom.recommendEmpty.hidden = true;
-  books.forEach(function (row) {
+  books.forEach(function (row, index) {
     var card = buildBookCard(normalizeBook(row));
+
+    // 추천 화면까지 들어온 것은 view_recommend로 잡히지만, 거기서 실제로 책을 눌렀는지는
+    // 지금까지 알 수 없었다. 추천이 쓸모가 있는지를 재는 건 이 클릭이라 따로 남긴다.
+    // 몇 번째 카드를 눌렀는지(position)도 같이 보내 1위와 2위의 차이를 볼 수 있게 한다.
+    // 카드 자체의 이동 동작은 buildBookCard가 이미 달아뒀고, 여기서는 기록만 한다.
+    card.addEventListener("click", function () {
+      gtag("event", "click_recommend_book", { book_id: row.id, position: index + 1 });
+    });
     var overlay = card.querySelector(".b-overlay");
     if (!overlay) return;
 
