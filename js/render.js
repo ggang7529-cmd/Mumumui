@@ -1309,7 +1309,15 @@ export function renderDetail() {
         replyNameInput.className = "c-reply-name";
         replyNameInput.placeholder = "닉네임";
         replyNameInput.maxLength = 10;
-        replyNameInput.value = getSavedNickname();
+        // 치던 값이 있으면 그것부터 쓴다. 저장된 닉네임으로 무조건 덮어쓰면, 8초 폴링이
+        // 목록을 다시 그릴 때마다 치던 글자가 사라진다 — 닉네임을 저장한 적 없는 사람은
+        // 아예 입력을 끝낼 수가 없었다(한줄평의 openReplies와 같은 이유, 같은 방식).
+        replyNameInput.value = Object.prototype.hasOwnProperty.call(state.openReplyNames, c.id)
+          ? state.openReplyNames[c.id]
+          : getSavedNickname();
+        replyNameInput.addEventListener("input", function () {
+          state.openReplyNames[c.id] = replyNameInput.value;
+        });
         replyForm.appendChild(replyNameInput);
       }
 
@@ -1335,6 +1343,7 @@ export function renderDetail() {
         replyForm.hidden = !replyForm.hidden;
         if (replyForm.hidden) {
           delete state.openReplies[c.id];
+          delete state.openReplyNames[c.id];
         } else {
           state.openReplies[c.id] = replyTextInput.value;
           replyTextInput.focus();
@@ -1361,6 +1370,7 @@ export function renderDetail() {
             replyTextInput.value = "";
             replyForm.hidden = true;
             delete state.openReplies[c.id];
+            delete state.openReplyNames[c.id];
             refreshComments();
             refreshMyScore();
           })
