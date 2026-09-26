@@ -3243,6 +3243,20 @@
     font-size: var(--t-meta);
   }
 
+  /* "기록을 남긴 9명 중 3위". 위의 목표 줄(.level-progress-goal)과 같은 크기로 두되
+     순위 숫자만 브랜드 색으로 세워, 두 줄이 나란히 있어도 어느 쪽이 새 정보인지
+     바로 보이게 한다. */
+  .level-rank {
+    margin: 0.3rem 0 0;
+    color: var(--ink-soft);
+    font-size: var(--t-meta);
+  }
+
+  .level-rank strong {
+    color: var(--accent);
+    font-size: 1.05em;
+  }
+
   .level-progress-empty {
     margin: 0;
     color: var(--ink-soft);

@@ -198,6 +198,8 @@ export function refreshMyScore(gainedPoints) {
   if (!nickname) return Promise.resolve();
   return api("/api/nickname-score?name=" + encodeURIComponent(nickname)).then(function (data) {
     state.myScore = data.score || 0;
+    state.myRank = data.rank || null;
+    state.myTotal = data.total || 0;
     renderAuthBox();
     // 홈 한 줄이 "다음 등급까지 26점"처럼 점수를 그대로 적으므로 같이 다시 그린다.
     renderIntroLevelLine();

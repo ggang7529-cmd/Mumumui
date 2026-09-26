@@ -45,6 +45,9 @@ export var state = {
   currentUser: null,
   // 헤더의 "이모지 레벨 [등급명] 닉네임" 표시용 내 활동 점수 (api.js refreshMyScore 참고).
   myScore: 0,
+  // 등급 안내 팝업의 "9명 중 3위". 기록이 없는 닉네임이면 myRank가 null이다.
+  myRank: null,
+  myTotal: 0,
   books: [],
   booksLoaded: false,
   recentComments: [],
@@ -469,6 +472,21 @@ export function openLevelGuide(from) {
   }
 
   gtag("event", "open_level_guide", { from: from || "unknown" });
+
+  // 순위는 남이 기록해도 바뀌므로, 오래 열어둔 탭에서는 내 점수보다 먼저 낡는다.
+  // 열자마자 한 번 다시 받아오되, 화면은 이미 갖고 있는 값으로 먼저 그려둔다 —
+  // 응답을 기다렸다 그리면 팝업이 빈 채로 떴다가 채워진다.
+  var shownScore = state.myScore;
+  var shownRank = state.myRank;
+  var shownTotal = state.myTotal;
+  refreshMyScore().then(function () {
+    if (dom.levelGuide.hidden) return;
+    if (state.myScore === shownScore && state.myRank === shownRank && state.myTotal === shownTotal) return;
+    // 표를 훑던 중이었을 수 있으므로 스크롤 위치는 그대로 돌려놓는다.
+    var scrolled = dom.levelTable.scrollTop;
+    renderLevelGuide();
+    dom.levelTable.scrollTop = scrolled;
+  });
 }
 
 export function closeLevelGuide() {

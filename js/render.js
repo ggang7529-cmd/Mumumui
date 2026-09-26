@@ -424,6 +424,8 @@ export function renderLevelGuide() {
     dom.levelProgress.appendChild(note);
   } else {
     var p = levelProgress(score);
+    var myRank = state.myRank;
+    var myTotal = state.myTotal;
 
     var now = document.createElement("p");
     now.className = "level-progress-now";
@@ -455,6 +457,21 @@ export function renderLevelGuide() {
       goal.textContent = "가장 높은 등급이에요. 축하해요!";
     }
     dom.levelProgress.appendChild(goal);
+
+    // 순위는 분모까지 적는다. "3위"만 적으면 처음엔 커 보이지만 "몇 명 중인데?"가
+    // 곧바로 따라오고, 사람이 많지 않다는 걸 나중에 알면 오히려 깎여서 돌아온다.
+    // 아직 사람이 적은 지금은 분모가 "여기 아홉 명이 기록 중"이라는 신호이기도 하다.
+    //
+    // 혼자뿐이면(1명 중 1위) 순위라는 말이 성립하지 않으므로 줄째로 뺀다.
+    if (myRank && myTotal > 1) {
+      var rankLine = document.createElement("p");
+      rankLine.className = "level-rank";
+      rankLine.appendChild(document.createTextNode("기록을 남긴 " + myTotal + "명 중 "));
+      var rankNum = document.createElement("strong");
+      rankNum.textContent = myRank + "위";
+      rankLine.appendChild(rankNum);
+      dom.levelProgress.appendChild(rankLine);
+    }
   }
 
   // ② 배점. 표의 숫자는 js/levels.js의 SCORE_RULES에서 온다(계산은 서버가 한다).
