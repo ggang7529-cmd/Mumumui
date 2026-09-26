@@ -7,7 +7,7 @@ import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
-  renderRecommend, renderLevelGuide, renderIntroLevelLine, buildIcon
+  renderRecommend, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -149,6 +149,10 @@ export var dom = {
   profileReviewCount: document.getElementById("profileReviewCount"),
   levelGuide: document.getElementById("levelGuide"),
   levelGuideClose: document.getElementById("levelGuideClose"),
+  levelGuideBack: document.getElementById("levelGuideBack"),
+  levelGuideTitle: document.getElementById("levelGuideTitle"),
+  levelGuideBody: document.getElementById("levelGuideBody"),
+  levelRankingBody: document.getElementById("levelRankingBody"),
   levelProgress: document.getElementById("levelProgress"),
   levelRuleList: document.getElementById("levelRuleList"),
   levelTable: document.getElementById("levelTable"),
@@ -454,6 +458,7 @@ var levelGuideOpener = null;
 
 export function openLevelGuide(from) {
   levelGuideOpener = document.activeElement;
+  showLevelGuidePage("guide");
   renderLevelGuide();
   dom.levelGuide.hidden = false;
   void dom.levelGuide.offsetWidth;
@@ -497,13 +502,45 @@ export function closeLevelGuide() {
   levelGuideOpener = null;
 }
 
+// 팝업 안에서 "등급 안내"와 "전체 순위" 두 화면을 갈아 끼운다. 새 팝업을 겹쳐 띄우면
+// 모바일에서 닫는 법부터 헷갈리고, 뒤에 깔린 시트가 반쯤 보여 지저분하다.
+export function showLevelGuidePage(page) {
+  var ranking = page === "ranking";
+  dom.levelGuideBody.hidden = ranking;
+  dom.levelRankingBody.hidden = !ranking;
+  dom.levelGuideBack.hidden = !ranking;
+  dom.levelGuideTitle.textContent = ranking ? "전체 순위" : "등급 안내";
+  // 화면이 바뀌었는데 스크롤이 남아 있으면 가운데부터 시작한 것처럼 보인다.
+  (ranking ? dom.levelRankingBody : dom.levelGuideBody).scrollTop = 0;
+}
+
+export function openLevelRanking() {
+  showLevelGuidePage("ranking");
+  renderLevelRanking();
+  dom.levelGuideBack.focus();
+  gtag("event", "open_level_ranking");
+}
+
+dom.levelGuideBack.addEventListener("click", function () {
+  showLevelGuidePage("guide");
+  dom.levelGuideClose.focus();
+});
+
 dom.levelGuideClose.addEventListener("click", closeLevelGuide);
 // 바깥(어두운 배경)을 눌러도 닫는다. 패널 안쪽 클릭까지 닫히면 표를 훑다 말고 사라진다.
 dom.levelGuide.addEventListener("click", function (e) {
   if (e.target === dom.levelGuide) closeLevelGuide();
 });
 document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") closeLevelGuide();
+  if (e.key !== "Escape" || dom.levelGuide.hidden) return;
+  // 전체 순위를 보던 중이면 한 단계만 되돌린다 — 곧바로 닫히면 등급 안내로 돌아갈
+  // 길이 없어지고, 보통 "뒤로"를 기대한다.
+  if (!dom.levelRankingBody.hidden) {
+    showLevelGuidePage("guide");
+    dom.levelGuideClose.focus();
+    return;
+  }
+  closeLevelGuide();
 });
 
 dom.introLevelLine.addEventListener("click", function () { openLevelGuide("intro"); });

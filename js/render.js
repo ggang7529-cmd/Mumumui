@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide, openLevelRanking } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { kdcOrder } from "./kdc.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
@@ -347,6 +347,13 @@ function levelIconFor(lv) {
   return buildIcon(lv.icon, "lv-icon lv-icon--" + lv.icon);
 }
 
+function buildFactValue(text) {
+  var el = document.createElement("strong");
+  el.className = "level-fact-value";
+  el.textContent = text;
+  return el;
+}
+
 // 홈 헤드라인 아래 한 줄.
 //
 // 닉네임이 있으면 "지금 3등급 · 다음 등급까지 26점"처럼 그 사람 얘기로 쓴다. 처음엔
@@ -400,6 +407,92 @@ export function renderIntroLevelLine() {
   line.appendChild(buildIntroChevron());
 }
 
+// 전체 순위 화면. 같은 팝업 안에서 등급 안내와 자리를 바꿔 가며 쓴다.
+//
+// 점수는 서버가 한 번에 계산해 정렬까지 마쳐서 준다(functions/api/ranking.js) —
+// 여기서는 등급 아이콘만 붙여 그린다. 동점자 처리(1, 2, 2, 4식)도 서버와 같은
+// 규칙이라 위쪽 "10명 중 1위"와 어긋나지 않는다.
+export function renderLevelRanking() {
+  var box = dom.levelRankingBody;
+  var myName = getSavedNickname();
+
+  box.innerHTML = "";
+  var loading = document.createElement("p");
+  loading.className = "level-rank-note";
+  loading.textContent = "불러오는 중…";
+  box.appendChild(loading);
+
+  api("/api/ranking").then(function (data) {
+    var rows = data.ranking || [];
+    box.innerHTML = "";
+
+    if (rows.length === 0) {
+      var none = document.createElement("p");
+      none.className = "level-rank-note";
+      none.textContent = "아직 기록을 남긴 사람이 없어요.";
+      box.appendChild(none);
+      return;
+    }
+
+    var head = document.createElement("p");
+    head.className = "level-rank-note";
+    head.textContent = "기록을 남긴 " + data.total + "명";
+    box.appendChild(head);
+
+    var list = document.createElement("ol");
+    list.className = "rank-list";
+    rows.forEach(function (row) {
+      var lv = getLevel(row.score);
+      var li = document.createElement("li");
+      li.className = "rank-row" + (myName && row.name === myName ? " is-me" : "");
+
+      var num = document.createElement("span");
+      num.className = "rank-row-num";
+      num.textContent = row.rank;
+      li.appendChild(num);
+
+      li.appendChild(levelIconFor(lv));
+
+      var name = document.createElement("span");
+      name.className = "rank-row-name";
+      name.textContent = row.name;
+      li.appendChild(name);
+
+      // 같은 닉네임이 둘일 수 있는 사이트라(로그인이 없다) 내 줄에 표를 달아준다 —
+      // 이름만으로는 어느 줄이 나인지 확신할 수 없다.
+      if (myName && row.name === myName) {
+        var meBadge = document.createElement("span");
+        meBadge.className = "rank-row-me";
+        meBadge.textContent = "나";
+        li.appendChild(meBadge);
+      }
+
+      var lvTag = document.createElement("span");
+      lvTag.className = "rank-row-level";
+      lvTag.textContent = lv.level + "등급";
+      li.appendChild(lvTag);
+
+      var score = document.createElement("span");
+      score.className = "rank-row-score";
+      score.textContent = row.score + "점";
+      li.appendChild(score);
+
+      list.appendChild(li);
+    });
+    box.appendChild(list);
+
+    // 내 줄이 아래쪽에 있으면 열자마자 안 보인다. 목록 안에서만 스크롤해 가운데로 온다.
+    var me = list.querySelector(".is-me");
+    if (me) box.scrollTop = Math.max(0, me.offsetTop - box.clientHeight / 2 + me.offsetHeight / 2);
+  }).catch(function () {
+    box.innerHTML = "";
+    var err = document.createElement("p");
+    err.className = "level-rank-note";
+    err.textContent = "순위를 불러오지 못했어요. 잠시 후 다시 열어주세요.";
+    box.appendChild(err);
+  });
+}
+
 function buildIntroChevron() {
   var more = document.createElement("span");
   more.className = "intro-level-more";
@@ -447,16 +540,27 @@ export function renderLevelGuide() {
     bar.appendChild(fill);
     dom.levelProgress.appendChild(bar);
 
+    // "다음 등급까지 몇 점"과 "몇 명 중 몇 위" 두 줄이 이 팝업에서 제일 궁금한 값인데,
+    // 아래 배점표·등급표와 같은 크기·같은 색이라 설명문에 묻혀 있었다. 둘만 따로 묶어
+    // 구분선 아래에 세우고, 숫자는 한 단계 키워 브랜드 색으로 세운다.
+    var facts = document.createElement("div");
+    facts.className = "level-facts";
+
     var goal = document.createElement("p");
-    goal.className = "level-progress-goal";
+    goal.className = "level-fact";
     if (p.next) {
-      goal.appendChild(document.createTextNode("다음 등급까지 " + p.remain + "점 남았어요 · "));
-      goal.appendChild(levelIconFor(p.next));
-      goal.appendChild(document.createTextNode(p.next.name));
+      goal.appendChild(document.createTextNode("다음 등급까지 "));
+      goal.appendChild(buildFactValue(p.remain + "점"));
+      var nextTag = document.createElement("span");
+      nextTag.className = "level-fact-note";
+      nextTag.appendChild(levelIconFor(p.next));
+      nextTag.appendChild(document.createTextNode(p.next.name));
+      goal.appendChild(nextTag);
     } else {
-      goal.textContent = "가장 높은 등급이에요. 축하해요!";
+      goal.appendChild(buildFactValue("가장 높은 등급"));
+      goal.appendChild(document.createTextNode("이에요"));
     }
-    dom.levelProgress.appendChild(goal);
+    facts.appendChild(goal);
 
     // 순위는 분모까지 적는다. "3위"만 적으면 처음엔 커 보이지만 "몇 명 중인데?"가
     // 곧바로 따라오고, 사람이 많지 않다는 걸 나중에 알면 오히려 깎여서 돌아온다.
@@ -465,13 +569,21 @@ export function renderLevelGuide() {
     // 혼자뿐이면(1명 중 1위) 순위라는 말이 성립하지 않으므로 줄째로 뺀다.
     if (myRank && myTotal > 1) {
       var rankLine = document.createElement("p");
-      rankLine.className = "level-rank";
+      rankLine.className = "level-fact";
       rankLine.appendChild(document.createTextNode("기록을 남긴 " + myTotal + "명 중 "));
-      var rankNum = document.createElement("strong");
-      rankNum.textContent = myRank + "위";
-      rankLine.appendChild(rankNum);
-      dom.levelProgress.appendChild(rankLine);
+      rankLine.appendChild(buildFactValue(myRank + "위"));
+
+      var allBtn = document.createElement("button");
+      allBtn.type = "button";
+      allBtn.className = "level-rank-btn";
+      allBtn.textContent = "전체 순위";
+      allBtn.addEventListener("click", openLevelRanking);
+      rankLine.appendChild(allBtn);
+
+      facts.appendChild(rankLine);
     }
+
+    dom.levelProgress.appendChild(facts);
   }
 
   // ② 배점. 표의 숫자는 js/levels.js의 SCORE_RULES에서 온다(계산은 서버가 한다).

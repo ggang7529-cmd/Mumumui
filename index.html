@@ -460,16 +460,20 @@
 <div class="level-guide" id="levelGuide" hidden>
   <div class="level-guide-panel" role="dialog" aria-modal="true" aria-labelledby="levelGuideTitle">
     <div class="level-guide-head">
+      <!-- 전체 순위로 넘어갔을 때만 나오는 뒤로가기. 팝업 위에 팝업을 쌓지 않고 같은
+           시트 안에서 화면만 바꾸므로, 돌아올 길을 여기 하나 둔다. -->
+      <button type="button" class="level-guide-back" id="levelGuideBack" hidden aria-label="등급 안내로 돌아가기">‹</button>
       <h2 class="level-guide-title" id="levelGuideTitle">등급 안내</h2>
       <button type="button" class="level-guide-close" id="levelGuideClose" aria-label="등급 안내 닫기">✕</button>
     </div>
-    <div class="level-guide-body">
+    <div class="level-guide-body" id="levelGuideBody">
       <div class="level-progress" id="levelProgress"></div>
       <h3 class="level-guide-sub">점수는 이렇게 쌓여요</h3>
       <ul class="level-rules" id="levelRuleList"></ul>
       <h3 class="level-guide-sub">등급표</h3>
       <ol class="level-table" id="levelTable"></ol>
     </div>
+    <div class="level-guide-body" id="levelRankingBody" hidden></div>
   </div>
 </div>
 
