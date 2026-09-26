@@ -3,7 +3,7 @@
 // 함께 수정할 것.
 // 구간(min)은 전부 최초 기획안의 2배로 잡혀 있다 — 등급명/레벨 번호/아이콘은 그대로 두고
 // 점수만 두 배로 늘려 달라는 요청(2026-09-06)에 따른 것.
-var LEVELS = [
+export var LEVELS = [
   { level: 1, min: 0, icon: "bookmark", name: "책갈피 입문자" },
   { level: 2, min: 20, icon: "bookmark", name: "표지만 구경" },
   { level: 3, min: 40, icon: "bookmark", name: "첫 장을 넘긴 사람" },
@@ -50,4 +50,57 @@ export function formatNicknameShort(nickname, score) {
 export function formatNicknameFull(nickname, score) {
   var lvl = getLevel(score);
   return lvl.level + " [" + lvl.name + "] " + (nickname || "익명");
+}
+
+// 아래는 "등급 안내" 팝업(js/render.js renderLevelGuide)이 쓰는 표시용 도우미다. 점수를
+// 매기는 로직은 여전히 functions/_lib/scores.js 한 곳에만 있고, 여기 있는 건 그 결과를
+// 사람에게 보여주기 위한 계산뿐이다.
+
+// 점수 배점표. 실제 계산은 functions/_lib/scores.js가 하며, 이 표는 팝업에 그대로 적어
+// 보여주기 위한 사본이다 — 배점을 바꾸면 scores.js와 이 표를 함께 고쳐야 한다.
+export var SCORE_RULES = [
+  { label: "책 등록하기", points: 10 },
+  { label: "한줄평 남기기", points: 3 },
+  { label: "좋아요 받기", points: 1 },
+  { label: "답글 남기기", points: 1 }
+];
+
+// 다음 등급. 최고 등급(20)이면 null.
+export function nextLevel(score) {
+  var cur = getLevel(score);
+  for (var i = 0; i < LEVELS.length; i++) {
+    if (LEVELS[i].level === cur.level + 1) return LEVELS[i];
+  }
+  return null;
+}
+
+// 진행 바에 필요한 값 한 벌: 지금 등급, 다음 등급, 다음까지 남은 점수, 구간 내 진행률.
+// 최고 등급이면 next는 null, ratio는 1로 채워 막대가 가득 찬 채로 그려지게 한다.
+export function levelProgress(score) {
+  var s = score || 0;
+  var cur = getLevel(s);
+  var next = nextLevel(s);
+  if (!next) return { current: cur, next: null, remain: 0, ratio: 1 };
+  var span = next.min - cur.min;
+  var done = s - cur.min;
+  return {
+    current: cur,
+    next: next,
+    remain: next.min - s,
+    ratio: span > 0 ? Math.max(0, Math.min(1, done / span)) : 0
+  };
+}
+
+// 등급명 뒤에 붙는 조사를 받침에 맞춰 고른다 — "[표지만 구경]으로", "[책벌레]로".
+// 승급 토스트 한 곳에서만 쓰지만, 등급명과 같이 있어야 표를 고칠 때 같이 눈에 띈다.
+// 이름이 대괄호에 싸여 나가는 자리라 이름을 붙여 돌려주지 않고 조사만 돌려준다.
+export function levelParticle(name) {
+  var text = name || "";
+  var last = text.charCodeAt(text.length - 1);
+  if (last >= 0xAC00 && last <= 0xD7A3) {
+    var jong = (last - 0xAC00) % 28;
+    // 받침이 없거나(0) ㄹ 받침(8)이면 "로", 나머지는 "으로".
+    return jong === 0 || jong === 8 ? "로" : "으로";
+  }
+  return "으로";
 }

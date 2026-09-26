@@ -213,6 +213,13 @@
          renderLibrary가 실제 등록 권수로 채운다(비어 있는 채로 자리만 잡지 않도록
          기본은 hidden). -->
     <p class="intro-invite" id="introInvite" hidden></p>
+    <!-- 등급 시스템으로 들어가는 입구. 이미 구현돼 있는데 헤더 뱃지 말고는 알릴 자리가
+         없어서, 홈에 한 줄만 가볍게 둔다. 누르면 헤더 뱃지와 같은 등급 안내가 열린다.
+         화살표 양옆 아이콘은 js/render.js renderIntroLevelLine이 채운다. -->
+    <button type="button" class="intro-level-line" id="introLevelLine">
+      기록할수록 등급이 올라가요
+      <span class="intro-level-icons" id="introLevelIcons" aria-hidden="true"></span>
+    </button>
     <div class="latest-highlight" id="latestHighlight" hidden></div>
   </div>
 
@@ -447,6 +454,29 @@
     <p class="milestone-message" id="milestoneMessage"></p>
   </div>
 </div>
+
+<!-- 등급 안내 팝업. 헤더의 등급 뱃지와 홈의 "기록할수록 등급이 올라가요" 줄에서 열린다.
+     내용(진행 바·배점·20단계 표)은 js/render.js의 renderLevelGuide가 열 때마다 새로 그린다.
+     모바일에서는 화면을 다 덮지 않도록 아래쪽 시트로 뜨고, 안에서만 스크롤된다. -->
+<div class="level-guide" id="levelGuide" hidden>
+  <div class="level-guide-panel" role="dialog" aria-modal="true" aria-labelledby="levelGuideTitle">
+    <div class="level-guide-head">
+      <h2 class="level-guide-title" id="levelGuideTitle">등급 안내</h2>
+      <button type="button" class="level-guide-close" id="levelGuideClose" aria-label="등급 안내 닫기">✕</button>
+    </div>
+    <div class="level-guide-body">
+      <div class="level-progress" id="levelProgress"></div>
+      <h3 class="level-guide-sub">점수는 이렇게 쌓여요</h3>
+      <ul class="level-rules" id="levelRuleList"></ul>
+      <h3 class="level-guide-sub">등급표</h3>
+      <ol class="level-table" id="levelTable"></ol>
+    </div>
+  </div>
+</div>
+
+<!-- 점수·승급 토스트. 축하 모달과 달리 화면 구석에 잠깐 떴다 사라져서, 방금 남긴 기록이나
+     목록을 가리지 않는다. -->
+<div class="score-toast" id="scoreToast" hidden aria-live="polite"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

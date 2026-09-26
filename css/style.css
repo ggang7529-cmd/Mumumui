@@ -458,6 +458,45 @@
     font-weight: 500;
   }
 
+  /* 등급 안내로 들어가는 한 줄. 위 권유 문구(.intro-invite)보다 한 단계 더 조용하게 —
+     헤드라인 영역에 강조가 셋이나 쌓이면 어느 것도 안 읽힌다. 눌린다는 신호는 밑줄
+     대신 점선 밑줄로 줘서, 문장이 아니라 안내라는 느낌을 남긴다. */
+  .intro-level-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: var(--t-meta);
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.25em;
+  }
+
+  .intro-level-line:hover,
+  .intro-level-line:focus-visible {
+    color: var(--accent);
+  }
+
+  .intro-level-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.12rem;
+    font-size: 1.15em;
+  }
+
+  /* 등급별 색(--lv-crown 등)은 라이트 배경 기준의 진한 버건디라, 다크 모드의 어두운
+     배경에 얹으면 거의 안 보인다. 이 한 줄에서는 글자와 같은 색을 따르게 해서 두
+     아이콘이 문장의 일부로 읽히게 한다. */
+  .intro-level-icons .lv-icon {
+    margin-right: 0;
+    color: currentColor;
+  }
+
   /* 두 줄짜리 강조 버튼 — 윗줄에 작은 권유 문구, 아랫줄에 행동. "+ 책장에 추가하기"와
      "나를 위한 추천"이 이 모양을 함께 쓴다. 기록하는 것과 추천받는 것이 이 서비스의 두
      축이라 한 쌍으로 읽혀야 해서, 같은 채움색·같은 크기로 나란히 둔다. (추천 버튼은
@@ -638,7 +677,7 @@
      버튼 기본 모양(테두리·배경·여백)을 지워서 겉보기는 예전 그대로 두고, 누를 수 있다는
      신호는 커서와 호버 밑줄로만 준다 — 목록에 알약 버튼이 줄줄이 생기면 정작 읽어야 할
      한줄평보다 닉네임이 더 눈에 띈다. */
-  .user-chip.is-linked,
+  .user-chip-name.is-linked,
   .c-author.is-linked,
   .c-reply-author.is-linked {
     background: none;
@@ -650,11 +689,42 @@
     text-align: left;
   }
 
-  .user-chip.is-linked:hover .user-name,
+  .user-chip-name.is-linked:hover .user-name,
   .c-author.is-linked:hover,
   .c-reply-author.is-linked:hover {
     text-decoration: underline;
     text-underline-offset: 0.2em;
+  }
+
+  /* 등급 아이콘과 닉네임 사이는 원래 아이콘의 margin-right(0.24em)가 만들던 간격이라,
+     둘을 형제 버튼으로 떼어낸 뒤에도 같은 정도로 붙여둔다. */
+  .user-chip--level {
+    gap: 0.1rem;
+  }
+
+  /* 등급 뱃지 — 누르면 등급 안내가 열린다. 헤더에 알약 버튼이 하나 더 생기면 닉네임보다
+     눈에 띄어서, 평소에는 아이콘만 있는 것처럼 두고 호버·포커스에서만 배경을 준다.
+     대신 손가락으로 누를 넓이는 항상 확보한다(모바일 규칙에서 32px). */
+  .lv-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .lv-badge-btn .lv-icon { margin-right: 0; }
+
+  .lv-badge-btn:hover,
+  .lv-badge-btn:focus-visible {
+    background: var(--paper-soft);
   }
 
   .user-avatar {
@@ -2993,4 +3063,320 @@
   .sw-update-banner__btn:hover {
     background: var(--accent);
     color: var(--paper);
+  }
+
+  /* ── 등급 안내 팝업 ─────────────────────────────────────────────────────────
+     PC에서는 가운데 뜨는 작은 창, 모바일에서는 아래에서 올라오는 시트. 어느 쪽이든
+     화면을 다 덮지 않고(최대 76~78vh) 안에서만 스크롤돼서, 뒤의 화면이 계속 보인다.
+     20단계 표가 들어가는데 전체 화면을 잡아먹으면 "닫는 법"부터 찾게 된다. */
+
+  .level-guide {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem;
+    background: rgba(35, 32, 29, 0.42);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+
+  .level-guide.show { opacity: 1; }
+
+  .level-guide-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 420px;
+    max-height: min(78vh, 640px);
+    overflow: hidden;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 18px 40px var(--shadow);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.22s ease;
+  }
+
+  .level-guide.show .level-guide-panel { transform: none; }
+
+  /* 제목줄은 스크롤되지 않고 남는다 — 표를 한참 내려가도 닫기 버튼이 늘 손에 닿는다. */
+  .level-guide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex: none;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .level-guide-title {
+    margin: 0;
+    font-family: "Gowun Batang", serif;
+    font-size: var(--t-section);
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .level-guide-close {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: none;
+    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .level-guide-close:hover,
+  .level-guide-close:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .level-guide-body {
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  .level-guide-sub {
+    position: relative;
+    margin: 1.1rem 0 0.5rem;
+    padding-top: 0.7rem;
+    font-family: "Gowun Batang", serif;
+    font-weight: 700;
+    font-size: var(--t-body);
+    color: var(--ink);
+  }
+
+  .level-guide-sub::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.4rem;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* 진행 바 */
+
+  .level-progress-now {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    color: var(--ink);
+    font-size: var(--t-body);
+    font-weight: 700;
+  }
+
+  .level-progress-score {
+    margin-left: auto;
+    color: var(--accent);
+  }
+
+  .level-bar {
+    height: 8px;
+    margin: 0.55rem 0 0.45rem;
+    border-radius: 999px;
+    background: var(--paper-soft);
+    overflow: hidden;
+  }
+
+  .level-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+  }
+
+  .level-progress-goal {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.15rem;
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: var(--t-meta);
+  }
+
+  .level-progress-empty {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: var(--t-body);
+  }
+
+  /* 배점 */
+
+  .level-rules {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .level-rules li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.42rem 0;
+    border-bottom: 1px dashed var(--line);
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+
+  .level-rules li:last-child { border-bottom: none; }
+  .level-rules strong { color: var(--accent); }
+
+  /* 20단계 표 */
+
+  /* 표만 따로 스크롤시킨다. 팝업 전체를 한 덩어리로 스크롤하면, 열자마자 내 등급을
+     보여주려고 내린 만큼 정작 맨 위의 진행 바가 화면 밖으로 밀려난다. */
+  .level-table {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 42vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .level-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.45rem;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+  }
+
+  .level-row .lv-icon { margin-right: 0; flex: none; }
+
+  .level-row-num {
+    flex: none;
+    width: 1.5em;
+    text-align: right;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+  }
+
+  .level-row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  .level-row-range {
+    flex: none;
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .level-row.is-current {
+    background: var(--paper-soft);
+    font-weight: 700;
+  }
+
+  .level-row.is-current .level-row-name { color: var(--accent); }
+
+  .level-row-badge {
+    flex: none;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
+    font-size: var(--t-micro);
+    font-weight: 700;
+  }
+
+  /* ── 점수·승급 토스트 ───────────────────────────────────────────────────────
+     화면 위 가운데에 잠깐 떴다 사라진다. 아래쪽에 두면 한줄평을 남긴 직후 방금 누른
+     "남기기" 버튼과 입력칸을 그대로 덮어서, 글이 올라갔는지 확인할 수가 없었다.
+     헤더(z-index 30) 위로 올리고 pointer-events를 꺼서, 떠 있는 동안에도 그 아래
+     버튼을 누를 수 있게 둔다. */
+
+  /* left:50% + translate(-50%)로 가운데를 잡으면, 고정 위치 요소의 "쓸 수 있는 폭"이
+     화면 절반으로 줄어서 짧은 문구도 세 줄로 접힌다. 좌우를 0으로 열어두고 margin auto로
+     가운데를 잡아야 알약이 문구 길이만큼 제대로 늘어난다. */
+  .score-toast {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(0.9rem + env(safe-area-inset-top));
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: fit-content;
+    margin: 0 auto;
+    max-width: calc(100vw - 2rem);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
+    font-size: 0.9rem;
+    font-weight: 700;
+    box-shadow: 0 6px 18px var(--shadow);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+  }
+
+  .score-toast.show {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 글자를 따로 감싸야 알약이 필요한 만큼 넓어진다 — 텍스트 노드를 그대로 두면
+     flex 줄이 좁은 폭에서 멋대로 끊긴다. */
+  .score-toast-text { min-width: 0; }
+
+  /* 등급 아이콘은 평소 등급별 색을 쓰지만, 이 진한 버건디 알약 위에서는 보이지 않는다. */
+  .score-toast .lv-icon {
+    margin-right: 0;
+    color: var(--btn-fill-ink);
+  }
+
+  @media (max-width: 640px) {
+    /* 아래에서 올라오는 시트. 화면을 다 덮지 않게 높이를 76vh로 묶고, 홈 버튼 제스처
+       영역(env(safe-area-inset-bottom))만큼 안쪽 여백을 더 준다. */
+    .level-guide {
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .level-guide-panel {
+      max-width: none;
+      max-height: 76vh;
+      border-radius: 14px 14px 0 0;
+      border-bottom: none;
+      transform: translateY(18px);
+    }
+
+    .level-guide-body {
+      padding: 0.9rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    /* 손가락으로 누를 자리를 확보한다 — PC에서는 26px이면 충분하지만 모바일에서는 좁다. */
+    .lv-badge-btn {
+      width: 32px;
+      height: 32px;
+    }
   }

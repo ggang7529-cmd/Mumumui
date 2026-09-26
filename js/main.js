@@ -7,7 +7,7 @@ import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
-  renderRecommend
+  renderRecommend, renderLevelGuide, renderIntroLevelLine, buildIcon
 } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
@@ -143,7 +143,15 @@ export var dom = {
   profileShelf: document.getElementById("profileShelf"),
   profileReviews: document.getElementById("profileReviews"),
   profileBookCount: document.getElementById("profileBookCount"),
-  profileReviewCount: document.getElementById("profileReviewCount")
+  profileReviewCount: document.getElementById("profileReviewCount"),
+  levelGuide: document.getElementById("levelGuide"),
+  levelGuideClose: document.getElementById("levelGuideClose"),
+  levelProgress: document.getElementById("levelProgress"),
+  levelRuleList: document.getElementById("levelRuleList"),
+  levelTable: document.getElementById("levelTable"),
+  introLevelLine: document.getElementById("introLevelLine"),
+  introLevelIcons: document.getElementById("introLevelIcons"),
+  scoreToast: document.getElementById("scoreToast")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -432,6 +440,81 @@ function hideMilestoneCelebration() {
 
 dom.milestoneOverlay.addEventListener("click", hideMilestoneCelebration);
 
+// ── 등급 안내 ───────────────────────────────────────────────────────────────
+//
+// 등급/점수 시스템은 진작 있었는데(functions/_lib/scores.js가 계산, js/levels.js가 표)
+// 헤더 뱃지에 "14 [책갈피 큐레이터] 이과생"이라고 떠 있는 게 전부라, 처음 온 사람은
+// 저게 무슨 숫자인지도 몰랐다. 여기서 여는 팝업이 배점과 20단계 표를 한 번에 보여준다.
+// 점수를 새로 매기지는 않는다 — 있는 값을 읽어서 그리기만 한다.
+
+// 팝업을 열기 직전의 포커스. 닫을 때 그 자리로 돌려놔야 키보드로 쓰던 사람이 길을 잃지 않는다.
+var levelGuideOpener = null;
+
+export function openLevelGuide(from) {
+  levelGuideOpener = document.activeElement;
+  renderLevelGuide();
+  dom.levelGuide.hidden = false;
+  void dom.levelGuide.offsetWidth;
+  dom.levelGuide.classList.add("show");
+  dom.levelGuideClose.focus();
+
+  // 20줄짜리 표라 내 등급이 표 아래쪽에 숨어 있기 쉽다. 열자마자 내 줄이 가운데
+  // 오도록 표를 스크롤한다 — scrollIntoView를 쓰면 팝업 전체가 같이 밀려 올라가서
+  // 맨 위의 진행 바가 안 보이므로, 표 자신의 scrollTop만 움직인다.
+  var current = dom.levelTable.querySelector(".is-current");
+  if (current) {
+    dom.levelTable.scrollTop = Math.max(
+      0,
+      current.offsetTop - dom.levelTable.clientHeight / 2 + current.offsetHeight / 2
+    );
+  }
+
+  gtag("event", "open_level_guide", { from: from || "unknown" });
+}
+
+export function closeLevelGuide() {
+  if (dom.levelGuide.hidden) return;
+  dom.levelGuide.classList.remove("show");
+  setTimeout(function () { dom.levelGuide.hidden = true; }, 220);
+  if (levelGuideOpener && levelGuideOpener.focus) levelGuideOpener.focus();
+  levelGuideOpener = null;
+}
+
+dom.levelGuideClose.addEventListener("click", closeLevelGuide);
+// 바깥(어두운 배경)을 눌러도 닫는다. 패널 안쪽 클릭까지 닫히면 표를 훑다 말고 사라진다.
+dom.levelGuide.addEventListener("click", function (e) {
+  if (e.target === dom.levelGuide) closeLevelGuide();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") closeLevelGuide();
+});
+
+dom.introLevelLine.addEventListener("click", function () { openLevelGuide("intro"); });
+renderIntroLevelLine();
+
+// ── 점수·승급 토스트 ────────────────────────────────────────────────────────
+//
+// 축하 모달(가운데 큰 팝업)과 일부러 다른 자리를 쓴다. 기록을 남길 때마다 화면 한가운데가
+// 막히면 방금 쓴 글을 확인하지 못하고, 모바일에서는 특히 답답하다.
+var scoreToastTimer = null;
+
+export function showScoreToast(text, iconName) {
+  clearTimeout(scoreToastTimer);
+  dom.scoreToast.innerHTML = "";
+  if (iconName) dom.scoreToast.appendChild(buildIcon(iconName, "lv-icon lv-icon--" + iconName));
+  var label = document.createElement("span");
+  label.className = "score-toast-text";
+  label.textContent = text;
+  dom.scoreToast.appendChild(label);
+  dom.scoreToast.hidden = false;
+  void dom.scoreToast.offsetWidth;
+  dom.scoreToast.classList.add("show");
+  scoreToastTimer = setTimeout(function () {
+    dom.scoreToast.classList.remove("show");
+    setTimeout(function () { dom.scoreToast.hidden = true; }, 260);
+  }, 2600);
+}
+
 function drawRandomBook() {
   if (state.randomSpinning) return;
   if (!state.booksLoaded || state.books.length === 0) {
@@ -709,7 +792,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
       gtag("event", "complete_review", { book_id: data.book.id });
       gtag("event", "complete_book_add", { book_id: data.book.id });
       renderAuthBox();
-      refreshMyScore();
+      refreshMyScore(10);
       state.books.unshift(normalizeBook(data.book));
       state.recentComments.unshift({
         bookId: data.book.id, bookTitle: data.book.title, bookAuthor: data.book.author,
@@ -788,7 +871,7 @@ document.getElementById("commentForm").addEventListener("submit", function (e) {
       renderStars(dom.cStars, 0, true, selectCommentRating);
       renderMoodPicker(dom.cMoods, null, selectCommentMood);
       renderAuthBox();
-      refreshMyScore();
+      refreshMyScore(3);
       return Promise.all([refreshBooks(), refreshComments()]);
     })
     .catch(function (e) { alert(e.message); });

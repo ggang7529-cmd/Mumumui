@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { kdcOrder } from "./kdc.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
@@ -6,7 +6,7 @@ import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
 } from "./api.js";
-import { getLevel, formatNicknameShort, formatNicknameFull } from "./levels.js";
+import { LEVELS, SCORE_RULES, getLevel, levelProgress, formatNicknameShort, formatNicknameFull } from "./levels.js";
 
 // 표지 없는 책의 "책등" 배경색. 예전엔 녹색·청색·남색까지 섞인 6색이라 브랜드 색과
 // 무관한 무지개가 됐다 — 버건디에서 클레이/탠으로 이어지는 같은 계열 5색으로 좁혀,
@@ -257,18 +257,33 @@ export function renderAuthBox() {
     if (nickname) {
       // 내 기록으로 들어가는 입구. 별도 메뉴를 만드는 대신 이미 헤더에 떠 있는 내 닉네임을
       // 그대로 누를 수 있게 했다 — 남의 닉네임을 누르는 것과 같은 동작이라 배울 게 없다.
+      // 등급 아이콘은 닉네임 버튼 안에 있었는데, 그 자리에서 등급 안내를 열려면 버튼
+      // 안의 버튼이 돼버린다(중첩 버튼은 HTML에서 허용되지 않는다). 아이콘만 형제
+      // 버튼으로 떼어내고 둘을 한 칸에 담아, 보이는 모양은 예전 그대로 두면서 아이콘은
+      // 등급 안내로, 닉네임은 내 기록으로 가게 했다.
+      var chipWrap = document.createElement("div");
+      chipWrap.className = "user-chip user-chip--level";
+
+      var myLevel = getLevel(state.myScore);
+      var lvBadge = document.createElement("button");
+      lvBadge.type = "button";
+      lvBadge.className = "lv-badge-btn";
+      lvBadge.setAttribute("aria-label", "등급 안내 보기 (지금 " + myLevel.level + "등급 " + myLevel.name + ")");
+      lvBadge.appendChild(buildIcon(myLevel.icon, "lv-icon lv-icon--" + myLevel.icon));
+      lvBadge.addEventListener("click", function () { openLevelGuide("badge"); });
+      chipWrap.appendChild(lvBadge);
+
       var savedChip = document.createElement("button");
       savedChip.type = "button";
-      savedChip.className = "user-chip is-linked";
+      savedChip.className = "user-chip-name is-linked";
       savedChip.setAttribute("aria-label", nickname + "님의 기록 보기");
       savedChip.addEventListener("click", function () { openProfile(nickname); });
       var savedName = document.createElement("span");
       savedName.className = "user-name";
-      var myLevel = getLevel(state.myScore);
-      savedName.appendChild(buildIcon(myLevel.icon, "lv-icon lv-icon--" + myLevel.icon));
       savedName.appendChild(document.createTextNode(formatNicknameFull(nickname, state.myScore)));
       savedChip.appendChild(savedName);
-      $box.appendChild(savedChip);
+      chipWrap.appendChild(savedChip);
+      $box.appendChild(chipWrap);
 
       // 닉네임 자체도 누르면 내 기록으로 가지만, 그 사실을 알리는 신호가 커서와 호버
       // 밑줄뿐이라 호버가 없는 모바일에서는 아무도 모른다. 옆에 작은 버튼을 따로 둬서
@@ -321,6 +336,124 @@ export function renderAuthBox() {
     $box.appendChild(slot);
     renderGoogleButtons();
   }
+}
+
+// ── 등급 안내 ───────────────────────────────────────────────────────────────
+//
+// 점수를 새로 계산하지 않는다. functions/_lib/scores.js가 매긴 점수(state.myScore)와
+// js/levels.js의 표를 읽어서 그리기만 한다.
+
+function levelIconFor(lv) {
+  return buildIcon(lv.icon, "lv-icon lv-icon--" + lv.icon);
+}
+
+// 홈 헤드라인 아래 한 줄의 "책갈피 → 왕관". 등급표의 첫 등급과 마지막 등급 아이콘을
+// 그대로 쓰므로, 표를 고치면 이 줄도 따라 바뀐다.
+export function renderIntroLevelLine() {
+  var icons = dom.introLevelIcons;
+  if (!icons) return;
+  icons.innerHTML = "";
+  icons.appendChild(levelIconFor(LEVELS[0]));
+  icons.appendChild(document.createTextNode("→"));
+  icons.appendChild(levelIconFor(LEVELS[LEVELS.length - 1]));
+}
+
+// 팝업을 열 때마다 다시 그린다 — 점수는 책을 등록하거나 좋아요를 받을 때마다 바뀌는데,
+// 한 번 그려두고 재활용하면 오래 켜둔 탭에서 옛 점수가 남는다.
+export function renderLevelGuide() {
+  var nickname = getSavedNickname();
+  var score = state.myScore || 0;
+
+  // ① 진행 바. 닉네임이 없으면 보여줄 점수 자체가 없으므로 안내 한 줄로 대신한다 —
+  //    "0점 / 다음 등급까지 20점"은 아직 시작도 안 한 사람에게 숙제처럼 읽힌다.
+  dom.levelProgress.innerHTML = "";
+  if (!nickname) {
+    var note = document.createElement("p");
+    note.className = "level-progress-empty";
+    note.textContent = "첫 기록을 남기면 등급이 생겨요";
+    dom.levelProgress.appendChild(note);
+  } else {
+    var p = levelProgress(score);
+
+    var now = document.createElement("p");
+    now.className = "level-progress-now";
+    now.appendChild(levelIconFor(p.current));
+    var nowText = document.createElement("span");
+    nowText.textContent = p.current.level + "등급 " + p.current.name;
+    now.appendChild(nowText);
+    var nowScore = document.createElement("span");
+    nowScore.className = "level-progress-score";
+    nowScore.textContent = score + "점";
+    now.appendChild(nowScore);
+    dom.levelProgress.appendChild(now);
+
+    var bar = document.createElement("div");
+    bar.className = "level-bar";
+    var fill = document.createElement("span");
+    fill.className = "level-bar-fill";
+    fill.style.width = Math.round(p.ratio * 100) + "%";
+    bar.appendChild(fill);
+    dom.levelProgress.appendChild(bar);
+
+    var goal = document.createElement("p");
+    goal.className = "level-progress-goal";
+    if (p.next) {
+      goal.appendChild(document.createTextNode("다음 등급까지 " + p.remain + "점 남았어요 · "));
+      goal.appendChild(levelIconFor(p.next));
+      goal.appendChild(document.createTextNode(p.next.name));
+    } else {
+      goal.textContent = "가장 높은 등급이에요. 축하해요!";
+    }
+    dom.levelProgress.appendChild(goal);
+  }
+
+  // ② 배점. 표의 숫자는 js/levels.js의 SCORE_RULES에서 온다(계산은 서버가 한다).
+  dom.levelRuleList.innerHTML = "";
+  SCORE_RULES.forEach(function (rule) {
+    var li = document.createElement("li");
+    var label = document.createElement("span");
+    label.textContent = rule.label;
+    var pts = document.createElement("strong");
+    pts.textContent = "+" + rule.points + "점";
+    li.appendChild(label);
+    li.appendChild(pts);
+    dom.levelRuleList.appendChild(li);
+  });
+
+  // ③ 20단계 표. 닉네임이 없으면 어느 줄도 강조하지 않는다(아직 내 등급이 없다).
+  dom.levelTable.innerHTML = "";
+  var myLevel = nickname ? getLevel(score).level : 0;
+  LEVELS.forEach(function (lv, i) {
+    var next = LEVELS[i + 1];
+    var li = document.createElement("li");
+    li.className = "level-row" + (lv.level === myLevel ? " is-current" : "");
+
+    li.appendChild(levelIconFor(lv));
+
+    var num = document.createElement("span");
+    num.className = "level-row-num";
+    num.textContent = lv.level;
+    li.appendChild(num);
+
+    var name = document.createElement("span");
+    name.className = "level-row-name";
+    name.textContent = lv.name;
+    li.appendChild(name);
+
+    var range = document.createElement("span");
+    range.className = "level-row-range";
+    range.textContent = next ? lv.min + "~" + (next.min - 1) + "점" : lv.min + "점~";
+    li.appendChild(range);
+
+    if (lv.level === myLevel) {
+      var badge = document.createElement("span");
+      badge.className = "level-row-badge";
+      badge.textContent = "지금";
+      li.appendChild(badge);
+    }
+
+    dom.levelTable.appendChild(li);
+  });
 }
 
 // category에는 KDC 대분류 이름("문학")만 들어 있다 — 국립중앙도서관 조회 시점에

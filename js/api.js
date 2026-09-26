@@ -1,6 +1,6 @@
-import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showCelebrationModal } from "./main.js";
+import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.js";
 import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight } from "./render.js";
-import { getLevel, formatNicknameFull } from "./levels.js";
+import { getLevel, levelParticle } from "./levels.js";
 
 export function googleConfigured() {
   return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -180,12 +180,19 @@ function saveLastKnownLevel(nickname, level) {
   try { localStorage.setItem(LAST_LEVEL_KEY, JSON.stringify({ name: nickname, level: level })); } catch (e) {}
 }
 
-// 헤더의 "이모지 레벨 [등급명] 닉네임" 표시(js/render.js renderAuthBox)용으로 내 현재
+// 헤더의 "아이콘 레벨 [등급명] 닉네임" 표시(js/render.js renderAuthBox)용으로 내 현재
 // 점수를 가져와 state.myScore에 채우고 다시 그린다. 책/리뷰/답글을 새로 남길 때마다,
 // 그리고 페이지를 열 때마다 불러서, 방금(또는 그 사이에 좋아요를 받아) 오른 점수가
-// 곧바로 헤더에 반영되게 한다. 이전에 확인했던 레벨보다 올랐으면 책 등록 축하와 같은
-// 모달로 레벨업을 알린다.
-export function refreshMyScore() {
+// 곧바로 헤더에 반영되게 한다.
+//
+// gainedPoints는 방금 그 동작으로 얻은 점수(책 등록 10, 한줄평 3 — 배점은
+// functions/_lib/scores.js)로, 넘겨주면 "+10점!" 토스트를 띄운다. 페이지를 열 때처럼
+// 방금 한 일이 없는 호출은 비워두면 된다.
+//
+// 승급했을 때는 점수 대신 승급을 알린다. 예전엔 여기서 화면 가운데 축하 모달을 띄웠는데,
+// 점수 토스트가 생기면서 같은 순간에 두 가지가 겹치게 됐다 — 같은 자리·같은 모양으로
+// 이어 읽히도록 토스트 하나로 합쳤다(2026-09-26).
+export function refreshMyScore(gainedPoints) {
   if (AUTH_MODE !== "nickname") return Promise.resolve();
   var nickname = getSavedNickname();
   if (!nickname) return Promise.resolve();
@@ -193,12 +200,15 @@ export function refreshMyScore() {
     state.myScore = data.score || 0;
     renderAuthBox();
 
-    var newLevel = getLevel(state.myScore).level;
+    var level = getLevel(state.myScore);
     var prevLevel = getLastKnownLevel(nickname);
-    if (prevLevel !== null && newLevel > prevLevel) {
-      showCelebrationModal("레벨 업! " + formatNicknameFull(nickname, state.myScore) + " 님이 되셨어요! 🎉");
+    saveLastKnownLevel(nickname, level.level);
+
+    if (prevLevel !== null && level.level > prevLevel) {
+      showScoreToast(" [" + level.name + "]" + levelParticle(level.name) + " 승급했어요!", level.icon);
+    } else if (gainedPoints) {
+      showScoreToast("+" + gainedPoints + "점!");
     }
-    saveLastKnownLevel(nickname, newLevel);
   }).catch(function () {});
 }
 
