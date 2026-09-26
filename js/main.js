@@ -150,7 +150,6 @@ export var dom = {
   levelRuleList: document.getElementById("levelRuleList"),
   levelTable: document.getElementById("levelTable"),
   introLevelLine: document.getElementById("introLevelLine"),
-  introLevelIcons: document.getElementById("introLevelIcons"),
   scoreToast: document.getElementById("scoreToast")
 };
 
@@ -506,14 +505,34 @@ export function showScoreToast(text, iconName) {
   label.className = "score-toast-text";
   label.textContent = text;
   dom.scoreToast.appendChild(label);
+
+  // 누를 수 있다는 표시. 글자로 "등급 보기"까지 붙이면 알약이 두 줄로 접히는 폭이
+  // 생겨서, 링크에 흔히 쓰는 홑화살괄호 하나로만 알린다.
+  var chevron = document.createElement("span");
+  chevron.className = "score-toast-more";
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.textContent = "›";
+  dom.scoreToast.appendChild(chevron);
+
   dom.scoreToast.hidden = false;
   void dom.scoreToast.offsetWidth;
   dom.scoreToast.classList.add("show");
-  scoreToastTimer = setTimeout(function () {
-    dom.scoreToast.classList.remove("show");
-    setTimeout(function () { dom.scoreToast.hidden = true; }, 260);
-  }, 2600);
+  // 누를 수 있게 된 뒤로는 조금 더 오래 둔다 — 2.6초는 읽고 손을 올리기에 짧았다.
+  scoreToastTimer = setTimeout(hideScoreToast, 3500);
 }
+
+function hideScoreToast() {
+  clearTimeout(scoreToastTimer);
+  dom.scoreToast.classList.remove("show");
+  setTimeout(function () { dom.scoreToast.hidden = true; }, 260);
+}
+
+// "+3점!"이 눈앞에 뜬 순간이 "점수가 뭔데?"가 가장 궁금한 때다. 가만히 있는 사람을
+// 헤더 뱃지로 끌어오는 것보다, 궁금해진 사람 앞에 입구를 놓는 편이 훨씬 잘 눌린다.
+dom.scoreToast.addEventListener("click", function () {
+  hideScoreToast();
+  openLevelGuide("toast");
+});
 
 function drawRandomBook() {
   if (state.randomSpinning) return;

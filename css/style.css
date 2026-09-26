@@ -3326,22 +3326,42 @@
     width: fit-content;
     margin: 0 auto;
     max-width: calc(100vw - 2rem);
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.85rem 0.5rem 1rem;
+    border: none;
     border-radius: 999px;
     background: var(--btn-fill);
     color: var(--btn-fill-ink);
+    font-family: inherit;
     font-size: 0.9rem;
     font-weight: 700;
+    text-align: left;
     box-shadow: 0 6px 18px var(--shadow);
+    cursor: pointer;
     opacity: 0;
     transform: translateY(-8px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease, background 0.15s ease;
+    /* 떠 있지 않은 동안에는 그 아래 버튼(헤더 알림 종 등)을 가리지 않게 꺼둔다. */
     pointer-events: none;
   }
 
   .score-toast.show {
     opacity: 1;
     transform: none;
+    pointer-events: auto;
+  }
+
+  .score-toast:hover,
+  .score-toast:focus-visible {
+    background: var(--btn-fill-hover);
+  }
+
+  /* 누를 수 있다는 유일한 표시. 살짝 흐리게 둬서 문구를 먼저 읽게 한다. */
+  .score-toast-more {
+    flex: none;
+    margin-left: 0.1rem;
+    font-size: 1.15em;
+    line-height: 1;
+    opacity: 0.75;
   }
 
   /* 글자를 따로 감싸야 알약이 필요한 만큼 넓어진다 — 텍스트 노드를 그대로 두면

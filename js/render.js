@@ -347,15 +347,43 @@ function levelIconFor(lv) {
   return buildIcon(lv.icon, "lv-icon lv-icon--" + lv.icon);
 }
 
-// 홈 헤드라인 아래 한 줄의 "책갈피 → 왕관". 등급표의 첫 등급과 마지막 등급 아이콘을
-// 그대로 쓰므로, 표를 고치면 이 줄도 따라 바뀐다.
+// 홈 헤드라인 아래 한 줄.
+//
+// 닉네임이 있으면 "지금 3등급 · 다음 등급까지 26점"처럼 그 사람 얘기로 쓴다. 처음엔
+// "기록할수록 등급이 올라가요"라는 일반론이었는데, 그건 설명문이라 누를 이유가 되지
+// 못했다 — 내 남은 점수가 적혀 있으면 그 자체로 읽을 이유가 생긴다.
+// 아직 닉네임이 없는 사람에게는 보여줄 점수가 없으므로 원래의 안내 문구를 쓰고,
+// 아이콘도 첫 등급 → 마지막 등급으로 "올라간다"는 것만 보여준다.
+//
+// 점수가 바뀔 때마다 다시 불러야 한다(js/api.js refreshMyScore).
 export function renderIntroLevelLine() {
-  var icons = dom.introLevelIcons;
-  if (!icons) return;
-  icons.innerHTML = "";
-  icons.appendChild(levelIconFor(LEVELS[0]));
-  icons.appendChild(document.createTextNode("→"));
-  icons.appendChild(levelIconFor(LEVELS[LEVELS.length - 1]));
+  var line = dom.introLevelLine;
+  if (!line) return;
+  var nickname = getSavedNickname();
+
+  line.innerHTML = "";
+  var icons = document.createElement("span");
+  icons.className = "intro-level-icons";
+  icons.setAttribute("aria-hidden", "true");
+
+  if (!nickname) {
+    line.appendChild(document.createTextNode("기록할수록 등급이 올라가요"));
+    icons.appendChild(levelIconFor(LEVELS[0]));
+    icons.appendChild(document.createTextNode("→"));
+    icons.appendChild(levelIconFor(LEVELS[LEVELS.length - 1]));
+    line.appendChild(icons);
+    return;
+  }
+
+  // 아이콘이 앞에 온다 — 지금 내 등급이 무엇인지가 먼저 읽혀야 한다.
+  var p = levelProgress(state.myScore || 0);
+  icons.appendChild(levelIconFor(p.current));
+  line.appendChild(icons);
+  line.appendChild(document.createTextNode(
+    p.next
+      ? "지금 " + p.current.level + "등급 · 다음 등급까지 " + p.remain + "점"
+      : "지금 " + p.current.level + "등급 · 가장 높은 등급이에요"
+  ));
 }
 
 // 팝업을 열 때마다 다시 그린다 — 점수는 책을 등록하거나 좋아요를 받을 때마다 바뀌는데,

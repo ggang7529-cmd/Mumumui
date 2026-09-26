@@ -1,5 +1,5 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.js";
-import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight } from "./render.js";
+import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight, renderIntroLevelLine } from "./render.js";
 import { getLevel, levelParticle } from "./levels.js";
 
 export function googleConfigured() {
@@ -199,6 +199,8 @@ export function refreshMyScore(gainedPoints) {
   return api("/api/nickname-score?name=" + encodeURIComponent(nickname)).then(function (data) {
     state.myScore = data.score || 0;
     renderAuthBox();
+    // 홈 한 줄이 "다음 등급까지 26점"처럼 점수를 그대로 적으므로 같이 다시 그린다.
+    renderIntroLevelLine();
 
     var level = getLevel(state.myScore);
     var prevLevel = getLastKnownLevel(nickname);

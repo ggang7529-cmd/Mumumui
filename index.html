@@ -215,11 +215,10 @@
     <p class="intro-invite" id="introInvite" hidden></p>
     <!-- 등급 시스템으로 들어가는 입구. 이미 구현돼 있는데 헤더 뱃지 말고는 알릴 자리가
          없어서, 홈에 한 줄만 가볍게 둔다. 누르면 헤더 뱃지와 같은 등급 안내가 열린다.
-         화살표 양옆 아이콘은 js/render.js renderIntroLevelLine이 채운다. -->
-    <button type="button" class="intro-level-line" id="introLevelLine">
-      기록할수록 등급이 올라가요
-      <span class="intro-level-icons" id="introLevelIcons" aria-hidden="true"></span>
-    </button>
+         내용은 js/render.js의 renderIntroLevelLine이 통째로 다시 채운다 — 닉네임이
+         있으면 "지금 3등급 · 다음 등급까지 26점"처럼 그 사람 얘기로 바뀐다. 여기 적힌
+         문구는 그 전(스크립트가 돌기 전)에 잠깐 보이는 기본값이다. -->
+    <button type="button" class="intro-level-line" id="introLevelLine">기록할수록 등급이 올라가요</button>
     <div class="latest-highlight" id="latestHighlight" hidden></div>
   </div>
 
@@ -475,8 +474,9 @@
 </div>
 
 <!-- 점수·승급 토스트. 축하 모달과 달리 화면 구석에 잠깐 떴다 사라져서, 방금 남긴 기록이나
-     목록을 가리지 않는다. -->
-<div class="score-toast" id="scoreToast" hidden aria-live="polite"></div>
+     목록을 가리지 않는다. 누르면 등급 안내가 열린다 — "+3점!"을 본 순간이 "점수가 뭔데?"가
+     가장 궁금한 때라, 안내로 가는 입구 중 여기가 제일 잘 눌린다. -->
+<button type="button" class="score-toast" id="scoreToast" hidden aria-live="polite"></button>
 
 <script type="module" src="js/main.js"></script>
 </body>
