@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide, openLevelRanking } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { kdcOrder } from "./kdc.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
@@ -453,9 +453,18 @@ export function renderLevelRanking() {
 
       li.appendChild(levelIconFor(lv));
 
-      var name = document.createElement("span");
+      // 닉네임을 누르면 그 사람 기록으로 간다 — 한줄평 목록·헤더 칩과 같은 동작이라
+      // 따로 배울 게 없다. 팝업은 먼저 닫는다. 그대로 두면 프로필이 시트 뒤에서
+      // 열려서, 누른 사람은 아무 일도 안 일어난 줄 안다.
+      var name = document.createElement("button");
+      name.type = "button";
       name.className = "rank-row-name";
       name.textContent = row.name;
+      name.setAttribute("aria-label", row.name + "님의 기록 보기");
+      name.addEventListener("click", function () {
+        closeLevelGuide();
+        openProfile(row.name);
+      });
       li.appendChild(name);
 
       // 같은 닉네임이 둘일 수 있는 사이트라(로그인이 없다) 내 줄에 표를 달아준다 —

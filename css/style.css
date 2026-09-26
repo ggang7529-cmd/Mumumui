@@ -3362,14 +3362,31 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* 순위표의 닉네임은 그 사람 기록으로 가는 버튼이다. 버튼 기본 모양(테두리·배경·여백)을
+     지워 겉보기는 글자 그대로 두고, 누를 수 있다는 신호는 커서와 호버 밑줄로만 준다 —
+     한줄평 목록의 닉네임(.c-author.is-linked)과 같은 방식이다. 여기서는 모든 줄이
+     닉네임이라 .is-linked를 따로 붙이지 않고 이 규칙 하나로 끝낸다. */
   .rank-row-name {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 0;
+    border: none;
+    background: none;
     color: var(--ink);
+    font-family: inherit;
+    font-size: inherit;
     font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .rank-row-name:hover,
+  .rank-row-name:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .rank-row-level {
