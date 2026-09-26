@@ -458,27 +458,33 @@
     font-weight: 500;
   }
 
-  /* 등급 안내로 들어가는 한 줄. 위 권유 문구(.intro-invite)보다 한 단계 더 조용하게 —
-     헤드라인 영역에 강조가 셋이나 쌓이면 어느 것도 안 읽힌다. 눌린다는 신호는 밑줄
-     대신 점선 밑줄로 줘서, 문장이 아니라 안내라는 느낌을 남긴다. */
+  /* 등급 안내로 들어가는 줄. 처음엔 흐린 글씨 한 줄이었는데 아무도 안 봤다 — 인트로에
+     이미 문장이 셋(헤드라인·설명·권유) 쌓여 있어서, 네 번째 문장은 색을 진하게 해도
+     "또 한 줄"로 넘어간다. 색이 아니라 모양을 바꿔야 했다.
+     그래서 글이 아니라 알약 하나로 묶고, 안에 짧은 진행 막대를 넣었다. 인트로에서
+     유일한 막대 모양이라 눈이 먼저 가고, 막대가 차 있는 걸 보면 "얼마 안 남았네"가
+     바로 읽혀서 누를 이유까지 생긴다. 색은 종이색 알약 + 버건디 막대로 팔레트 안에
+     그대로 있고, 글자는 예전처럼 차분한 톤이라 위 문장들과 다투지 않는다. */
   .intro-level-line {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    margin: 0.5rem 0 0;
-    padding: 0;
-    border: none;
-    background: none;
+    gap: 0.45rem;
+    margin: 0.6rem 0 0;
+    padding: 0.3rem 0.6rem 0.3rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--paper-soft);
     color: var(--ink-soft);
     font-family: inherit;
     font-size: var(--t-meta);
+    font-weight: 500;
     cursor: pointer;
-    text-decoration: underline dotted;
-    text-underline-offset: 0.25em;
+    transition: border-color 0.15s ease, color 0.15s ease;
   }
 
   .intro-level-line:hover,
   .intro-level-line:focus-visible {
+    border-color: var(--accent);
     color: var(--accent);
   }
 
@@ -490,11 +496,38 @@
   }
 
   /* 등급별 색(--lv-crown 등)은 라이트 배경 기준의 진한 버건디라, 다크 모드의 어두운
-     배경에 얹으면 거의 안 보인다. 이 한 줄에서는 글자와 같은 색을 따르게 해서 두
-     아이콘이 문장의 일부로 읽히게 한다. */
+     배경에 얹으면 거의 안 보인다. 이 줄에서는 글자와 같은 색을 따르게 해서 아이콘이
+     문장의 일부로 읽히게 한다. */
   .intro-level-icons .lv-icon {
     margin-right: 0;
     color: currentColor;
+  }
+
+  /* 미니 진행 막대. 트랙을 알약 배경이 아니라 페이지 배경색으로 둬서, 라이트에서는
+     한 톤 밝게 다크에서는 한 톤 어둡게 — 어느 쪽이든 홈이 파인 것처럼 보인다. */
+  .intro-level-bar {
+    flex: none;
+    width: 44px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--paper);
+    overflow: hidden;
+  }
+
+  .intro-level-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  /* 누를 수 있다는 표시. 토스트와 같은 홑화살괄호를 쓴다. */
+  .intro-level-more {
+    flex: none;
+    margin-left: 0.05rem;
+    font-size: 1.1em;
+    line-height: 1;
+    opacity: 0.6;
   }
 
   /* 두 줄짜리 강조 버튼 — 윗줄에 작은 권유 문구, 아랫줄에 행동. "+ 책장에 추가하기"와

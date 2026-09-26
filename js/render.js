@@ -367,23 +367,45 @@ export function renderIntroLevelLine() {
   icons.setAttribute("aria-hidden", "true");
 
   if (!nickname) {
-    line.appendChild(document.createTextNode("기록할수록 등급이 올라가요"));
+    // 보여줄 점수가 없으니 막대도 없다. 대신 첫 등급 → 마지막 등급으로 "올라간다"는
+    // 것만 아이콘으로 말한다.
     icons.appendChild(levelIconFor(LEVELS[0]));
     icons.appendChild(document.createTextNode("→"));
     icons.appendChild(levelIconFor(LEVELS[LEVELS.length - 1]));
     line.appendChild(icons);
+    line.appendChild(document.createTextNode("기록할수록 등급이 올라가요"));
+    line.appendChild(buildIntroChevron());
     return;
   }
 
-  // 아이콘이 앞에 온다 — 지금 내 등급이 무엇인지가 먼저 읽혀야 한다.
+  // 지금 등급 아이콘 → 진행 막대 → 남은 점수. 등급 번호를 글자로 또 적지 않는 것은
+  // 바로 위 헤더에 "3 [첫 장을 넘긴 사람] 셋"이 이미 떠 있고, 알약이 길어지면 좁은
+  // 화면에서 두 줄로 접히기 때문이다.
   var p = levelProgress(state.myScore || 0);
   icons.appendChild(levelIconFor(p.current));
   line.appendChild(icons);
+
+  var bar = document.createElement("span");
+  bar.className = "intro-level-bar";
+  bar.setAttribute("aria-hidden", "true");
+  var fill = document.createElement("span");
+  fill.className = "intro-level-bar-fill";
+  fill.style.width = Math.round(p.ratio * 100) + "%";
+  bar.appendChild(fill);
+  line.appendChild(bar);
+
   line.appendChild(document.createTextNode(
-    p.next
-      ? "지금 " + p.current.level + "등급 · 다음 등급까지 " + p.remain + "점"
-      : "지금 " + p.current.level + "등급 · 가장 높은 등급이에요"
+    p.next ? "다음 등급까지 " + p.remain + "점" : "가장 높은 등급이에요"
   ));
+  line.appendChild(buildIntroChevron());
+}
+
+function buildIntroChevron() {
+  var more = document.createElement("span");
+  more.className = "intro-level-more";
+  more.setAttribute("aria-hidden", "true");
+  more.textContent = "›";
+  return more;
 }
 
 // 팝업을 열 때마다 다시 그린다 — 점수는 책을 등록하거나 좋아요를 받을 때마다 바뀌는데,
