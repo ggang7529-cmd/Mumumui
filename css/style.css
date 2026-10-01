@@ -3657,6 +3657,10 @@
     .collage-layout {
       display: flex;
       flex-direction: column;
+      /* 기본 규칙의 align-items: start가 그대로 남으면, 세로 배치에서는 그게 가로축이
+         돼서 칸들이 내용 너비만큼만 차지한다 — 책 고르는 칸이 전체 폭 대신 한 줄(137px)로
+         쪼그라들어 있었다. 세로로 쌓을 때는 가로로 꽉 차야 한다. */
+      align-items: stretch;
       gap: 1.1rem;
       /* 아래 고정된 저장 버튼에 마지막 칸이 가리지 않게 자리를 비워 둔다. */
       padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
@@ -3694,9 +3698,17 @@
       box-shadow: 0 6px 20px var(--shadow);
     }
 
-    /* 아직 담은 조각이 없으면 저장할 것도 없다. 흐릿한 버튼이 화면 아래를 계속
-       차지하는 것보다 아예 없는 편이 낫다. */
-    #collageSaveBtn:disabled { display: none; }
+    /* 담은 조각이 없을 때도 버튼은 남겨둔다. 처음엔 "저장할 것도 없는데 흐릿한 버튼이
+       자리를 차지할 이유가 없다"고 숨겼는데, 그러니 저장이라는 게 있는지조차 보이지
+       않아서 기능이 없는 화면으로 읽혔다. 대신 반투명 대신 또렷한 "아직" 상태로 둔다 —
+       0.5 투명도로 두면 아래 내용이 비쳐서 지저분하다. */
+    #collageSaveBtn:disabled {
+      opacity: 1;
+      background: var(--paper-soft);
+      border: 1px solid var(--line);
+      color: var(--ink-faint);
+      box-shadow: 0 4px 14px var(--shadow);
+    }
   }
 
   .collage-out {

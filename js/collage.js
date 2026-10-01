@@ -378,7 +378,11 @@ function renderPicked() {
 
 function updatePreview() {
   dom.collageOut.src = drawCollage();
-  dom.collageSaveBtn.disabled = state.collage.picked.length === 0;
+  var empty = state.collage.picked.length === 0;
+  dom.collageSaveBtn.disabled = empty;
+  // 모바일에서는 이 버튼이 화면 아래에 늘 떠 있다. 아무것도 안 담았을 때 "이미지로
+  // 저장"이라고만 쓰여 있으면 왜 안 눌리는지 알 수 없어서, 글자로 다음 할 일을 말해준다.
+  dom.collageSaveBtn.textContent = empty ? "조각을 먼저 골라주세요" : "이미지로 저장";
 }
 
 export function renderCollage() {
