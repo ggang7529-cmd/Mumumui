@@ -9,6 +9,7 @@ import {
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
   renderRecommend, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
 } from "./render.js";
+import { initCollage, openCollage } from "./collage.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -48,6 +49,17 @@ export var state = {
   // 등급 안내 팝업의 "9명 중 3위". 기록이 없는 닉네임이면 myRank가 null이다.
   myRank: null,
   myTotal: 0,
+  // 표지 모음 이미지 화면(js/collage.js). picked는 고른 책, results는 카카오 검색 결과.
+  collage: {
+    picked: [],
+    results: [],
+    top: "",
+    bottom: "",
+    ratio: "portrait",
+    style: "grid",
+    bg: "#f3eee6",
+    note: ""
+  },
   books: [],
   booksLoaded: false,
   recentComments: [],
@@ -147,6 +159,22 @@ export var dom = {
   profileReviews: document.getElementById("profileReviews"),
   profileBookCount: document.getElementById("profileBookCount"),
   profileReviewCount: document.getElementById("profileReviewCount"),
+  collageView: document.getElementById("collageView"),
+  collageShelf: document.getElementById("collageShelf"),
+  collageResults: document.getElementById("collageResults"),
+  collageSearch: document.getElementById("collageSearch"),
+  collageSearchBtn: document.getElementById("collageSearchBtn"),
+  collagePicked: document.getElementById("collagePicked"),
+  collagePickedCount: document.getElementById("collagePickedCount"),
+  collagePickedStrip: document.getElementById("collagePickedStrip"),
+  collageTop: document.getElementById("collageTop"),
+  collageBottom: document.getElementById("collageBottom"),
+  collageRatio: document.getElementById("collageRatio"),
+  collageStyle: document.getElementById("collageStyle"),
+  collageBg: document.getElementById("collageBg"),
+  collageOut: document.getElementById("collageOut"),
+  collageSaveBtn: document.getElementById("collageSaveBtn"),
+  collageNote: document.getElementById("collageNote"),
   levelGuide: document.getElementById("levelGuide"),
   levelGuideClose: document.getElementById("levelGuideClose"),
   levelGuideBack: document.getElementById("levelGuideBack"),
@@ -235,6 +263,7 @@ export function showView(name) {
   dom.feedbackView.hidden = name !== "feedback";
   dom.profileView.hidden = name !== "profile";
   dom.recommendView.hidden = name !== "recommend";
+  dom.collageView.hidden = name !== "collage";
   // 목록(홈)이 아닌 모든 화면에서 "홈으로"를 띄운다. 책 등록 화면에는 폼 아래에 "취소"가
   // 있지만, 그건 폼을 스크롤해 끝까지 내려가야 보인다 — 화면 위에서 바로 빠져나올 길이 없었다.
   dom.homeBtn.hidden = name === "library";
@@ -814,9 +843,11 @@ document.getElementById("feedbackForm").addEventListener("submit", function (e) 
     .finally(function () { submitBtn.disabled = false; });
 });
 
-document.getElementById("randomBtn").addEventListener("click", function () {
-  gtag("event", "click_random_book");
-  openRandomView();
+// 헤더의 "랜덤 책 추천" 자리를 표지 모음 이미지가 가져갔다(2026-10-01). 랜덤 화면
+// 자체(openRandomView/drawRandomBook/#randomView)는 지우지 않고 그대로 뒀다 — 지금은
+// 들어갈 입구가 없을 뿐이라, 버튼 한 줄만 되돌리면 다시 쓸 수 있다.
+document.getElementById("collageBtn").addEventListener("click", function () {
+  openCollage();
 });
 dom.randomDrawBtn.addEventListener("click", function () {
   trackRandomStreak();
@@ -964,6 +995,8 @@ if (AUTH_MODE === "google") {
   renderAuthBox();
   refreshMyScore();
 }
+
+initCollage();
 
 function bookIdFromPath(pathname) {
   var m = pathname.match(/^\/book\/([^/]+)\/?$/);

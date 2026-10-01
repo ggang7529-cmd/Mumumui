@@ -1,5 +1,6 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.js";
 import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight, renderIntroLevelLine } from "./render.js";
+import { renderCollage } from "./collage.js";
 import { getLevel, levelParticle } from "./levels.js";
 
 export function googleConfigured() {
@@ -152,6 +153,8 @@ export function refreshBooks() {
     renderLatestHighlight();
     if (state.view === "library") renderLibrary();
     else if (state.view === "detail") renderDetail();
+    // 책이 다 불러와지기 전에 표지 모음 화면을 열면 고를 칸이 비어 있다. 도착하면 채운다.
+    else if (state.view === "collage") renderCollage();
   }).catch(function (e) {
     state.booksLoaded = true;
     if (state.view === "library") dom.countLabel.textContent = "불러오지 못했어요: " + e.message;
