@@ -170,7 +170,7 @@
         <span class="header-top-break" aria-hidden="true"></span>
         <button class="btn-accent-outline" id="feedbackBtn" type="button">의견 보내기</button>
         <button class="btn-accent-outline" id="homeBtn" type="button" hidden>홈으로</button>
-        <button class="btn-random" id="collageBtn" type="button">나의 독서 조각 모으기</button>
+        <button class="btn-random" id="collageBtn" type="button">나의 독서 기록 만들기</button>
         <!-- PC 폭에서 강조 버튼 둘을 같은 줄에 나란히 놓기 위한 줄바꿈용 빈 칸.
              헤더 버튼을 다 합치면 한 줄에 안 들어가 어차피 두 줄이 되는데, 그냥 두면
              "나를 위한 추천"과 "+ 책장에 추가하기"가 서로 다른 줄로 갈라진다. -->
@@ -397,18 +397,18 @@
          내용은 js/collage.js가 채운다. -->
     <section id="collageView" hidden>
       <div class="panel">
-        <h2>나의 독서 조각 모으기</h2>
-        <p class="char-hint">읽은 책 한 권 한 권이 독서 조각이에요. 마음에 남은 조각을 골라 한 장에 모아보세요.</p>
+        <h2>나의 독서 기록 만들기</h2>
+        <p class="char-hint">읽은 책을 골라 한 장에 모으면 그대로 독서 기록이 됩니다.</p>
 
         <div class="collage-layout">
           <div class="collage-controls">
             <div class="field" id="collagePicked" hidden>
-              <span class="label">모은 조각 <span class="count" id="collagePickedCount"></span></span>
+              <span class="label">고른 책 <span class="count" id="collagePickedCount"></span></span>
               <div class="collage-chips" id="collagePickedStrip"></div>
             </div>
 
             <div class="field" id="collageSearchField">
-              <label for="collageSearch">조각 더 찾기</label>
+              <label for="collageSearch">책 더 찾기</label>
               <div class="book-search-row">
                 <input type="search" id="collageSearch" placeholder="읽은 책 제목을 적어보세요" autocomplete="off">
                 <button type="button" class="btn-ghost" id="collageSearchBtn">검색</button>
@@ -418,7 +418,7 @@
 
             <div class="field" id="collageTopField">
               <label for="collageTop">위 문구</label>
-              <input type="text" id="collageTop" maxlength="30" placeholder="예: 올해 모은 조각">
+              <input type="text" id="collageTop" maxlength="30" placeholder="예: 올해 읽은 책">
             </div>
             <div class="field" id="collageBottomField">
               <label for="collageBottom">아래 문구</label>
@@ -449,17 +449,17 @@
             </div>
 
             <div class="field" id="collageShelfField">
-              <span class="label">책갈피에 쌓인 조각</span>
+              <span class="label">책갈피에 쌓인 책</span>
               <div class="collage-grid collage-grid--shelf" id="collageShelf"></div>
             </div>
           </div>
 
           <div class="collage-side">
-            <img class="collage-out" id="collageOut" alt="모은 독서 조각 이미지">
+            <img class="collage-out" id="collageOut" alt="만들어진 독서 기록 이미지">
             <button type="button" class="btn-primary" id="collageSaveBtn" disabled>이미지로 저장</button>
             <!-- 공유를 권하는 줄은 고정 문구라 따로 둔다. 아래 #collageNote는 "찾는 중",
                  "12권까지" 같은 상황별 안내가 덮어쓰는 자리다. -->
-            <p class="char-hint" id="collageShareNote">저장한 조각을 인스타그램·스레드에 공유해보세요.</p>
+            <p class="char-hint" id="collageShareNote">만든 기록을 인스타그램·스레드에 공유해보세요.</p>
             <p class="char-hint" id="collageNote"></p>
           </div>
         </div>

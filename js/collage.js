@@ -1,4 +1,4 @@
-// 책표지 모음판 — 고른 책들의 표지를 한 장짜리 이미지로 그려준다.
+// 나의 독서 기록 만들기 — 고른 책들의 표지를 한 장짜리 이미지로 그려준다.
 //
 // 아래쪽에 책갈피 마크와 주소가 늘 함께 들어간다. 이미지가 어디로 퍼지든 주소가 같이
 // 따라다니게 하려는 것이고, 이 화면이 존재하는 이유이기도 하다.
@@ -137,7 +137,7 @@ export function drawCollage() {
   if (n === 0) {
     ctx.fillStyle = sub;
     ctx.font = '400 40px "Noto Sans KR", sans-serif';
-    ctx.fillText("조각을 고르면 여기에 모여요", W / 2, (y0 + y1) / 2);
+    ctx.fillText("책을 고르면 여기에 모여요", W / 2, (y0 + y1) / 2);
     drawBrand(W, brandY, dark);
     return canvas.toDataURL("image/png");
   }
@@ -263,7 +263,7 @@ function togglePick(row) {
     return;
   }
   if (c.picked.length >= MAX_PICK) {
-    c.note = "한 번에 " + MAX_PICK + "조각까지 담을 수 있어요.";
+    c.note = "한 번에 " + MAX_PICK + "권까지 담을 수 있어요.";
     renderCollage();
     return;
   }
@@ -382,7 +382,7 @@ function updatePreview() {
   dom.collageSaveBtn.disabled = empty;
   // 모바일에서는 이 버튼이 화면 아래에 늘 떠 있다. 아무것도 안 담았을 때 "이미지로
   // 저장"이라고만 쓰여 있으면 왜 안 눌리는지 알 수 없어서, 글자로 다음 할 일을 말해준다.
-  dom.collageSaveBtn.textContent = empty ? "조각을 먼저 골라주세요" : "이미지로 저장";
+  dom.collageSaveBtn.textContent = empty ? "책을 먼저 골라주세요" : "이미지로 저장";
 }
 
 export function renderCollage() {
@@ -467,7 +467,7 @@ export function initCollage() {
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url;
-      a.download = "책갈피-표지모음.png";
+      a.download = "책갈피-독서기록.png";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
