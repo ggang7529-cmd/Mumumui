@@ -137,7 +137,7 @@ export function drawCollage() {
   if (n === 0) {
     ctx.fillStyle = sub;
     ctx.font = '400 40px "Noto Sans KR", sans-serif';
-    ctx.fillText("책을 고르면 여기에 표지가 모여요", W / 2, (y0 + y1) / 2);
+    ctx.fillText("조각을 고르면 여기에 모여요", W / 2, (y0 + y1) / 2);
     drawBrand(W, brandY, dark);
     return canvas.toDataURL("image/png");
   }
@@ -263,7 +263,7 @@ function togglePick(row) {
     return;
   }
   if (c.picked.length >= MAX_PICK) {
-    c.note = "한 번에 " + MAX_PICK + "권까지 담을 수 있어요.";
+    c.note = "한 번에 " + MAX_PICK + "조각까지 담을 수 있어요.";
     renderCollage();
     return;
   }
