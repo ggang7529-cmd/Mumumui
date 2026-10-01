@@ -1702,7 +1702,8 @@
 
   /* "책 소개"/"한줄평·별점"과 같은 섹션 제목 규칙(위쪽 짧은 버건디 선)을 패널 제목에도
      그대로 적용해, 화면이 달라도 제목의 생김새가 일관되게 한다. */
-  .panel h2 {
+  .panel h2,
+  .panel .collage-title {
     position: relative;
     font-family: "Gowun Batang", serif;
     margin: 0 0 1.5rem;
@@ -1710,7 +1711,8 @@
     font-size: var(--t-title);
   }
 
-  .panel h2::before {
+  .panel h2::before,
+  .panel .collage-title::before {
     content: "";
     position: absolute;
     left: 0;

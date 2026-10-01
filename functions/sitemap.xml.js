@@ -46,7 +46,11 @@ async function handle(context) {
 
   // 한 권이 잘못돼도 그 한 줄만 빠지고 나머지는 살아남게 한 권씩 처리한다. 사이트맵은
   // 전부 아니면 전무가 아니라서, 60권 중 1권이 이상하다고 60권을 다 잃을 이유가 없다.
-  var urls = ["<url><loc>" + escapeXml(origin) + "/</loc></url>"];
+  var urls = [
+    "<url><loc>" + escapeXml(origin) + "/</loc></url>",
+    // 도구 화면이라 책처럼 자주 바뀌지 않는다. lastmod는 넣지 않는다.
+    "<url><loc>" + escapeXml(origin + "/collage") + "</loc></url>"
+  ];
   for (var i = 0; i < books.length; i++) {
     try {
       var b = books[i];

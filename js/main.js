@@ -286,6 +286,7 @@ export function showView(name) {
   if (name === "detail" && state.currentId) path = "/book/" + encodeURIComponent(state.currentId);
   else if (name === "profile" && state.profileName) path = "/u/" + encodeURIComponent(state.profileName);
   else if (name === "recommend") path = "/recommend";
+  else if (name === "collage") path = "/collage";
   if (window.location.pathname !== path) history.pushState(null, "", path);
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -1032,12 +1033,17 @@ function isRecommendPath(pathname) {
   return /^\/recommend\/?$/.test(pathname);
 }
 
+function isCollagePath(pathname) {
+  return /^\/collage\/?$/.test(pathname);
+}
+
 window.addEventListener("popstate", function () {
   var id = bookIdFromPath(window.location.pathname);
   if (id) { openDetail(id); return; }
   var who = nicknameFromPath(window.location.pathname);
   if (who) { openProfile(who); return; }
   if (isRecommendPath(window.location.pathname)) { openRecommend(); return; }
+  if (isCollagePath(window.location.pathname)) { openCollage(); return; }
   showView("library");
 });
 
@@ -1046,6 +1052,7 @@ var initialNickname = nicknameFromPath(window.location.pathname);
 if (initialBookId) openDetail(initialBookId);
 else if (initialNickname) openProfile(initialNickname);
 else if (isRecommendPath(window.location.pathname)) openRecommend();
+else if (isCollagePath(window.location.pathname)) openCollage();
 else showView("library");
 
 refreshBooks();
