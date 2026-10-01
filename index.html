@@ -407,7 +407,7 @@
               <div class="collage-chips" id="collagePickedStrip"></div>
             </div>
 
-            <div class="field">
+            <div class="field" id="collageSearchField">
               <label for="collageSearch">조각 더 찾기</label>
               <div class="book-search-row">
                 <input type="search" id="collageSearch" placeholder="읽은 책 제목을 적어보세요" autocomplete="off">
@@ -416,30 +416,30 @@
               <div class="collage-grid" id="collageResults" hidden></div>
             </div>
 
-            <div class="field">
+            <div class="field" id="collageTopField">
               <label for="collageTop">위 문구</label>
               <input type="text" id="collageTop" maxlength="30" placeholder="예: 올해 모은 조각">
             </div>
-            <div class="field">
+            <div class="field" id="collageBottomField">
               <label for="collageBottom">아래 문구</label>
               <input type="text" id="collageBottom" maxlength="30" placeholder="예: 다 좋았다">
             </div>
 
-            <div class="field">
+            <div class="field" id="collageRatioField">
               <span class="label">비율</span>
               <div class="collage-seg" id="collageRatio">
                 <button type="button" data-v="portrait" aria-pressed="true">4:5 세로</button>
                 <button type="button" data-v="square" aria-pressed="false">1:1 정사각</button>
               </div>
             </div>
-            <div class="field">
+            <div class="field" id="collageStyleField">
               <span class="label">배치</span>
               <div class="collage-seg" id="collageStyle">
                 <button type="button" data-v="grid" aria-pressed="true">반듯하게</button>
                 <button type="button" data-v="messy" aria-pressed="false">흩어놓기</button>
               </div>
             </div>
-            <div class="field">
+            <div class="field" id="collageBgField">
               <span class="label">배경</span>
               <div class="collage-seg" id="collageBg">
                 <button type="button" data-v="#f3eee6" aria-pressed="true">종이</button>
@@ -448,7 +448,7 @@
               </div>
             </div>
 
-            <div class="field">
+            <div class="field" id="collageShelfField">
               <span class="label">책갈피에 쌓인 조각</span>
               <div class="collage-grid collage-grid--shelf" id="collageShelf"></div>
             </div>
@@ -459,7 +459,7 @@
             <button type="button" class="btn-primary" id="collageSaveBtn" disabled>이미지로 저장</button>
             <!-- 공유를 권하는 줄은 고정 문구라 따로 둔다. 아래 #collageNote는 "찾는 중",
                  "12권까지" 같은 상황별 안내가 덮어쓰는 자리다. -->
-            <p class="char-hint">저장한 조각을 인스타그램·스레드에 공유해보세요. 이미지 아래에 책갈피 주소가 함께 들어가요.</p>
+            <p class="char-hint" id="collageShareNote">저장한 조각을 인스타그램·스레드에 공유해보세요. 이미지 아래에 책갈피 주소가 함께 들어가요.</p>
             <p class="char-hint" id="collageNote"></p>
           </div>
         </div>

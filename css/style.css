@@ -3626,10 +3626,6 @@
     margin-top: 1.2rem;
   }
 
-  @media (max-width: 860px) {
-    .collage-layout { grid-template-columns: minmax(0, 1fr); }
-  }
-
   .collage-controls {
     display: flex;
     flex-direction: column;
@@ -3649,6 +3645,58 @@
       position: sticky;
       top: 1rem;
     }
+  }
+
+  /* 모바일에서는 작업 순서대로 다시 세운다: 고르기 → 모은 조각 → 미리보기 → 다듬기.
+     원래 순서는 아직 아무것도 안 고른 사람에게 비율·배치부터 보여주고, 정작 책 고르는
+     칸은 두 번째 화면(958px 아래)에 있었다. 담은 결과를 보려면 또 450px를 내려가야 해서,
+     "담을수록 그림이 차오르는" 피드백이 끊겼다.
+     두 칸(.collage-controls/.collage-side)을 display: contents로 풀어야 양쪽 자식을
+     한 줄에 섞어 세울 수 있다. PC(861px 이상)는 지금 배치가 이미 잘 동작하므로 그대로 둔다. */
+  @media (max-width: 860px) {
+    .collage-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      /* 아래 고정된 저장 버튼에 마지막 칸이 가리지 않게 자리를 비워 둔다. */
+      padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .collage-controls,
+    .collage-side { display: contents; }
+
+    #collageShelfField { order: 1; }
+
+    /* 고른 직후 결과까지 가는 거리를 줄이려고 목록 칸을 한 뼘 낮춘다 — 어차피
+       이 칸은 안에서 스크롤된다. */
+    #collageShelfField .collage-grid--shelf { max-height: 300px; }
+    #collagePicked { order: 2; }
+    #collageOut { order: 3; }
+    #collageShareNote { order: 4; }
+    #collageNote { order: 5; }
+    /* 검색은 "아직 등록 안 된 책"을 위한 보조 동작이라, 미리보기보다 아래로 내린다.
+       위에 두면 고른 직후 결과를 보러 가는 길이 그만큼 길어진다. */
+    #collageSearchField { order: 6; }
+    #collageTopField { order: 7; }
+    #collageBottomField { order: 8; }
+    #collageRatioField { order: 9; }
+    #collageStyleField { order: 10; }
+    #collageBgField { order: 11; }
+
+    /* 저장은 다 만든 뒤 맨 아래까지 내려가서 누르는 게 아니라, 언제든 손에 닿아야 한다. */
+    #collageSaveBtn {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 40;
+      padding: 0.85rem 1rem;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    /* 아직 담은 조각이 없으면 저장할 것도 없다. 흐릿한 버튼이 화면 아래를 계속
+       차지하는 것보다 아예 없는 편이 낫다. */
+    #collageSaveBtn:disabled { display: none; }
   }
 
   .collage-out {
