@@ -3737,13 +3737,25 @@
     padding: 0.2rem;
   }
 
+  /* 타일 높이를 aspect-ratio가 아니라 아래 여백 비율로 잡는다(높이 0 + padding-bottom
+     145% = 폭의 1.45배). 퍼센트 여백은 늘 "폭" 기준이라 어느 브라우저에서나 같은 높이가
+     나온다. 표지와 제목은 전부 절대 위치로 띄워서 흐름 안의 내용이 높이에 끼어들지
+     못하게 한다.
+     처음엔 display: flex + aspect-ratio에 표지를 흐름 안에 두고 height: 100%를 줬다.
+     크로미움에서는 멀쩡했지만 사파리 계열에서는 타일이 40px 남짓으로 무너져 표지
+     윗부분만 줄줄이 겹쳐 보였다(73권이 스크롤 없이 한 상자에 다 들어가 있었다). 원인
+     후보가 둘이다 — 타일 높이(비율)와 표지 높이(타일의 100%)가 서로를 참조하는 순환,
+     그리고 이 타일이 <button>이라는 점(홈 카드는 <a>라서 같은 aspect-ratio로도
+     멀쩡하다; 사파리는 버튼의 크기 계산에 오래된 버그가 많다). 이 샌드박스엔 사파리
+     엔진이 없어 어느 쪽인지 직접 가리지 못했으므로, 둘 다에 무관한 방식으로 바꿨다. */
   .collage-tile {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 1 / 1.45;
-    padding: 0;
+    display: block;
+    width: 100%;
+    height: 0;
+    padding: 0 0 145%;
+    -webkit-appearance: none;
+    appearance: none;
     border: 1px solid var(--line);
     border-radius: 4px;
     overflow: hidden;
@@ -3755,13 +3767,21 @@
      자르면 제목이 날아가서, 정작 고르려는 책을 못 알아본다. 통째로 넣고 남는 자리는
      타일 배경(책등 색)이 받는다. */
   .collage-tile img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
   }
 
+  /* 표지 없는 책의 제목. 이것도 타일을 꽉 채워 띄운 뒤 그 안에서 가운데로 모은다. */
   .collage-tile-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.3rem;
     color: var(--card-info-ink);
     font-family: "Gowun Batang", serif;
