@@ -376,13 +376,117 @@ function renderPicked() {
   });
 }
 
+// ── 저장 ─────────────────────────────────────────────────────────────────
+//
+// 아이폰에서는 웹페이지가 사진 앨범에 직접 저장할 수 없다. <a download>로 내려받으면
+// 늘 "파일" 앱으로 가서, 사진 앨범에서 찾던 사람은 저장이 안 된 줄 안다. 앨범으로 가는
+// 길은 공유 창(navigator.share)의 "이미지 저장"뿐이라, 아이폰·아이패드에서만 그 길을 쓴다.
+// 같은 창에서 인스타그램·카톡으로 바로 보낼 수도 있다.
+// 안드로이드는 내려받은 이미지가 갤러리에 바로 보이고 PC는 파일로 받는 게 자연스러워서
+// 지금처럼 내려받기로 둔다.
+var FILE_NAME = "책갈피-독서기록.png";
+
+function prefersShareSheet() {
+  var ua = navigator.userAgent || "";
+  // 아이패드는 데스크톱 사파리처럼 "MacIntel"로 자신을 밝히므로 터치 지점 수로 가린다.
+  var ios = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return ios && typeof navigator.share === "function" && typeof navigator.canShare === "function";
+}
+
+// 사파리는 공유 창을 "누른 바로 그 순간"에만 열어준다. 누른 뒤에 이미지를 만드느라
+// 기다리면(toBlob은 비동기다) 그 사이 허락이 끊겨 공유가 거절될 수 있다. 그래서 미리보기를
+// 그릴 때마다 파일을 미리 만들어 두고, 누르는 순간엔 기다림 없이 바로 넘긴다.
+// renderSeq는 그 사이 그림이 바뀌었을 때 낡은 파일을 쓰지 않게 하는 표시다.
+var readyFile = null;
+var renderSeq = 0;
+
+function prepareFile() {
+  renderSeq++;
+  readyFile = null;
+  if (state.collage.picked.length === 0 || !prefersShareSheet()) return;
+  var seq = renderSeq;
+  // toBlob은 부른 순간의 캔버스를 찍어 두므로, 그 뒤에 다시 그려도 이 파일은 섞이지 않는다.
+  canvas.toBlob(function (blob) {
+    if (blob && seq === renderSeq) readyFile = new File([blob], FILE_NAME, { type: "image/png" });
+  }, "image/png");
+}
+
+function downloadBlob(blob) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = FILE_NAME;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // 바로 해제하면 브라우저가 내려받기를 시작하기 전에 사라질 수 있다.
+  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+}
+
+function shareFile(file) {
+  return navigator.share({ files: [file] }).then(function () {
+    gtag("event", "save_collage", { count: state.collage.picked.length, via: "share" });
+  });
+}
+
+function saveCollage() {
+  if (state.collage.picked.length === 0) return;
+
+  if (prefersShareSheet()) {
+    var file = readyFile;
+    if (file && navigator.canShare({ files: [file] })) {
+      // 기다림 없이 바로 공유 창을 연다(위 prepareFile 참고).
+      shareFile(file).catch(handleShareError);
+      return;
+    }
+    // 파일이 아직 덜 만들어졌으면(방금 뭔가 바꾼 직후) 만들어서 바로 연다. 대개는 허락이
+    // 끊기기 전에 끝나지만, 거절되면 아래에서 내려받기로 넘어간다.
+    canvas.toBlob(function (blob) {
+      if (!blob) return reportSaveFailure();
+      var f = new File([blob], FILE_NAME, { type: "image/png" });
+      if (!navigator.canShare({ files: [f] })) { downloadBlob(blob); return; }
+      shareFile(f).catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        downloadBlob(blob);
+      });
+    }, "image/png");
+    return;
+  }
+
+  canvas.toBlob(function (blob) {
+    if (!blob) return reportSaveFailure();
+    downloadBlob(blob);
+    gtag("event", "save_collage", { count: state.collage.picked.length, via: "download" });
+  }, "image/png");
+}
+
+function handleShareError(e) {
+  // 공유 창을 그냥 닫은 건 실패가 아니다.
+  if (e && e.name === "AbortError") return;
+  // 그 밖의 거절(허락이 끊김 등)이면 적어도 파일로는 받게 한다.
+  canvas.toBlob(function (blob) {
+    if (!blob) return reportSaveFailure();
+    downloadBlob(blob);
+  }, "image/png");
+}
+
+function reportSaveFailure() {
+  dom.collageNote.textContent = "이미지를 만들지 못했어요. 미리보기를 길게 눌러 저장해주세요.";
+}
+
 function updatePreview() {
   dom.collageOut.src = drawCollage();
   var empty = state.collage.picked.length === 0;
   dom.collageSaveBtn.disabled = empty;
   // 모바일에서는 이 버튼이 화면 아래에 늘 떠 있다. 아무것도 안 담았을 때 "이미지로
   // 저장"이라고만 쓰여 있으면 왜 안 눌리는지 알 수 없어서, 글자로 다음 할 일을 말해준다.
-  dom.collageSaveBtn.textContent = empty ? "책을 먼저 골라주세요" : "이미지로 저장";
+  // 아이폰에서는 누르면 공유 창이 뜨므로 그렇게 적는다 — "저장"만 적어두면 공유 창이
+  // 뜨는 게 뜻밖이다.
+  dom.collageSaveBtn.textContent = empty
+    ? "책을 먼저 골라주세요"
+    : (prefersShareSheet() ? "앨범에 저장 · 공유" : "이미지로 저장");
+  prepareFile();
 }
 
 export function renderCollage() {
@@ -457,25 +561,7 @@ export function initCollage() {
     if (e.key === "Enter") { e.preventDefault(); search(); }
   });
 
-  dom.collageSaveBtn.addEventListener("click", function () {
-    if (state.collage.picked.length === 0) return;
-    canvas.toBlob(function (blob) {
-      if (!blob) {
-        dom.collageNote.textContent = "이미지를 만들지 못했어요. 미리보기를 길게 눌러 저장해주세요.";
-        return;
-      }
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = "책갈피-독서기록.png";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // 바로 해제하면 브라우저가 내려받기를 시작하기 전에 사라질 수 있다.
-      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-      gtag("event", "save_collage", { count: state.collage.picked.length });
-    }, "image/png");
-  });
+  dom.collageSaveBtn.addEventListener("click", saveCollage);
 
   // 글꼴이 늦게 와도 미리보기가 기본 글꼴로 굳어 있지 않게 한 번 더 그린다.
   if (document.fonts && document.fonts.load) {
