@@ -224,14 +224,22 @@ function selectCommentRating(idx) {
   renderStars(dom.cStars, state.commentRating, true, selectCommentRating);
 }
 
-// 별점이 유일한 필수 항목이라, 별점을 누르는 순간 나머지(태그·한 줄·닉네임)를 펼치고
-// 저장 버튼을 켠다.
+// 별점이 유일한 필수 항목이라, 별점을 누르는 순간 나머지(태그·한 줄·닉네임)를 펼친다.
 function selectFormRating(idx) {
   state.formRating = idx;
   renderStars(dom.fStars, state.formRating, true, selectFormRating);
   dom.writeMore.hidden = false;
-  dom.writeSubmit.disabled = false;
+  syncWriteSubmit();
 }
+
+// 저장 버튼은 모바일(시트 바닥에 고정된 바)에서만 별점 전에 꺼둔다 — 좁은 화면에선 꺼진
+// 버튼이 "별점부터"라는 안내 노릇을 한다. PC는 화면이 넓어 별점 칸이 바로 눈에 들어오니
+// 켜두고, 별점 없이 누르면 제출 단계의 "별점을 선택해주세요"가 알려준다.
+var writeMobileMQ = window.matchMedia("(max-width: 640px)");
+function syncWriteSubmit() {
+  dom.writeSubmit.disabled = state.formRating === 0 && writeMobileMQ.matches;
+}
+if (writeMobileMQ.addEventListener) writeMobileMQ.addEventListener("change", syncWriteSubmit);
 
 // 닉네임이 이 브라우저에 저장돼 있으면 입력칸 대신 "○○ 님으로 남겨요 · 변경" 한 줄로.
 function renderNicknameRow(editing) {
@@ -335,7 +343,7 @@ function openForm(prefillQuery) {
   state.formRating = 0;
   renderStars(dom.fStars, 0, true, selectFormRating);
   dom.writeMore.hidden = true;
-  dom.writeSubmit.disabled = true;
+  syncWriteSubmit();
   state.formMood = null;
   renderMoodPicker(dom.fMoods, null, selectFormMood);
   // 폼을 열 때마다 예시 문구를 하나 새로 뽑는다(같은 문구만 계속 보면 예시로 안 읽힌다).

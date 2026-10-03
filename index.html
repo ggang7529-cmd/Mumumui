@@ -555,11 +555,11 @@
                     </div>
                   </div>
                 </div>
-                <!-- 모바일에서는 시트 아래에 붙어 있다(css .write-actions). 별점을 고르기
-                     전에는 꺼둔다 — 별점이 유일한 필수 항목이다. -->
+                <!-- 모바일에서는 시트 아래에 붙어 있고(css .write-actions), 별점을 고르기
+                     전에는 꺼둔다 — 별점이 유일한 필수 항목이다. PC는 켜둔다(js syncWriteSubmit). -->
                 <div class="form-actions write-actions">
                   <button type="button" class="btn-ghost" id="cancelForm">취소</button>
-                  <button type="submit" class="btn-primary" id="writeSubmit" disabled>남기기</button>
+                  <button type="submit" class="btn-primary" id="writeSubmit">남기기</button>
                 </div>
               </div>
             </form>
