@@ -1,32 +1,33 @@
-  /* 팔레트는 5색으로 압축했다: 잉크 / 종이 / 카드 / 버건디 / 클레이.
-     예전엔 랜덤 추천 버튼만 초록(--accent2 #3F6B63)이라 팔레트가 분산됐고, 다크 모드에서
-     accent가 연분홍(#E08A90)으로 바뀌면서 라이트와 다른 브랜드처럼 보였다. 이제 다크도
-     같은 버건디 색상환을 유지해서 두 모드가 한 브랜드로 읽히게 한다.
-     (--accent2는 이름만 유지하고 값은 클레이로 바꿔, 기존 규칙을 다 고치지 않아도
-     팔레트가 통일되게 했다.) */
+  /* 기본(라이트)은 크림 테마다(2026-10-03). 배경 #F7F3EC 위에 흰 카드, 포인트는 버건디
+     #8C2F39, 보조는 로즈 #C88E92, 본문 #2A211F, 보조 글씨 #5E524C.
+     다크는 아래 :root[data-theme="dark"] 하나뿐이고, 헤더의 해/달 버튼으로만 켠다 — 예전엔
+     기기의 다크 설정을 따라 저절로 바뀌었는데, 크림이 사이트의 기본 얼굴이라 기기 설정과
+     무관하게 크림으로 시작한다(index.html <head>, js/main.js 테마).
+     --accent2(클레이)는 표지 모음판 같은 곳의 보조 채움색으로 남겨 둔다. */
   :root {
-    --paper: #F2EDE4;
-    --paper-soft: #E7DFD1;
-    --paper-raised: #FBF8F2;
-    --ink: #23201D;
-    --ink-soft: #5C534A;
-    /* 흰 배경 대비 4.8:1 — 예전 #94897C는 2.9:1로 AA 미달이었다. */
-    --ink-faint: #6F6558;
-    --accent: #7C2B36;
+    --paper: #F7F3EC;
+    --paper-soft: #EFE8DD;
+    --paper-raised: #FFFFFF;
+    --ink: #2A211F;
+    --ink-soft: #5E524C;
+    /* 배경(#F7F3EC) 대비 5.3:1, 흰 카드 대비 5.9:1 — 가장 흐린 글자도 AA를 넘긴다. */
+    --ink-faint: #706259;
+    --accent: #8C2F39;
     --accent-soft: #A84A52;
-    /* 흰 글자를 얹는 버튼(랜덤 추천)에 쓰이므로 4.9:1이 나오는 깊이로 잡았다. */
+    --rose: #C88E92;
+    /* 흰 글자를 얹는 버튼(표지 모음판 등)에 쓰이므로 4.9:1이 나오는 깊이로 잡았다. */
     --accent2: #A85C46;
     --accent2-soft: #C07253;
-    --line: rgba(35, 32, 29, 0.13);
-    --shadow: rgba(35, 32, 29, 0.10);
-    --logo-front: #7C2B36;
-    --logo-back: #C4837F;
+    --line: rgba(42, 33, 31, 0.12);
+    --shadow: rgba(42, 33, 31, 0.08);
+    --logo-front: #8C2F39;
+    --logo-back: #C88E92;
     /* 채운 버튼은 라이트/다크 모두 "진한 버건디(또는 클레이) 바탕 + 밝은 글자"로 통일한다.
        텍스트 색인 --accent를 그대로 버튼 배경에 쓰면, 다크에서는 그 값이 밝은 로즈라
        버튼만 쨍하게 떠서 라이트와 인상이 달라졌다. */
-    --btn-fill: #7C2B36;
-    --btn-fill-hover: #963642;
-    --btn-fill-ink: #FBF8F2;
+    --btn-fill: #8C2F39;
+    --btn-fill-hover: #A33945;
+    --btn-fill-ink: #FFFFFF;
     --btn-alt: #A85C46;
     --btn-alt-hover: #BE6D54;
     /* 등급 아이콘 5티어 색. 브랜드 계열 안에서 입문(밝은 클레이) → 전설(가장 깊은 버건디)로
@@ -38,38 +39,8 @@
     --lv-crown: #6E2733;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #17140F;
-      --paper-soft: #241F19;
-      --paper-raised: #211D17;
-      --ink: #EDE7DC;
-      --ink-soft: #B5AA9B;
-      --ink-faint: #8D8274;
-      --accent: #D9848B;
-      --accent-soft: #E8A0A6;
-      --accent2: #D89B84;
-      --accent2-soft: #E8B49F;
-      --line: rgba(237, 231, 220, 0.14);
-      --shadow: rgba(0, 0, 0, 0.45);
-      --logo-front: #D9848B;
-      --logo-back: #8C4E56;
-      --btn-fill: #8C3A44;
-      --btn-fill-hover: #A34551;
-      --btn-fill-ink: #FBEDED;
-      --btn-alt: #A15942;
-      --btn-alt-hover: #B96A4F;
-      /* 어두운 바탕에서는 같은 순서로 흐린 톤 → 밝은 톤으로 올라간다(라이트의 반대 방향이
-         아니라, 낮은 등급이 눈에 덜 띄고 높은 등급이 도드라진다는 관계를 유지한 것). */
-      --lv-bookmark: #C08268;
-      --lv-books: #CE7F86;
-      --lv-ghost: #C295A0;
-      --lv-owl: #E0918C;
-      --lv-crown: #F0B9BE;
-    }
-  }
-
   :root[data-theme="dark"] {
+    --rose: #8C4E56;
     --paper: #17140F;
     --paper-soft: #241F19;
     --paper-raised: #211D17;
@@ -239,6 +210,8 @@
     }
   }
 
+  /* 헤더: 로고 | 책 찾기 · 테마 · 알림. 모든 폭에서 한 줄이다(예전엔 버튼 다섯 개와 닉네임
+     칩 때문에 900px 아래에서 두 줄로 접혔고, 그걸 맞추는 order 규칙이 한 무더기 있었다). */
   .site-header {
     display: flex;
     align-items: center;
@@ -247,109 +220,38 @@
     padding: 0.55rem 0;
   }
 
-  /* 헤더는 브랜드+닉네임+알림+버튼 4개가 한 줄에 들어가려면 900px 가까이 필요하다.
-     640px에서 곧바로 데스크톱 한 줄 배치로 되돌리면 641~880px 구간에서 헤더가 가로로
-     넘쳐 "+ 책장에 추가하기" 버튼이 화면 밖으로 잘렸다(페이지도 가로 스크롤됨).
-     그래서 이 줄바꿈 배치를 900px까지 유지한다. */
-  @media (max-width: 900px) {
-    .site-header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      /* 줄마다 오른쪽 기준으로 모은다. 브랜드만 margin-right:auto로 왼쪽에 고정하면,
-         같은 줄의 나머지(벨·닉네임 묶음)는 오른쪽 끝에 붙고, 아래 줄로 내려간 닉네임
-         묶음도 그 줄에서 오른쪽으로 간다 — 한 줄에 같이 놓이는 폭에서는 벨과 닉네임이
-         서로 붙어 오른쪽에 모인다. 예전엔 각자에게 margin-left:auto를 줬는데, 둘이 한
-         줄에 놓이면 남은 공간이 반씩 나뉘어 벨이 가운데 떠 보였다. */
-      justify-content: flex-end;
-      row-gap: 0;
-      column-gap: 0.5rem;
-      padding: 0.5rem 0;
-    }
-
-    /* header-actions 자체는 박스를 만들지 않고, 그 자식들(auth-box/notif-box/
-       버튼들)이 site-header의 flex 아이템으로 직접 들어와서 order로 재배치될
-       수 있게 한다. 데스크톱 폭에서는 이 규칙이 적용되지 않으므로
-       header-actions가 그대로 하나의 그룹으로 유지된다(레이아웃 그대로).
-       선택자에 .site-header를 붙여 우선순위를 올린 이유: 스타일시트 뒤쪽에
-       있는 기존 ".header-actions { display:flex; ... }" 규칙과 우선순위가
-       동점이면 나중에 나온 규칙이 이겨버려서 여기서 지정한 display:contents가
-       무시되는 문제가 있었다. */
-    .site-header .header-actions {
-      display: contents;
-    }
-
-    .brand {
-      order: 1;
-      margin-right: auto;
-    }
-    /* 알림 벨을 닉네임보다 앞에 둔다. 닉네임 칩은 등급 이름까지 달고 있어 폭이 큰데,
-       뒤에 "내 기록" 버튼까지 붙으면서 좁은 화면에서 한 줄에 다 못 들어간다. 벨이
-       뒤에 있으면 벨만 혼자 다음 줄로 밀려나 빈 줄처럼 보였다 — 순서를 바꿔 넘칠 때
-       닉네임 묶음이 통째로 내려가게 한다. */
-    .header-actions .notif-box { order: 2; }
-    .header-actions .auth-box { order: 3; }
-
-    .header-actions .auth-box:empty {
-      display: none;
-    }
-
-    /* 닉네임(auth-box)·알림 벨을 오른쪽으로 붙여서 브랜드와의 사이에만 큰
-       여백이 생기게 한다. 닉네임이 저장되어 있으면 auth-box에 그 여백을
-       주고, 아직 없으면(auth-box가 비어 사라진 상태) 바로 다음 알림 벨이
-       대신 그 여백을 떠안는다. */
-    /* 오른쪽 정렬은 위 .site-header의 justify-content가 맡는다 — 여기서 따로 auto
-       여백을 주면 그 줄의 남은 공간을 나눠 가져 정렬이 어긋난다. */
-
-    /* 폭 100%짜리 빈 아이템으로 강제 줄바꿈을 만든다 — 이 아이템은 항상
-       자기 혼자 한 줄을 차지하므로, order가 더 큰(20번대) 버튼들은 전부
-       다음 줄로 밀려난다. */
-    .site-header::after {
-      content: "";
-      order: 10;
-      flex-basis: 100%;
-      width: 0;
-      height: 0.5rem;
-    }
-
-    .header-actions #feedbackBtn { order: 20; }
-    .header-actions #homeBtn { order: 21; }
-    .header-actions #collageBtn { order: 22; }
-    /* 23은 위 .header-actions-break가 쓴다(줄바꿈). */
-    .header-actions #recommendBtn { order: 24; }
-    .header-actions #newReviewBtn { order: 25; }
-
-    .header-actions .btn-accent-outline,
-    .header-actions .btn-random,
-    .header-actions .btn-primary {
-      /* min-width를 명시적으로 0으로 풀지 않는다 — 기본값(auto)이어야 라벨 안의
-         white-space: nowrap 텍스트(예: new-review-btn-hint) 폭만큼은 자동으로
-         확보되고, 그보다 좁아져야 할 때는 다음 줄로 줄바꿈되어 버튼 밖으로
-         글자가 삐져나오는 대신 자연스럽게 두 줄로 배치된다. */
-      flex: 1 1 auto;
-      padding: 0.5rem 0.6rem;
-      font-size: 0.82rem;
-      text-align: center;
-    }
-
-    /* 테두리가 있는 버튼(.btn-accent-outline)과 없는 버튼이 같은 줄에 서면 그 1px씩
-       때문에 위아래가 2px 어긋난다. 없는 쪽에 투명 테두리를 줘 같은 높이를 차지하게 한다. */
-    .header-actions .btn-random,
-    .header-actions .btn-primary {
-      border: 1px solid transparent;
-    }
-
-    /* 터치 타겟 확대: 애플/구글 권장 최소 크기(44px)에 맞춘다. */
-    .notif-bell {
-      width: 44px;
-      height: 44px;
-    }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
+
+  /* 헤더의 아이콘 버튼(돋보기·해/달·알림 종). 손가락 기준 44px. */
+  .icon-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .icon-btn svg { width: 20px; height: 20px; }
+  .icon-btn:hover { background: var(--paper-soft); color: var(--ink); }
 
   .brand {
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    color: var(--ink);
+    text-decoration: none;
     font-size: clamp(1.2rem, 2.4vw, 1.45rem);
     /* 등급 배지가 붙어 닉네임(.user-name)이 길어지면서 데스크톱 폭이 좁아졌을 때
        "책갈피" 로고 텍스트 쪽이 밀려서 두 줄로 쪼개지는 문제가 있었다. 로고는 항상
@@ -449,106 +351,91 @@
     font-weight: 400;
   }
 
-  /* 참여를 권하는 줄. 위 설명(intro-subtext)과 구분되게 브랜드 색을 쓰되, 크기는 한 단계
-     줄이고 무게만 살짝 올려서 "권유"로 읽히되 헤드라인을 가리지 않게 한다. */
-  .intro-invite {
-    margin: 0.35rem 0 0;
-    color: var(--accent);
-    font-size: var(--t-meta);
-    font-weight: 500;
+  /* 첫 화면의 단 하나의 큰 행동. 폭을 화면만큼 쓰지 않고 글자보다 넉넉한 알약으로 —
+     모바일에서는 가로로 꽉 채운다(아래 640px). */
+  .intro-cta {
+    display: block;
+    margin: 1.4rem 0 0;
+    padding: 0.95rem 2.4rem;
+    border-radius: 999px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 16px rgba(140, 47, 57, 0.18);
   }
 
-  /* 등급 안내로 들어가는 줄. 처음엔 흐린 글씨 한 줄이었는데 아무도 안 봤다 — 인트로에
-     이미 문장이 셋(헤드라인·설명·권유) 쌓여 있어서, 네 번째 문장은 색을 진하게 해도
-     "또 한 줄"로 넘어간다. 색이 아니라 모양을 바꿔야 했다.
-     그래서 글이 아니라 알약 하나로 묶고, 안에 짧은 진행 막대를 넣었다. 인트로에서
-     유일한 막대 모양이라 눈이 먼저 가고, 막대가 차 있는 걸 보면 "얼마 안 남았네"가
-     바로 읽혀서 누를 이유까지 생긴다. 색은 종이색 알약 + 버건디 막대로 팔레트 안에
-     그대로 있고, 글자는 예전처럼 차분한 톤이라 위 문장들과 다투지 않는다. */
-  .intro-level-line {
-    display: inline-flex;
+  /* 큰 버튼 아래의 작은 글자 링크들(추천 · 한 컷 · 내 기록). */
+  .intro-links {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.45rem;
-    margin: 0.6rem 0 0;
-    padding: 0.3rem 0.6rem 0.3rem 0.55rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--paper-soft);
+    gap: 0.35rem 1.1rem;
+    margin-top: 0.9rem;
+  }
+
+  .intro-links .auth-box:empty { display: none; }
+
+  /* 글자처럼 보이는 링크 버튼. */
+  .text-link {
+    background: none;
+    border: none;
+    padding: 0.3rem 0;
     color: var(--ink-soft);
     font-family: inherit;
     font-size: var(--t-meta);
     font-weight: 500;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
   }
 
-  .intro-level-line:hover,
-  .intro-level-line:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .text-link:hover,
+  .text-link:focus-visible { color: var(--accent); }
 
-  .intro-level-icons {
-    display: inline-flex;
+  /* 홈 맨 아래: 등급 안내 · 의견 보내기 */
+  .home-footer-links {
+    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 0.12rem;
-    font-size: 1.15em;
+    gap: 0.6rem;
+    margin-top: 3rem;
+    color: var(--ink-faint);
+    font-size: var(--t-meta);
   }
 
-  /* 등급별 색(--lv-crown 등)은 라이트 배경 기준의 진한 버건디라, 다크 모드의 어두운
-     배경에 얹으면 거의 안 보인다. 이 줄에서는 글자와 같은 색을 따르게 해서 아이콘이
-     문장의 일부로 읽히게 한다. */
-  .intro-level-icons .lv-icon {
-    margin-right: 0;
-    color: currentColor;
+  .home-footer-links .text-link { color: var(--ink-faint); }
+  .home-footer-links .text-link:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .intro-cta { width: 100%; padding: 0.95rem 1rem; }
   }
 
-  /* 미니 진행 막대. 트랙을 알약 배경이 아니라 페이지 배경색으로 둬서, 라이트에서는
-     한 톤 밝게 다크에서는 한 톤 어둡게 — 어느 쪽이든 홈이 파인 것처럼 보인다. */
-  .intro-level-bar {
-    flex: none;
-    width: 44px;
-    height: 6px;
-    border-radius: 999px;
+  /* 헤더 돋보기 "책 찾기" 시트 */
+  .search-sheet-panel { max-width: 520px; max-height: min(80vh, 680px); }
+
+  .site-search-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--ink);
     background: var(--paper);
-    overflow: hidden;
-  }
-
-  .intro-level-bar-fill {
-    display: block;
-    height: 100%;
+    border: 1px solid var(--line);
     border-radius: 999px;
-    background: var(--accent);
+    padding: 0.7rem 1rem;
   }
 
-  /* 누를 수 있다는 표시. 토스트와 같은 홑화살괄호를 쓴다. */
-  .intro-level-more {
-    flex: none;
-    margin-left: 0.05rem;
-    font-size: 1.1em;
-    line-height: 1;
-    opacity: 0.6;
-  }
+  .site-search-input:focus { outline: none; border-color: var(--accent); }
 
-  /* 두 줄짜리 강조 버튼 — 윗줄에 작은 권유 문구, 아랫줄에 행동. "+ 책장에 추가하기"와
-     "나를 위한 추천"이 이 모양을 함께 쓴다. 기록하는 것과 추천받는 것이 이 서비스의 두
-     축이라 한 쌍으로 읽혀야 해서, 같은 채움색·같은 크기로 나란히 둔다. (추천 버튼은
-     처음에 외곽선 버튼이어서 의견 보내기와 같은 무게로 보였다.) */
-  .stacked-btn {
+  .search-sheet-body .book-results { max-height: none; }
+
+  .site-search-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
-    line-height: 1.15;
+    gap: 0.8rem;
+    padding: 1.4rem 1rem;
+    text-align: center;
   }
 
-  .stacked-btn-hint,
-  .new-review-btn-hint {
-    font-size: 0.68rem;
-    font-weight: 400;
-    opacity: 0.85;
-    white-space: nowrap;
-  }
+  .site-search-empty p { margin: 0; }
 
   .btn-primary {
     flex: none;
@@ -592,78 +479,6 @@
   }
 
   /* auth */
-
-  /* 폭 100%짜리 빈 칸으로 강제 줄바꿈을 만든다 — 뒤따르는 강조 버튼 둘이 함께 다음
-     줄로 내려가 나란히 붙는다. 좁은 화면(≤900px)에서는 site-header 쪽 order 배치가
-     따로 있어서 이 칸을 숨긴다. */
-  .header-actions-break {
-    flex-basis: 100%;
-    height: 0;
-  }
-
-  /* 닉네임 묶음(닉네임 · 내 기록 · 알림)만 첫 줄에 두고 버튼들을 아래 줄로 내린다.
-     버튼과 닉네임이 한 줄에 섞여 있으면 어디까지가 "내 정보"인지 읽히지 않는다. */
-  .header-top-break {
-    flex-basis: 100%;
-    height: 0.5rem;
-  }
-
-  /* 버튼 넷을 한 줄에 둘 수 있게 되어(닉네임이 자리를 비켜줬다) 강조 버튼 둘을 붙여주던
-     줄바꿈은 PC에서 더 필요 없다. 좁은 화면에서는 여전히 필요해서 거기서만 살려둔다. */
-  @media (min-width: 901px) {
-    .header-actions-break { display: none; }
-  }
-
-  @media (max-width: 900px) {
-    .header-top-break { display: none; }
-  }
-
-  /* 좁은 화면에서도 같은 역할을 한다. 여기서는 header-actions가 display:contents라
-     자식들이 site-header의 flex 아이템으로 직접 들어가므로, 아래 order 배치에 맞춰
-     강조 버튼 둘 바로 앞 순서를 준다 — 그래야 둘이 한 줄을 반씩 나눠 갖는다. */
-  @media (max-width: 900px) {
-    .header-actions-break {
-      order: 23;
-      height: 0.5rem;
-    }
-  }
-
-  /* PC 폭에서 헤더 첫 줄(의견 보내기 · 랜덤 책 추천)의 높이를 맞춘다.
-     테두리가 있는 버튼(.btn-accent-outline, 1px)과 없는 버튼(.btn-random)의 안쪽 여백과
-     글자 크기가 서로 달라서 높이가 39px / 42px로 3px 어긋났다. 세로 중심은 맞아 있어도
-     위아래 선이 안 맞으니 줄이 삐뚤어 보인다. 상자 규격을 한 벌로 통일한다.
-     테두리 없는 쪽에도 투명 테두리를 줘서 같은 두께를 차지하게 한다.
-
-     min-width로 감싼 이유: 좁은 화면에는 이미 @media (max-width: 900px) 안에 헤더 버튼
-     전용 규격(글자 0.82rem 등)이 따로 있는데, 그 규칙이 스타일시트 앞쪽에 있어서 감싸지
-     않으면 같은 우선순위의 이 규칙이 뒤에서 덮어써 버린다. */
-  @media (min-width: 901px) {
-    .header-actions .btn-accent-outline,
-    .header-actions .btn-random {
-      padding: 0.6rem 1rem;
-      font-size: 0.95rem;
-      line-height: 1.4;
-      border: 1px solid transparent;
-    }
-
-    .header-actions .btn-accent-outline {
-      border-color: var(--accent);
-    }
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    /* 900px 위에서도 안전장치를 둔다 — 등급 배지가 붙은 긴 닉네임처럼 내용이
-       길어지면 한 줄에 다 못 들어갈 수 있다. flex:none으로 고정해두면 그때
-       버튼이 화면 밖으로 잘리므로, 줄바꿈을 허용해 아래로 흐르게 한다. */
-    flex: 0 1 auto;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    row-gap: 0.5rem;
-    min-width: 0;
-  }
 
   .auth-box { display: flex; align-items: center; min-width: 0; }
 
@@ -797,29 +612,13 @@
 
   .notif-box { position: relative; display: flex; align-items: center; }
 
-  .notif-bell {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: none;
-    border: none;
-    color: var(--ink-soft);
-    cursor: pointer;
-    border-radius: 50%;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-
-  .notif-bell svg { width: 17px; height: 17px; }
-
-  .notif-bell:hover { background: var(--paper-soft); color: var(--ink); }
+  /* 종 모양 자체는 헤더 아이콘 버튼(.icon-btn)과 같다. */
+  .notif-bell { position: relative; }
 
   .notif-dot {
     position: absolute;
-    top: 3px;
-    right: 4px;
+    top: 10px;
+    right: 11px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -1104,14 +903,6 @@
 
   /* 책등 색(js/render.js COVERS)은 라이트 종이 배경 기준으로 고른 중간 명도라, 다크에서는
      카드만 밝게 떠 보인다. 색을 테마별로 따로 두는 대신 여기서 한 단계 눌러준다. */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .b-cover,
-    :root:not([data-theme="light"]) .pr-cover,
-    :root:not([data-theme="light"]) .detail-cover {
-      filter: brightness(0.82) saturate(0.92);
-    }
-  }
-
   :root[data-theme="dark"] .b-cover,
   :root[data-theme="dark"] .pr-cover,
   :root[data-theme="dark"] .detail-cover {

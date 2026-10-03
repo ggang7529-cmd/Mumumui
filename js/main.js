@@ -5,9 +5,9 @@ import {
 } from "./api.js";
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
-  clearSelectedBook, renderBookResults, findBook, renderRandomCard, bookRating, formatDate,
+  clearSelectedBook, renderBookResults, renderSiteSearch, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
-  renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
+  renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 
@@ -114,7 +114,11 @@ export var state = {
 export var dom = {
   shelf: document.getElementById("shelfGrid"),
   countLabel: document.getElementById("countLabel"),
-  searchInput: document.getElementById("searchInput"),
+  searchSheet: document.getElementById("searchSheet"),
+  searchSheetClose: document.getElementById("searchSheetClose"),
+  siteSearchInput: document.getElementById("siteSearchInput"),
+  siteSearchResults: document.getElementById("siteSearchResults"),
+  themeBtn: document.getElementById("themeBtn"),
   categoryFilter: document.getElementById("categoryFilter"),
   libraryView: document.getElementById("libraryView"),
   libraryToolbar: document.getElementById("libraryToolbar"),
@@ -142,13 +146,11 @@ export var dom = {
   randomInfo: document.getElementById("randomInfo"),
   randomDrawBtn: document.getElementById("randomDrawBtn"),
   randomGoBtn: document.getElementById("randomGoBtn"),
-  homeBtn: document.getElementById("homeBtn"),
   randomStreakMsg: document.getElementById("randomStreakMsg"),
   milestoneOverlay: document.getElementById("milestoneOverlay"),
   milestoneMessage: document.getElementById("milestoneMessage"),
   latestHighlight: document.getElementById("latestHighlight"),
   headerIntro: document.getElementById("headerIntro"),
-  introInvite: document.getElementById("introInvite"),
   stickyHeader: document.getElementById("stickyHeader"),
   fMoods: document.getElementById("fMoods"),
   cMoods: document.getElementById("cMoods"),
@@ -198,7 +200,6 @@ export var dom = {
   levelProgress: document.getElementById("levelProgress"),
   levelRuleList: document.getElementById("levelRuleList"),
   levelTable: document.getElementById("levelTable"),
-  introLevelLine: document.getElementById("introLevelLine"),
   scoreToast: document.getElementById("scoreToast")
 };
 
@@ -279,16 +280,6 @@ function startDetailPolling() {
 }
 
 export function showView(name) {
-  // 책 등록·추천·랜덤·의견·프로필로 넘어갈 때 홈의 검색어를 비운다. 그러지 않으면 갔다가
-  // 돌아왔을 때 아까 친 검색어가 그대로 걸린 목록이 나와서, 책이 몇 권 없는 것처럼 보인다.
-  //
-  // 책 상세(detail)는 일부러 뺐다 — 검색해서 찾은 책을 열어보고 뒤로 나오는 건 한 흐름이라,
-  // 거기서 검색어를 지우면 보던 자리를 잃는다.
-  if (name !== "library" && name !== "detail" && state.searchQuery) {
-    state.searchQuery = "";
-    if (dom.searchInput) dom.searchInput.value = "";
-  }
-
   state.view = name;
   dom.libraryView.hidden = name !== "library";
   dom.libraryToolbar.hidden = name !== "library";
@@ -298,9 +289,6 @@ export function showView(name) {
   dom.profileView.hidden = name !== "profile";
   dom.recommendView.hidden = name !== "recommend";
   dom.collageView.hidden = name !== "collage";
-  // 목록(홈)이 아닌 모든 화면에서 "홈으로"를 띄운다. 책 등록 화면에는 폼 아래에 "취소"가
-  // 있지만, 그건 폼을 스크롤해 끝까지 내려가야 보인다 — 화면 위에서 바로 빠져나올 길이 없었다.
-  dom.homeBtn.hidden = name === "library";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
@@ -679,8 +667,7 @@ document.addEventListener("keydown", function (e) {
   closeLevelGuide();
 });
 
-dom.introLevelLine.addEventListener("click", function () { openLevelGuide("intro"); });
-renderIntroLevelLine();
+document.getElementById("levelGuideLink").addEventListener("click", function () { openLevelGuide("footer"); });
 
 // ── 점수·승급 토스트 ────────────────────────────────────────────────────────
 //
@@ -819,11 +806,6 @@ dom.bookSearchInput.addEventListener("keydown", function (e) {
 });
 document.getElementById("clearSelectedBook").addEventListener("click", clearSelectedBook);
 
-dom.searchInput.addEventListener("input", function (e) {
-  state.searchQuery = e.target.value;
-  renderLibrary();
-});
-
 document.querySelectorAll(".sort-tab").forEach(function (btn) {
   btn.addEventListener("click", function () {
     state.sortMode = btn.dataset.sort;
@@ -864,7 +846,66 @@ document.getElementById("feedbackBtn").addEventListener("click", function () {
   showView("feedback");
 });
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
-document.getElementById("homeBtn").addEventListener("click", function () { showView("library"); });
+// 로고 = 홈. 링크라 새 탭 열기(가운데 클릭 등)는 그대로 두고, 그냥 누르면 페이지를 다시
+// 받지 않고 화면만 바꾼다.
+document.getElementById("brandLink").addEventListener("click", function (e) {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  e.preventDefault();
+  showView("library");
+});
+
+// 테마. 기본은 크림(data-theme 없음)이고 다크를 고르면 이 브라우저에 기억한다. 첫 그림을
+// 그리기 전에 적용하는 부분은 index.html <head>의 작은 스크립트가 맡는다.
+var THEME_KEY = "chaekgalpi_theme";
+function currentTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+function renderThemeBtn() {
+  var dark = currentTheme() === "dark";
+  dom.themeBtn.innerHTML = "";
+  dom.themeBtn.appendChild(buildIcon(dark ? "sun" : "moon"));
+  dom.themeBtn.setAttribute("aria-label", dark ? "밝은 테마로 바꾸기" : "다크 모드로 바꾸기");
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", dark ? "#17140F" : "#F7F3EC");
+}
+dom.themeBtn.addEventListener("click", function () {
+  var next = currentTheme() === "dark" ? "light" : "dark";
+  if (next === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  renderThemeBtn();
+  gtag("event", "toggle_theme", { theme: next });
+});
+renderThemeBtn();
+
+// 헤더 돋보기 "책 찾기". 리뷰를 보러 온 사람이 책장에 있는 책을 찾아 바로 상세로 간다.
+var searchSheetOpener = null;
+function openSearchSheet() {
+  searchSheetOpener = document.activeElement;
+  dom.siteSearchInput.value = "";
+  renderSiteSearch();
+  dom.searchSheet.hidden = false;
+  void dom.searchSheet.offsetWidth;
+  dom.searchSheet.classList.add("show");
+  dom.siteSearchInput.focus();
+  gtag("event", "open_search");
+}
+export function closeSearchSheet() {
+  if (dom.searchSheet.hidden) return;
+  dom.searchSheet.classList.remove("show");
+  setTimeout(function () { dom.searchSheet.hidden = true; }, 220);
+  if (searchSheetOpener && searchSheetOpener.focus) searchSheetOpener.focus();
+  searchSheetOpener = null;
+}
+document.getElementById("searchBtn").addEventListener("click", openSearchSheet);
+dom.searchSheetClose.addEventListener("click", closeSearchSheet);
+dom.searchSheet.addEventListener("click", function (e) {
+  if (e.target === dom.searchSheet) closeSearchSheet();
+});
+dom.siteSearchInput.addEventListener("input", renderSiteSearch);
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && !dom.searchSheet.hidden) closeSearchSheet();
+});
 document.getElementById("recommendBtn").addEventListener("click", function () { openRecommend(); });
 // 추천할 근거가 없을 때 뜨는 두 버튼. 기본은 책장으로 보내는 것이다 — 이미 등록된 책에
 // 별점만 남겨도 추천은 돌아가므로, 등록을 먼저 요구할 이유가 없다.

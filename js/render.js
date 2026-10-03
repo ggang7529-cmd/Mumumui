@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { kdcOrder } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -226,7 +226,7 @@ function compactText(v) {
 
 // 책장(state.books = DB의 책 전체, 홈이 이미 받아둔 목록)에서 제목+저자로 찾는다. 띄어쓰기는
 // 무시하고, 검색어를 띄어 쓴 낱말이 모두 들어 있어야 한다("헤세 데미안"도 걸리게).
-function matchRegisteredBooks(query) {
+function matchRegisteredBooks(query, limit) {
   var words = String(query || "").trim().split(/\s+/).map(compactText).filter(Boolean);
   if (!words.length) return [];
   return state.books.filter(function (b) {
@@ -234,7 +234,7 @@ function matchRegisteredBooks(query) {
     return words.every(function (w) { return hay.indexOf(w) !== -1; });
   }).sort(function (a, b) {
     return (b.commentCount || 0) - (a.commentCount || 0) || b.updatedAt - a.updatedAt;
-  }).slice(0, 5);
+  }).slice(0, limit || 5);
 }
 
 function buildResultRow(opts) {
@@ -310,6 +310,77 @@ function noteRow(text) {
   return li;
 }
 
+// 헤더 돋보기 "책 찾기"의 결과. 책장(state.books)에서만 찾는다 — 이건 리뷰를 보러 온
+// 사람용이라 고르면 그 책 상세로 간다. 없으면 그 말로 한 줄 남기기 시트를 열어 준다.
+export function renderSiteSearch() {
+  var q = dom.siteSearchInput.value.trim();
+  var list = dom.siteSearchResults;
+  list.innerHTML = "";
+  if (!q) { list.hidden = true; return; }
+  list.hidden = false;
+
+  var found = matchRegisteredBooks(q, 20);
+  found.forEach(function (r) {
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "book-result-item";
+    var placeholder = document.createElement("div");
+    placeholder.className = "book-result-noimg";
+    placeholder.textContent = "표지 없음";
+    if (r.cover) {
+      var img = document.createElement("img");
+      img.src = upscaleCover(r.cover);
+      img.alt = "";
+      img.addEventListener("error", function () { img.replaceWith(placeholder); });
+      btn.appendChild(img);
+    } else {
+      btn.appendChild(placeholder);
+    }
+    var info = document.createElement("div");
+    var t = document.createElement("div");
+    t.className = "book-result-title";
+    t.textContent = r.title;
+    var a = document.createElement("div");
+    a.className = "book-result-author";
+    a.textContent = r.author;
+    var meta = document.createElement("div");
+    meta.className = "book-result-status";
+    var rating = bookRating(r);
+    meta.textContent = (rating ? "★ " + rating.avg.toFixed(1) + " · " : "") + "한 줄 " + (r.commentCount || 0) + "개";
+    info.appendChild(t);
+    info.appendChild(a);
+    info.appendChild(meta);
+    btn.appendChild(info);
+    btn.addEventListener("click", function () {
+      gtag("event", "click_search_result", { book_id: r.id });
+      closeSearchSheet();
+      openDetail(r.id);
+    });
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+
+  if (!found.length) {
+    var li = document.createElement("li");
+    li.className = "book-result-empty site-search-empty";
+    var p = document.createElement("p");
+    p.textContent = "책장에 아직 없는 책이에요.";
+    var go = document.createElement("button");
+    go.type = "button";
+    go.className = "btn-primary";
+    go.textContent = "이 책으로 첫 한 줄 남기기";
+    go.addEventListener("click", function () {
+      gtag("event", "click_add_from_search");
+      closeSearchSheet();
+      startBookRegistration(q);
+    });
+    li.appendChild(p);
+    li.appendChild(go);
+    list.appendChild(li);
+  }
+}
+
 // 한 줄 남기기 시트의 검색 결과. 위에는 이미 책장에 있는 책(치는 대로 바로), 아래에는
 // 카카오 검색 결과(검색 버튼을 눌렀을 때)를 이어 붙인다. 카카오 결과 중 책장에 이미 있는
 // 책은 "등록된 책" 줄로 바꿔 보여주고, 위에 이미 나온 책이면 빼서 한 책이 두 줄로 나오지
@@ -365,43 +436,13 @@ export function renderAuthBox() {
   if (AUTH_MODE === "nickname") {
     var nickname = getSavedNickname();
     if (nickname) {
-      // 내 기록으로 들어가는 입구. 별도 메뉴를 만드는 대신 이미 헤더에 떠 있는 내 닉네임을
-      // 그대로 누를 수 있게 했다 — 남의 닉네임을 누르는 것과 같은 동작이라 배울 게 없다.
-      // 등급 아이콘은 닉네임 버튼 안에 있었는데, 그 자리에서 등급 안내를 열려면 버튼
-      // 안의 버튼이 돼버린다(중첩 버튼은 HTML에서 허용되지 않는다). 아이콘만 형제
-      // 버튼으로 떼어내고 둘을 한 칸에 담아, 보이는 모양은 예전 그대로 두면서 아이콘은
-      // 등급 안내로, 닉네임은 내 기록으로 가게 했다.
-      var chipWrap = document.createElement("div");
-      chipWrap.className = "user-chip user-chip--level";
-
-      var myLevel = getLevel(state.myScore);
-      var lvBadge = document.createElement("button");
-      lvBadge.type = "button";
-      lvBadge.className = "lv-badge-btn";
-      lvBadge.setAttribute("aria-label", "등급 안내 보기 (지금 " + myLevel.level + "등급 " + myLevel.name + ")");
-      lvBadge.appendChild(buildIcon(myLevel.icon, "lv-icon lv-icon--" + myLevel.icon));
-      lvBadge.addEventListener("click", function () { openLevelGuide("badge"); });
-      chipWrap.appendChild(lvBadge);
-
-      var savedChip = document.createElement("button");
-      savedChip.type = "button";
-      savedChip.className = "user-chip-name is-linked";
-      savedChip.setAttribute("aria-label", nickname + "님의 기록 보기");
-      savedChip.addEventListener("click", function () { openProfile(nickname); });
-      var savedName = document.createElement("span");
-      savedName.className = "user-name";
-      savedName.appendChild(document.createTextNode(formatNicknameFull(nickname, state.myScore)));
-      savedChip.appendChild(savedName);
-      chipWrap.appendChild(savedChip);
-      $box.appendChild(chipWrap);
-
-      // 닉네임 자체도 누르면 내 기록으로 가지만, 그 사실을 알리는 신호가 커서와 호버
-      // 밑줄뿐이라 호버가 없는 모바일에서는 아무도 모른다. 옆에 작은 버튼을 따로 둬서
-      // "여기 눌러서 볼 수 있다"를 글자로 말해준다.
+      // 내 기록으로 가는 길. 예전엔 헤더에 "등급아이콘 3 [등급명] 닉네임 · 내 기록" 칩이
+      // 있었는데, 헤더를 로고·아이콘만으로 줄이면서 홈 첫 화면의 작은 링크 줄로 옮겼다.
+      // 등급은 하단 "등급 안내" 링크와 점수 토스트로 들어간다.
       var myRecords = document.createElement("button");
       myRecords.type = "button";
-      myRecords.className = "my-records-btn";
-      myRecords.textContent = "내 기록";
+      myRecords.className = "text-link";
+      myRecords.textContent = "내 기록 ›";
       myRecords.setAttribute("aria-label", nickname + "님의 기록 보기");
       myRecords.addEventListener("click", function () { openProfile(nickname); });
       $box.appendChild(myRecords);
@@ -462,59 +503,6 @@ function buildFactValue(text) {
   el.className = "level-fact-value";
   el.textContent = text;
   return el;
-}
-
-// 홈 헤드라인 아래 한 줄.
-//
-// 닉네임이 있으면 "지금 3등급 · 다음 등급까지 26점"처럼 그 사람 얘기로 쓴다. 처음엔
-// "기록할수록 등급이 올라가요"라는 일반론이었는데, 그건 설명문이라 누를 이유가 되지
-// 못했다 — 내 남은 점수가 적혀 있으면 그 자체로 읽을 이유가 생긴다.
-// 아직 닉네임이 없는 사람에게는 보여줄 점수가 없으므로 원래의 안내 문구를 쓰고,
-// 아이콘도 첫 등급 → 마지막 등급으로 "올라간다"는 것만 보여준다.
-//
-// 점수가 바뀔 때마다 다시 불러야 한다(js/api.js refreshMyScore).
-export function renderIntroLevelLine() {
-  var line = dom.introLevelLine;
-  if (!line) return;
-  var nickname = getSavedNickname();
-
-  line.innerHTML = "";
-  var icons = document.createElement("span");
-  icons.className = "intro-level-icons";
-  icons.setAttribute("aria-hidden", "true");
-
-  if (!nickname) {
-    // 보여줄 점수가 없으니 막대도 없다. 대신 첫 등급 → 마지막 등급으로 "올라간다"는
-    // 것만 아이콘으로 말한다.
-    icons.appendChild(levelIconFor(LEVELS[0]));
-    icons.appendChild(document.createTextNode("→"));
-    icons.appendChild(levelIconFor(LEVELS[LEVELS.length - 1]));
-    line.appendChild(icons);
-    line.appendChild(document.createTextNode("기록할수록 등급이 올라가요"));
-    line.appendChild(buildIntroChevron());
-    return;
-  }
-
-  // 지금 등급 아이콘 → 진행 막대 → 남은 점수. 등급 번호를 글자로 또 적지 않는 것은
-  // 바로 위 헤더에 "3 [첫 장을 넘긴 사람] 셋"이 이미 떠 있고, 알약이 길어지면 좁은
-  // 화면에서 두 줄로 접히기 때문이다.
-  var p = levelProgress(state.myScore || 0);
-  icons.appendChild(levelIconFor(p.current));
-  line.appendChild(icons);
-
-  var bar = document.createElement("span");
-  bar.className = "intro-level-bar";
-  bar.setAttribute("aria-hidden", "true");
-  var fill = document.createElement("span");
-  fill.className = "intro-level-bar-fill";
-  fill.style.width = Math.round(p.ratio * 100) + "%";
-  bar.appendChild(fill);
-  line.appendChild(bar);
-
-  line.appendChild(document.createTextNode(
-    p.next ? "다음 등급까지 " + p.remain + "점" : "가장 높은 등급이에요"
-  ));
-  line.appendChild(buildIntroChevron());
 }
 
 // 전체 순위 화면. 같은 팝업 안에서 등급 안내와 자리를 바꿔 가며 쓴다.
@@ -610,14 +598,6 @@ export function renderLevelRanking() {
     err.textContent = "순위를 불러오지 못했어요. 잠시 후 다시 열어주세요.";
     box.appendChild(err);
   });
-}
-
-function buildIntroChevron() {
-  var more = document.createElement("span");
-  more.className = "intro-level-more";
-  more.setAttribute("aria-hidden", "true");
-  more.textContent = "›";
-  return more;
 }
 
 // 팝업을 열 때마다 다시 그린다 — 점수는 책을 등록하거나 좋아요를 받을 때마다 바뀌는데,
@@ -921,24 +901,6 @@ export function renderLibrary() {
     dom.countLabel.textContent = visible.length + "권 검색됨 (전체 " + state.books.length + "권)";
   } else {
     dom.countLabel.textContent = state.books.length ? "총 " + state.books.length + "권의 리뷰" : "";
-  }
-
-  // 처음 온 사람이 "나는 지금 등록할 책이 없다"고 느끼고 그냥 나가는 걸 줄이려고, 이미
-  // 이만큼 쌓여 있다는 사실과 함께 한 권 보태달라고 가볍게 권한다. 권수는 바로 위
-  // countLabel과 같은 state.books.length를 그대로 쓴다 — 따로 세지 않는다.
-  //
-  // 검색·분류로 걸러도 문구는 전체 권수를 그대로 보여준다. 이 줄은 "이 서가에 지금까지
-  // 몇 권이 모였나"를 말하는 것이지 지금 화면에 몇 권이 보이나가 아니고, 필터를 만질
-  // 때마다 숫자가 같이 흔들리면 오히려 산만하다.
-  if (dom.introInvite) {
-    if (!state.booksLoaded) {
-      dom.introInvite.hidden = true;
-    } else {
-      dom.introInvite.hidden = false;
-      dom.introInvite.textContent = state.books.length
-        ? "지금까지 " + state.books.length + "권이 모였어요. 다음 한 권은 당신 차례예요"
-        : "아직 한 권도 없어요. 첫 기록을 남겨보세요";
-    }
   }
 
   // 검색어나 분류로 목록을 걸렀다면 인트로(헤드라인 + 참여 문구 + "방금 등록됐어요"
