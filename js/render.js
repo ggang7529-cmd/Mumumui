@@ -1,6 +1,7 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { kdcOrder } from "./kdc.js";
+import { groupEditions } from "./bookIdentity.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
 import {
   googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
@@ -202,6 +203,10 @@ export function clearSelectedBook() {
   dom.selectedBookField.hidden = true;
 }
 
+// 책장에 추가하기의 검색 결과. 판본(리커버·양장·개정판 …)만 다른 책은 한 줄로 묶고
+// "판본 N개"를 작게 단다 — 같은 책이 줄줄이 나오면 어느 걸 골라야 하는지 고민하게 되고,
+// 판본마다 따로 등록되면 한줄평이 여러 책으로 흩어진다. 묶는 기준과 대표 판본 고르는
+// 순서는 js/bookIdentity.js(서버의 중복 검사와 같은 파일)에 있다.
 export function renderBookResults(list) {
   dom.bookResults.innerHTML = "";
   dom.bookResults.hidden = false;
@@ -214,7 +219,8 @@ export function renderBookResults(list) {
     return;
   }
 
-  list.forEach(function (b) {
+  groupEditions(list, state.books).forEach(function (g) {
+    var b = g.book;
     var li = document.createElement("li");
     var btn = document.createElement("button");
     btn.type = "button";
@@ -235,10 +241,18 @@ export function renderBookResults(list) {
     var info = document.createElement("div");
     var t = document.createElement("div");
     t.className = "book-result-title";
-    t.textContent = b.title;
+    t.textContent = g.displayTitle;
     var a = document.createElement("div");
     a.className = "book-result-author";
-    a.textContent = b.author + (b.publisher ? " · " + b.publisher : "");
+    // 여러 판본을 묶은 줄에서는 출판사가 판본마다 다를 수 있어 대표 판본 것만 적으면
+    // 오해를 산다. 저자만 적고 판본 수를 붙인다.
+    a.textContent = b.author + (g.editionCount < 2 && b.publisher ? " · " + b.publisher : "");
+    if (g.editionCount > 1) {
+      var ed = document.createElement("span");
+      ed.className = "book-result-editions";
+      ed.textContent = "판본 " + g.editionCount + "개";
+      a.appendChild(ed);
+    }
     info.appendChild(t);
     info.appendChild(a);
     btn.appendChild(info);

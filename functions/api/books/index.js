@@ -6,6 +6,7 @@ import { checkRateLimit } from "../../_lib/rateLimit.js";
 // 쓸 수 있는 곳에 둔다.
 import { fetchBookClass } from "../../_lib/bookClass.js";
 import { normalizeMoodId } from "../../../js/moodTags.js";
+import { bookKey } from "../../../js/bookIdentity.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -59,6 +60,15 @@ export async function onRequestPost(context) {
 
   var dupTitle = await env.DB.prepare("SELECT id FROM books WHERE lower(title) = lower(?1)").bind(title).first();
   if (dupTitle) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
+
+  // 판본만 다른 같은 책(정규화 제목 + 첫 번째 저자, js/bookIdentity.js). 검색 화면이 이미
+  // 이 기준으로 묶어서 등록된 판본을 대표로 내밀지만, 화면을 거치지 않은 요청이나 책
+  // 목록을 아직 못 받은 화면에서도 같은 책이 두 권 되지 않게 여기서 한 번 더 막는다.
+  // 책 수가 수백 권 단위라 전부 읽어 비교한다(제목 정규화는 SQL로 옮기기 어렵다).
+  var key = bookKey(title, author);
+  var all = await env.DB.prepare("SELECT id, title, author FROM books").all();
+  var sameBook = (all.results || []).find(function (r) { return bookKey(r.title, r.author) === key; });
+  if (sameBook) return json({ error: "이미 등록된 책이에요. (다른 판본으로 등록돼 있어요)", bookId: sameBook.id }, { status: 409 });
 
   // 분류는 두 가지를 같이 저장한다. category는 드롭다운에 그대로 띄우는 대분류 이름
   // ("문학"), class_no는 나중에 "비슷한 책"을 고를 때 쓸 상세 분류번호("813.7")다.

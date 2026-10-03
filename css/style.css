@@ -2000,6 +2000,19 @@
     margin-top: 0.2rem;
   }
 
+  /* 판본을 묶은 줄의 "판본 N개". 저자 줄 끝에 작은 꼬리표로 붙인다. */
+  .book-result-editions {
+    display: inline-block;
+    margin-left: 0.45rem;
+    padding: 0 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    vertical-align: 1px;
+  }
+
   .selected-book {
     display: flex;
     align-items: center;
