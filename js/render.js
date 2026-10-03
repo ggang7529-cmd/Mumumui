@@ -195,11 +195,11 @@ export function selectBook(b) {
   }
   // 판본을 묶은 줄의 정리된 제목이 아니라 실제로 저장될 제목을 보여준다.
   document.getElementById("selectedBookTitle").textContent = b.title;
-  document.getElementById("selectedBookAuthor").textContent = b.author;
+  document.getElementById("selectedBookAuthor").textContent = b.author ? " · " + b.author : "";
 
   var existing = !!b.existingId;
   dom.selectedBookNote.textContent = existing && b.reviewCount
-    ? b.reviewCount + "명이 남긴 책이에요. 여기에 한 줄을 더해요"
+    ? b.reviewCount + "명이 남긴 책이에요"
     : "첫 한 줄의 주인공이 돼보세요";
   dom.selectedBookNote.classList.toggle("is-existing", existing);
 

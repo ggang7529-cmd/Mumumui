@@ -2013,17 +2013,6 @@
     font-weight: 700;
   }
 
-  .selected-book-note {
-    margin: 0.55rem 0 0;
-    font-size: 0.85rem;
-    color: var(--ink-faint);
-  }
-
-  .selected-book-note.is-existing {
-    color: var(--accent);
-    font-weight: 700;
-  }
-
   /* 판본을 묶은 줄의 "판본 N개". 저자 줄 끝에 작은 꼬리표로 붙인다. */
   .book-result-editions {
     display: inline-block;
@@ -2037,24 +2026,26 @@
     vertical-align: 1px;
   }
 
+  /* 고른 책 한 줄: 작은 썸네일 + 제목·저자 + 등록 여부. 여기서 할 일은 별점이라 표지가
+     크면 별점이 아래로 밀린다. */
   .selected-book {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     background: var(--paper-soft);
     border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 0.9rem 1rem;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
   }
 
   .selected-book-cover {
-    width: 76px;
-    aspect-ratio: 2 / 3;
+    width: 34px;
+    height: 50px;
     flex: none;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
     background: var(--cover, var(--accent));
-    box-shadow: 0 2px 8px var(--shadow);
+    box-shadow: 0 1px 4px var(--shadow);
   }
 
   .selected-book-cover img {
@@ -2068,14 +2059,77 @@
 
   .selected-book-title {
     font-family: "Gowun Batang", serif;
-    font-size: 1.05rem;
+    font-size: 0.98rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .selected-book-author {
-    font-size: 0.85rem;
+    font-family: inherit;
+    font-size: 0.82rem;
     color: var(--ink-faint);
-    margin-top: 0.2rem;
   }
+
+  .selected-book-note {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  .selected-book-note.is-existing {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* 글자처럼 보이는 작은 버튼("다시 검색", 닉네임 "변경"). */
+  .link-btn {
+    flex: none;
+    background: none;
+    border: none;
+    padding: 0.2rem 0.1rem;
+    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .link-btn:hover,
+  .link-btn:focus-visible { color: var(--accent); }
+
+  .write-stars .star-picker button { font-size: 2rem; }
+
+  /* 태그 + 한 줄 묶음. fieldset 기본 테두리는 지우고 제목줄만 남긴다. */
+  .write-line {
+    border: none;
+    margin: 0 0 1.15rem;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .write-line legend {
+    padding: 0;
+    margin-bottom: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+  }
+
+  .write-line legend strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .write-line #fText { margin-top: 0.75rem; }
+
+  .nickname-line {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+
+  .nickname-line strong { color: var(--ink); }
 
   .star-picker {
     display: flex;
@@ -3809,6 +3863,24 @@
       max-height: 92vh;
       max-height: 92dvh;
     }
+
+    /* 저장 버튼은 시트 아래에 붙인다 — 별점을 누르면 태그·한 줄이 펼쳐져 버튼이 밑으로
+       밀리는데, 그때마다 내려가서 찾게 하지 않는다. 아래 여백(홈 제스처 영역)은 본문이
+       아니라 이 바가 갖는다. 바깥 .level-guide-body가 스크롤 상자라 sticky가 그 바닥에 붙는다. */
+    .write-sheet-body { padding-bottom: 0; }
+    .write-sheet-body #bookSearchField { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+
+    .write-actions {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      margin: 1rem -1rem 0;
+      padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom));
+      background: var(--paper-raised);
+      border-top: 1px solid var(--line);
+    }
+
+    .write-actions .btn-primary { flex: 1; }
 
     .level-guide-body {
       padding: 0.9rem 1rem calc(1rem + env(safe-area-inset-bottom));

@@ -513,50 +513,54 @@
                 <p class="char-hint">예전에 읽은 책도 좋아요. 도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
                 <ul class="book-results" id="bookResults" hidden></ul>
               </div>
+              <!-- 고른 책은 작은 썸네일 한 줄로만 — 여기서 할 일은 책을 다시 보는 게 아니라
+                   별점을 누르는 것이라, 표지가 크면 별점이 화면 아래로 밀린다. 둘째 줄은
+                   "3명이 남긴 책이에요" / "첫 한 줄의 주인공이 돼보세요"로, 저장하면 어디에
+                   쌓이는지(기존 책 vs 새 책)를 미리 알려준다. -->
               <div class="field" id="selectedBookField" hidden>
-                <label>선택한 책</label>
                 <div class="selected-book">
                   <div class="selected-book-cover" id="selectedBookCover"></div>
                   <div class="selected-book-info">
-                    <div class="selected-book-title" id="selectedBookTitle"></div>
-                    <div class="selected-book-author" id="selectedBookAuthor"></div>
+                    <div class="selected-book-title"><span id="selectedBookTitle"></span><span class="selected-book-author" id="selectedBookAuthor"></span></div>
+                    <p class="selected-book-note" id="selectedBookNote"></p>
                   </div>
-                  <button type="button" class="btn-ghost" id="clearSelectedBook">다시 검색</button>
+                  <button type="button" class="link-btn" id="clearSelectedBook">다시 검색</button>
                 </div>
-                <!-- 이미 책장에 있는 책이면 "3명이 남긴 책이에요", 아니면 "첫 한 줄의 주인공이
-                     돼보세요". 저장하면 어디에 쌓이는지(기존 책 vs 새 책)를 미리 알려준다. -->
-                <p class="selected-book-note" id="selectedBookNote"></p>
               </div>
-              <!-- 책을 고르기 전에는 숨긴다. 시트 안에서 검색창 아래로 닉네임·별점·태그가
-                   줄줄이 보이면 "무엇부터 해야 하는지"가 흐려진다. -->
+              <!-- 책을 고르기 전에는 숨긴다. 고른 뒤에도 처음엔 별점만 — 별점을 누르면
+                   태그·한 줄·닉네임이 펼쳐진다(js/main.js selectFormRating). 할 일을 한 번에
+                   하나씩 보여줘야 "무엇부터 해야 하는지"가 흐려지지 않는다. -->
               <div id="writeFields" hidden>
-              <div class="field">
-                <label for="fNickname">닉네임</label>
-                <input type="text" id="fNickname" required maxlength="10" placeholder="예: 책벌레" autocomplete="off">
-              </div>
-              <div class="field">
-                <label>별점 (필수)</label>
-                <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
-              </div>
-              <!-- 감정 태그. 버튼은 js/render.js renderMoodPicker가 js/moodTags.js의 목록으로
-                   그린다. 하나만 고를 수 있어서 role="radiogroup"을 쓴다.
-                   라벨에 "(선택)"만 달았더니 "한 줄 리뷰를 쓰고 그 위에 덤으로 붙이는 것"으로
-                   읽혔다 — 태그 하나로 리뷰를 대신할 수 있다는 게 핵심이라 그 말을 바로 밑에
-                   적고, 아래 한 줄 리뷰에도 "(선택)"을 달아 둘이 같은 급으로 보이게 한다. -->
-              <div class="field">
-                <label>이런 책이었어요</label>
-                <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
-                <p class="char-hint">한 줄 쓰기 어려우면, 여기서 하나만 골라도 등록돼요</p>
-              </div>
-              <div class="field">
-                <label for="fText">한 줄 리뷰 (선택)</label>
-                <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
-                <p class="char-hint" id="fTextHint">최대 80자, 한 줄로 남겨주세요</p>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn-ghost" id="cancelForm">취소</button>
-                <button type="submit" class="btn-primary" id="writeSubmit">남기기</button>
-              </div>
+                <div class="field write-stars">
+                  <label>이 책, 몇 점인가요?</label>
+                  <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
+                </div>
+                <div id="writeMore" hidden>
+                  <!-- 태그와 한 줄은 한 묶음이다 — 둘 중 하나만 있어도 저장된다. 태그를 위에
+                       두는 건, 한 줄이 막막한 사람이 누르기만 하고 끝낼 수 있게 하려는 것.
+                       버튼은 js/render.js renderMoodPicker가 js/moodTags.js 목록으로 그린다. -->
+                  <fieldset class="field write-line">
+                    <legend><strong>한 줄 남기기</strong> · 태그만 골라도 OK</legend>
+                    <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
+                    <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off" aria-label="한 줄 리뷰">
+                    <p class="char-hint" id="fTextHint">최대 80자, 한 줄로 남겨주세요</p>
+                  </fieldset>
+                  <!-- 닉네임은 이 브라우저에 한 번 저장되면 입력칸 대신 한 줄로만 보여준다.
+                       매번 같은 이름을 다시 확인하게 할 이유가 없다. -->
+                  <div class="field write-nickname">
+                    <p class="nickname-line" id="nicknameLine" hidden><strong id="nicknameLineName"></strong> 님으로 남겨요 · <button type="button" class="link-btn" id="nicknameChange">변경</button></p>
+                    <div id="nicknameInputWrap">
+                      <label for="fNickname">닉네임</label>
+                      <input type="text" id="fNickname" maxlength="10" placeholder="예: 책벌레" autocomplete="off">
+                    </div>
+                  </div>
+                </div>
+                <!-- 모바일에서는 시트 아래에 붙어 있다(css .write-actions). 별점을 고르기
+                     전에는 꺼둔다 — 별점이 유일한 필수 항목이다. -->
+                <div class="form-actions write-actions">
+                  <button type="button" class="btn-ghost" id="cancelForm">취소</button>
+                  <button type="submit" class="btn-primary" id="writeSubmit" disabled>남기기</button>
+                </div>
               </div>
             </form>
     </div>

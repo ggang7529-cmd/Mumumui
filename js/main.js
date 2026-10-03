@@ -122,6 +122,10 @@ export var dom = {
   writeSheetClose: document.getElementById("writeSheetClose"),
   writeFields: document.getElementById("writeFields"),
   writeSubmit: document.getElementById("writeSubmit"),
+  writeMore: document.getElementById("writeMore"),
+  nicknameLine: document.getElementById("nicknameLine"),
+  nicknameLineName: document.getElementById("nicknameLineName"),
+  nicknameInputWrap: document.getElementById("nicknameInputWrap"),
   selectedBookNote: document.getElementById("selectedBookNote"),
   detailView: document.getElementById("detailView"),
   randomView: document.getElementById("randomView"),
@@ -220,9 +224,22 @@ function selectCommentRating(idx) {
   renderStars(dom.cStars, state.commentRating, true, selectCommentRating);
 }
 
+// 별점이 유일한 필수 항목이라, 별점을 누르는 순간 나머지(태그·한 줄·닉네임)를 펼치고
+// 저장 버튼을 켠다.
 function selectFormRating(idx) {
   state.formRating = idx;
   renderStars(dom.fStars, state.formRating, true, selectFormRating);
+  dom.writeMore.hidden = false;
+  dom.writeSubmit.disabled = false;
+}
+
+// 닉네임이 이 브라우저에 저장돼 있으면 입력칸 대신 "○○ 님으로 남겨요 · 변경" 한 줄로.
+function renderNicknameRow(editing) {
+  var saved = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  var showLine = !!saved && !editing;
+  dom.nicknameLine.hidden = !showLine;
+  dom.nicknameInputWrap.hidden = showLine;
+  dom.nicknameLineName.textContent = saved;
 }
 
 function selectFormMood(id) {
@@ -317,11 +334,14 @@ function openForm(prefillQuery) {
   dom.bookResults.innerHTML = "";
   state.formRating = 0;
   renderStars(dom.fStars, 0, true, selectFormRating);
+  dom.writeMore.hidden = true;
+  dom.writeSubmit.disabled = true;
   state.formMood = null;
   renderMoodPicker(dom.fMoods, null, selectFormMood);
   // 폼을 열 때마다 예시 문구를 하나 새로 뽑는다(같은 문구만 계속 보면 예시로 안 읽힌다).
   document.getElementById("fText").placeholder = pickReviewPlaceholder();
   if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
+  renderNicknameRow(false);
 
   writeSheetOpener = document.activeElement;
   dom.writeSheet.hidden = false;
@@ -816,6 +836,12 @@ document.getElementById("newReviewBtn").addEventListener("click", function () {
   startBookRegistration();
 });
 document.getElementById("cancelForm").addEventListener("click", function () { closeWriteSheet(); });
+document.getElementById("nicknameChange").addEventListener("click", function () {
+  renderNicknameRow(true);
+  var input = document.getElementById("fNickname");
+  input.focus();
+  input.select();
+});
 dom.writeSheetClose.addEventListener("click", function () { closeWriteSheet(); });
 // 바깥(어두운 배경)을 눌러도 닫는다.
 dom.writeSheet.addEventListener("click", function (e) {
@@ -955,7 +981,12 @@ dom.reviewForm.addEventListener("submit", function (e) {
   var nickname = "";
   if (AUTH_MODE === "nickname") {
     nickname = document.getElementById("fNickname").value.trim().slice(0, 10);
-    if (!nickname) { alert("닉네임을 입력해주세요."); return; }
+    if (!nickname) {
+      renderNicknameRow(true);
+      document.getElementById("fNickname").focus();
+      alert("닉네임을 입력해주세요.");
+      return;
+    }
   }
 
   var text = document.getElementById("fText").value.trim();
