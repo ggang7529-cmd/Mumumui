@@ -1593,6 +1593,159 @@
     font-size: 0.9rem;
   }
 
+  /* 추천을 고르는 동안의 "기록을 살펴보는 중" 화면 (js/main.js openRecommend) */
+  .recommend-analyze {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 1.5rem 0 1.5rem;
+  }
+
+  /* 책장 표지가 렌즈 아래로 흘러간다. 양 끝은 흐리게 지워 띠가 끊긴 데가 안 보이게. */
+  .ra-scan {
+    position: relative;
+    width: 100%;
+    max-width: 30rem;
+    height: 118px;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  }
+
+  .ra-track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+    height: 100%;
+    animation: raScroll 12s linear infinite;
+  }
+
+  .ra-tile {
+    position: relative;
+    flex: none;
+    width: 66px;
+    height: 96px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--cover, var(--accent));
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+
+  .ra-tile img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 가운데 고정된 렌즈. 안에서 가로줄 하나가 위아래로 훑는다. */
+  .ra-lens {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 50%;
+    width: 84px;
+    margin-left: -42px;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ra-lens-line {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    top: 8%;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    opacity: 0.85;
+    animation: raSweep 1.4s ease-in-out infinite alternate;
+  }
+
+  .ra-lens-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+    border-radius: 0 6px 0 8px;
+    background: var(--accent);
+    color: var(--paper);
+  }
+
+  .ra-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    font-size: 0.92rem;
+  }
+
+  /* 닉네임이 길면 휴대폰에서 첫 줄이 두 줄로 접힌다. 동그라미는 가운데가 아니라
+     첫 줄 높이에 맞춘다. */
+  .ra-step {
+    display: flex;
+    align-items: flex-start;
+    line-height: 1.45;
+    gap: 0.6rem;
+    color: var(--ink-faint);
+    transition: color 0.25s, opacity 0.25s;
+  }
+
+  .ra-step.is-todo { opacity: 0.45; }
+  .ra-step.is-active { color: var(--ink); font-weight: 700; }
+  .ra-step.is-done { color: var(--ink-soft); }
+
+  .ra-step-mark {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    margin-top: 0.05rem;
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  .ra-step.is-done .ra-step-mark {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+  }
+
+  /* 지금 하는 줄은 테두리 일부만 칠해 돌린다 — 도는 고리 하나로 "진행 중"을 말한다. */
+  .ra-step.is-active .ra-step-mark {
+    border-color: var(--line);
+    border-top-color: var(--accent);
+    animation: raSpin 0.8s linear infinite;
+  }
+
+  @keyframes raScroll { to { transform: translateX(-50%); } }
+  @keyframes raSweep { to { top: 88%; } }
+  @keyframes raSpin { to { transform: rotate(360deg); } }
+
+  /* 결과가 열릴 때 카드가 살짝 떠오르며 나타난다. 분석 화면에서 바로 이어지는 순간이라
+     툭 바뀌면 앞의 연출이 끊긴 것처럼 보인다. */
+  .recommend-shelf > * { animation: raReveal 0.45s ease-out both; }
+  .recommend-shelf > *:nth-child(2) { animation-delay: 0.12s; }
+  @keyframes raReveal { from { opacity: 0; transform: translateY(10px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ra-track, .ra-lens-line, .recommend-shelf > * { animation: none; }
+    .ra-step.is-active .ra-step-mark { animation-duration: 2.4s; }
+  }
+
   /* 카드 그리드는 홈 서가(.shelf)를 그대로 쓴다 — 추천 화면만 따로 배치를 만들면 홈을
      고칠 때마다 두 곳을 맞춰야 한다. 패널 안에 들어가므로 위 여백만 준다. */
   .recommend-shelf {

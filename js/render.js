@@ -1050,10 +1050,12 @@ export function renderRecommend() {
 
   dom.recommendTitle.textContent = name ? name + "님을 위한 추천" : "나를 위한 추천";
   dom.recommendShelf.innerHTML = "";
+  // 응답 전에는 "기록을 살펴보는 중" 화면이 그 자리를 대신한다(내용은 main.js가 채운다).
+  dom.recommendAnalyze.hidden = state.recommendReady;
 
   // 아직 응답 전. 빈 화면에 "추천할 책이 없다"고 단정해버리면 잠깐 잘못된 안내가 보인다.
   if (!state.recommendReady) {
-    dom.recommendSub.textContent = "고르는 중...";
+    dom.recommendSub.textContent = "";
     dom.recommendEmpty.hidden = true;
     dom.recommendClaim.hidden = true;
     return;
@@ -1132,6 +1134,61 @@ export function renderRecommend() {
     // 응답에는 reason/reasonKind가 그대로 오므로(디버깅과 나중에 쓸 여지), 여기서 안 그릴 뿐이다.
 
     dom.recommendShelf.appendChild(card);
+  });
+}
+
+// 추천을 고르는 동안 렌즈 아래로 흘러가는 표지 띠. 책장에 실제로 꽂힌 책의 표지를
+// 섞어서 쓴다 — "이 책들과 맞춰보는 중"이라는 문장과 그림이 같은 걸 가리키게.
+// 띠를 두 번 이어 붙여 -50%만큼 흘리면 이음매 없이 돈다(CSS raScroll).
+var SCAN_TILES = 10;
+
+export function renderRecommendScan() {
+  var track = dom.recommendScanTrack;
+  track.innerHTML = "";
+  var pool = state.books.slice();
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  // 표지 있는 책을 앞으로. 책이 아직 안 불려왔으면(주소로 바로 들어온 경우) 색 띠로 채운다.
+  pool.sort(function (a, b) { return (b.cover ? 1 : 0) - (a.cover ? 1 : 0); });
+  var picks = pool.slice(0, SCAN_TILES);
+  while (picks.length < SCAN_TILES) picks.push({ title: "책" + picks.length });
+
+  for (var round = 0; round < 2; round++) {
+    picks.forEach(function (b) {
+      var tile = document.createElement("span");
+      tile.className = "ra-tile";
+      tile.style.setProperty("--cover", coverFor(b.title || ""));
+      if (b.cover) {
+        var img = document.createElement("img");
+        img.src = b.cover;
+        img.alt = "";
+        img.addEventListener("error", function () { img.remove(); });
+        tile.appendChild(img);
+      }
+      track.appendChild(tile);
+    });
+  }
+}
+
+// 단계 목록. active보다 앞은 끝난 줄(체크), active는 지금 하는 줄(점 세 개),
+// 뒤는 아직 차례가 안 온 흐린 줄이다.
+export function renderRecommendSteps(steps, active) {
+  var list = dom.recommendSteps;
+  list.innerHTML = "";
+  steps.forEach(function (text, i) {
+    var li = document.createElement("li");
+    li.className = "ra-step " + (i < active ? "is-done" : i === active ? "is-active" : "is-todo");
+    var mark = document.createElement("span");
+    mark.className = "ra-step-mark";
+    mark.setAttribute("aria-hidden", "true");
+    if (i < active) mark.textContent = "✓";
+    li.appendChild(mark);
+    var label = document.createElement("span");
+    label.textContent = text;
+    li.appendChild(label);
+    list.appendChild(li);
   });
 }
 

@@ -368,6 +368,19 @@
           <h2 class="recommend-title" id="recommendTitle"></h2>
           <p class="recommend-sub" id="recommendSub"></p>
         </header>
+        <!-- 추천을 고르는 동안 보여주는 "기록을 살펴보는 중" 화면. 결과가 곧바로 뜨면
+             무엇을 근거로 골랐는지 느낄 틈이 없어서, 별점 확인 → 작가·분류 → 책장 대조 →
+             고르기 순서를 한 줄씩 보여준 뒤에 결과를 연다(js/main.js openRecommend). -->
+        <div class="recommend-analyze" id="recommendAnalyze" hidden>
+          <div class="ra-scan" aria-hidden="true">
+            <div class="ra-track" id="recommendScanTrack"></div>
+            <div class="ra-lens">
+              <span class="ra-lens-line"></span>
+              <svg class="ra-lens-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+            </div>
+          </div>
+          <ol class="ra-steps" id="recommendSteps" aria-live="polite"></ol>
+        </div>
         <div class="shelf recommend-shelf" id="recommendShelf"></div>
         <div class="recommend-empty" id="recommendEmpty" hidden>
           <p class="recommend-empty-text" id="recommendEmptyText"></p>

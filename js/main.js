@@ -7,7 +7,7 @@ import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
-  renderRecommend, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
+  renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 
@@ -142,6 +142,9 @@ export var dom = {
   fMoods: document.getElementById("fMoods"),
   cMoods: document.getElementById("cMoods"),
   recommendView: document.getElementById("recommendView"),
+  recommendAnalyze: document.getElementById("recommendAnalyze"),
+  recommendScanTrack: document.getElementById("recommendScanTrack"),
+  recommendSteps: document.getElementById("recommendSteps"),
   recommendTitle: document.getElementById("recommendTitle"),
   recommendSub: document.getElementById("recommendSub"),
   recommendShelf: document.getElementById("recommendShelf"),
@@ -358,35 +361,80 @@ export function openProfile(nickname) {
 
 // "나를 위한 추천" 화면. 이 브라우저에 저장된 닉네임(책·한줄평을 남길 때 쓴 그 이름)으로
 // 조회한다. 닉네임이 아직 없으면 서버를 부를 것도 없이 안내 화면만 띄운다.
+//
+// 닉네임이 있으면 결과를 바로 펼치지 않고 "기록을 살펴보는 중" 화면을 먼저 보여준다.
+// 응답은 대개 순식간에 오지만, 그러면 무엇을 보고 골랐는지 느낄 틈 없이 책 두 권이
+// 툭 떨어져 "아무 책이나 띄운 것"처럼 읽힌다. 첫 줄(별점 확인)은 실제 응답을 기다렸다가
+// 받은 별점 개수로 바꿔 적고, 나머지 줄은 짧은 간격으로 넘긴다.
+var recommendRun = 0;
+var RECOMMEND_FIRST_STEP_MS = 900;
+var RECOMMEND_STEP_MS = 600;
+
+function waitMs(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
 export function openRecommend() {
   gtag("event", "view_recommend");
+  var run = ++recommendRun;
   state.recommend = null;
   state.recommendReady = false;
-  renderRecommend();
-  showView("recommend");
 
   var name = getSavedNickname();
   if (!name) {
     // 아직 아무것도 안 남긴 첫 방문자. "불러오는 중"으로 두면 영영 안 끝나는 것처럼 보인다.
     state.recommendReady = true;
     renderRecommend();
+    showView("recommend");
     return;
   }
 
-  api("/api/recommend/" + encodeURIComponent(name))
-    .then(function (data) {
-      // 기다리는 동안 다른 화면으로 옮겨갔다면 늦게 온 응답으로 화면을 덮지 않는다.
-      if (state.view !== "recommend") return;
-      state.recommend = data;
-      state.recommendReady = true;
-      renderRecommend();
-    })
-    .catch(function (e) {
-      if (state.view !== "recommend") return;
-      state.recommendReady = true;
-      renderRecommend();
-      dom.recommendSub.textContent = "불러오지 못했어요: " + e.message;
-    });
+  var count = state.books.length;
+  var steps = [
+    name + "님의 별점과 기록을 확인하는 중...",
+    "좋아하신 작가와 분류를 살펴보는 중...",
+    count ? "책장에 꽂힌 " + count + "권과 맞춰보는 중..." : "책장의 책들과 맞춰보는 중...",
+    "어울리는 책을 고르는 중..."
+  ];
+  renderRecommend();
+  renderRecommendScan();
+  renderRecommendSteps(steps, 0);
+  showView("recommend");
+
+  // 기다리는 동안 다른 화면으로 옮겨갔거나 추천을 다시 눌렀다면 늦게 끝난 쪽은 버린다.
+  function stale() { return run !== recommendRun || state.view !== "recommend"; }
+
+  function finish(res) {
+    if (stale()) return;
+    state.recommend = res.data || null;
+    state.recommendReady = true;
+    renderRecommend();
+    if (res.error) dom.recommendSub.textContent = "불러오지 못했어요: " + res.error.message;
+  }
+
+  var fetched = api("/api/recommend/" + encodeURIComponent(name)).then(
+    function (data) { return { data: data }; },
+    function (e) { return { error: e }; }
+  );
+
+  Promise.all([fetched, waitMs(RECOMMEND_FIRST_STEP_MS)]).then(function (arr) {
+    var res = arr[0];
+    if (stale()) return;
+    var data = res.data;
+    // 실패했거나 별점이 모자라 고를 게 없으면 "작가와 분류를 살펴보는 중"을 이어가는 건
+    // 거짓말이 된다. 그 자리에서 바로 안내로 넘어간다.
+    if (!data || !data.seedCount || data.seedCount < (data.minRatings || 0)) { finish(res); return; }
+
+    steps[0] = name + "님의 별점 " + data.seedCount + "개를 확인했어요";
+    var step = 1;
+    (function next() {
+      if (stale()) return;
+      renderRecommendSteps(steps, step);
+      if (step > steps.length - 1) { waitMs(300).then(function () { finish(res); }); return; }
+      step++;
+      waitMs(RECOMMEND_STEP_MS).then(next);
+    })();
+  });
 }
 
 export function openDetail(id) {
