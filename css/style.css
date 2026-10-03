@@ -2000,6 +2000,30 @@
     margin-top: 0.2rem;
   }
 
+  /* 검색 결과 줄의 등록 여부 한 줄. 이미 있는 책은 브랜드 색으로 — "여기에 붙는다"가 이
+     목록에서 가장 중요한 구분이라 한눈에 갈려야 한다. 없는 책은 흐린 권유로 둔다. */
+  .book-result-status {
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+  }
+
+  .book-result-item.is-registered .book-result-status {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .selected-book-note {
+    margin: 0.55rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+
+  .selected-book-note.is-existing {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
   /* 판본을 묶은 줄의 "판본 N개". 저자 줄 끝에 작은 꼬리표로 붙인다. */
   .book-result-editions {
     display: inline-block;
@@ -3753,6 +3777,16 @@
     color: var(--btn-fill-ink);
   }
 
+  /* 한 줄 남기기 시트(#writeSheet). 틀은 등급 안내(.level-guide)를 그대로 쓰고 크기만
+     다르다 — 폼이 길어서 조금 더 넓고 높게. 바깥 화면은 그대로 남아 닫으면 보던 곳이다. */
+  .write-sheet-panel {
+    max-width: 520px;
+    max-height: min(88vh, 760px);
+  }
+
+  .write-sheet-body .field:last-child { margin-bottom: 0; }
+  .write-sheet-body .book-results { max-height: none; }
+
   @media (max-width: 640px) {
     /* 아래에서 올라오는 시트. 화면을 다 덮지 않게 높이를 76vh로 묶고, 홈 버튼 제스처
        영역(env(safe-area-inset-bottom))만큼 안쪽 여백을 더 준다. */
@@ -3767,6 +3801,13 @@
       border-radius: 14px 14px 0 0;
       border-bottom: none;
       transform: translateY(18px);
+    }
+
+    /* 한 줄 남기기는 키보드가 올라오는 폼이라 거의 화면 높이를 다 쓴다. 위에 조금 남는
+       어두운 띠가 "보던 화면 위에 떠 있다"는 표시이자 닫는 자리다. */
+    .write-sheet-panel {
+      max-height: 92vh;
+      max-height: 92dvh;
     }
 
     .level-guide-body {

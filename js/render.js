@@ -176,13 +176,13 @@ export function buildStarRow(rating, className) {
   return wrap;
 }
 
+// 시트에서 책을 골랐을 때. 이미 책장에 있는 책이면 b.existingId가 있다 — 저장하면 그 책에
+// 한줄평만 붙는다(js/main.js). 고른 뒤에야 닉네임·별점·한 줄 칸을 연다.
 export function selectBook(b) {
   state.selectedBook = b;
   dom.bookSearchField.hidden = true;
   dom.selectedBookField.hidden = false;
-  dom.bookResults.hidden = true;
-  dom.bookResults.innerHTML = "";
-  dom.bookSearchInput.value = "";
+  dom.writeFields.hidden = false;
 
   var $cover = document.getElementById("selectedBookCover");
   $cover.innerHTML = "";
@@ -193,74 +193,170 @@ export function selectBook(b) {
     img.alt = "";
     $cover.appendChild(img);
   }
+  // 판본을 묶은 줄의 정리된 제목이 아니라 실제로 저장될 제목을 보여준다.
   document.getElementById("selectedBookTitle").textContent = b.title;
   document.getElementById("selectedBookAuthor").textContent = b.author;
+
+  var existing = !!b.existingId;
+  dom.selectedBookNote.textContent = existing && b.reviewCount
+    ? b.reviewCount + "명이 남긴 책이에요. 여기에 한 줄을 더해요"
+    : "첫 한 줄의 주인공이 돼보세요";
+  dom.selectedBookNote.classList.toggle("is-existing", existing);
+
+  // 길이 제한이 경로마다 다르다(책 등록 80자, 기존 책 한줄평 60자 — 서버가 그 길이로 자른다).
+  // 화면에서 미리 맞춰야 서버가 말없이 뒷부분을 자르는 일이 없다.
+  var limit = existing ? 60 : 80;
+  var $text = document.getElementById("fText");
+  $text.maxLength = limit;
+  if ($text.value.length > limit) $text.value = $text.value.slice(0, limit);
+  document.getElementById("fTextHint").textContent = "최대 " + limit + "자, 한 줄로 남겨주세요";
 }
 
+// "다시 검색". 검색창과 결과는 그대로 둔다 — 돌아왔을 때 방금 본 목록에서 바로 고를 수 있게.
 export function clearSelectedBook() {
   state.selectedBook = null;
   dom.bookSearchField.hidden = false;
   dom.selectedBookField.hidden = true;
+  dom.writeFields.hidden = true;
 }
 
-// 책장에 추가하기의 검색 결과. 판본(리커버·양장·개정판 …)만 다른 책은 한 줄로 묶고
-// "판본 N개"를 작게 단다 — 같은 책이 줄줄이 나오면 어느 걸 골라야 하는지 고민하게 되고,
-// 판본마다 따로 등록되면 한줄평이 여러 책으로 흩어진다. 묶는 기준과 대표 판본 고르는
-// 순서는 js/bookIdentity.js(서버의 중복 검사와 같은 파일)에 있다.
-export function renderBookResults(list) {
+function compactText(v) {
+  return String(v || "").normalize("NFC").toLowerCase().replace(/\s+/g, "");
+}
+
+// 책장(state.books = DB의 책 전체, 홈이 이미 받아둔 목록)에서 제목+저자로 찾는다. 띄어쓰기는
+// 무시하고, 검색어를 띄어 쓴 낱말이 모두 들어 있어야 한다("헤세 데미안"도 걸리게).
+function matchRegisteredBooks(query) {
+  var words = String(query || "").trim().split(/\s+/).map(compactText).filter(Boolean);
+  if (!words.length) return [];
+  return state.books.filter(function (b) {
+    var hay = compactText(b.title + b.author);
+    return words.every(function (w) { return hay.indexOf(w) !== -1; });
+  }).sort(function (a, b) {
+    return (b.commentCount || 0) - (a.commentCount || 0) || b.updatedAt - a.updatedAt;
+  }).slice(0, 5);
+}
+
+function buildResultRow(opts) {
+  var b = opts.book;
+  var li = document.createElement("li");
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "book-result-item" + (opts.registered ? " is-registered" : "");
+
+  var placeholder = document.createElement("div");
+  placeholder.className = "book-result-noimg";
+  placeholder.textContent = "표지 없음";
+  if (b.cover) {
+    var img = document.createElement("img");
+    img.src = upscaleCover(b.cover);
+    img.alt = "";
+    // 표지 주소가 죽었으면 깨진 그림 대신 "표지 없음" 칸으로.
+    img.addEventListener("error", function () { img.replaceWith(placeholder); });
+    btn.appendChild(img);
+  } else {
+    btn.appendChild(placeholder);
+  }
+
+  var info = document.createElement("div");
+  var t = document.createElement("div");
+  t.className = "book-result-title";
+  t.textContent = opts.title;
+  var a = document.createElement("div");
+  a.className = "book-result-author";
+  // 여러 판본을 묶은 줄에서는 출판사가 판본마다 다를 수 있어 대표 판본 것만 적으면
+  // 오해를 산다. 저자만 적고 판본 수를 붙인다.
+  a.textContent = b.author + (!opts.registered && opts.editionCount < 2 && b.publisher ? " · " + b.publisher : "");
+  if (opts.editionCount > 1) {
+    var ed = document.createElement("span");
+    ed.className = "book-result-editions";
+    ed.textContent = "판본 " + opts.editionCount + "개";
+    a.appendChild(ed);
+  }
+  // 등록 여부. 이미 있는 책은 몇 명이 남겼는지, 없는 책은 첫 기록을 권한다 — 고르기 전에
+  // "여기에 붙는다 / 새로 생긴다"를 알 수 있게.
+  var status = document.createElement("div");
+  status.className = "book-result-status";
+  status.textContent = opts.registered && opts.reviewCount
+    ? opts.reviewCount + "명이 남긴 책이에요"
+    : "첫 한 줄의 주인공이 돼보세요";
+  info.appendChild(t);
+  info.appendChild(a);
+  info.appendChild(status);
+  btn.appendChild(info);
+
+  btn.addEventListener("click", function () { selectBook(opts.select); });
+  li.appendChild(btn);
+  return li;
+}
+
+function registeredRow(r, editionCount) {
+  return buildResultRow({
+    // 책장에 있는 책은 책장에 보이는 제목 그대로 적는다(여기서만 다른 이름이면 헷갈린다).
+    book: r, title: r.title, registered: true, reviewCount: r.commentCount || 0,
+    editionCount: editionCount || 1,
+    select: {
+      existingId: r.id, reviewCount: r.commentCount || 0,
+      title: r.title, author: r.author, cover: r.cover,
+      isbn: r.isbn, contents: r.contents
+    }
+  });
+}
+
+function noteRow(text) {
+  var li = document.createElement("li");
+  li.className = "book-result-empty";
+  li.textContent = text;
+  return li;
+}
+
+// 한 줄 남기기 시트의 검색 결과. 위에는 이미 책장에 있는 책(치는 대로 바로), 아래에는
+// 카카오 검색 결과(검색 버튼을 눌렀을 때)를 이어 붙인다. 카카오 결과 중 책장에 이미 있는
+// 책은 "등록된 책" 줄로 바꿔 보여주고, 위에 이미 나온 책이면 빼서 한 책이 두 줄로 나오지
+// 않게 한다. 판본(리커버·양장·개정판 …)만 다른 책은 한 줄로 묶고 "판본 N개"를 단다 —
+// 묶는 기준과 대표 판본 고르는 순서는 js/bookIdentity.js(서버의 중복 검사와 같은 파일).
+export function renderBookResults() {
+  var q = dom.bookSearchInput.value.trim();
   dom.bookResults.innerHTML = "";
+  if (!q) { dom.bookResults.hidden = true; return; }
   dom.bookResults.hidden = false;
 
-  if (list.length === 0) {
-    var empty = document.createElement("li");
-    empty.className = "book-result-empty";
-    empty.textContent = "검색 결과가 없어요.";
-    dom.bookResults.appendChild(empty);
+  var shown = {};
+  var local = matchRegisteredBooks(q);
+  local.forEach(function (r) {
+    shown[r.id] = true;
+    dom.bookResults.appendChild(registeredRow(r, 1));
+  });
+
+  var search = state.bookSearch && state.bookSearch.query === q ? state.bookSearch : null;
+  if (!search || !search.results) {
+    dom.bookResults.appendChild(noteRow(
+      local.length ? "찾는 책이 없으면 '검색'을 눌러 아직 없는 책까지 찾아보세요" : "'검색'을 누르면 모든 책에서 찾아요"
+    ));
+    return;
+  }
+  if (search.error) {
+    dom.bookResults.appendChild(noteRow("검색에 실패했어요: " + search.error));
     return;
   }
 
-  groupEditions(list, state.books).forEach(function (g) {
-    var b = g.book;
-    var li = document.createElement("li");
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "book-result-item";
-
-    if (b.cover) {
-      var img = document.createElement("img");
-      img.src = upscaleCover(b.cover);
-      img.alt = "";
-      btn.appendChild(img);
+  var added = 0;
+  groupEditions(search.results, state.books).forEach(function (g) {
+    if (g.registeredId) {
+      if (shown[g.registeredId]) return;
+      var r = state.books.find(function (x) { return x.id === g.registeredId; });
+      if (!r) return;
+      shown[r.id] = true;
+      dom.bookResults.appendChild(registeredRow(r, g.editionCount));
     } else {
-      var placeholder = document.createElement("div");
-      placeholder.className = "book-result-noimg";
-      placeholder.textContent = "표지 없음";
-      btn.appendChild(placeholder);
+      dom.bookResults.appendChild(buildResultRow({
+        book: g.book, title: g.displayTitle, registered: false, editionCount: g.editionCount,
+        select: Object.assign({}, g.book, { displayTitle: g.displayTitle })
+      }));
     }
-
-    var info = document.createElement("div");
-    var t = document.createElement("div");
-    t.className = "book-result-title";
-    t.textContent = g.displayTitle;
-    var a = document.createElement("div");
-    a.className = "book-result-author";
-    // 여러 판본을 묶은 줄에서는 출판사가 판본마다 다를 수 있어 대표 판본 것만 적으면
-    // 오해를 산다. 저자만 적고 판본 수를 붙인다.
-    a.textContent = b.author + (g.editionCount < 2 && b.publisher ? " · " + b.publisher : "");
-    if (g.editionCount > 1) {
-      var ed = document.createElement("span");
-      ed.className = "book-result-editions";
-      ed.textContent = "판본 " + g.editionCount + "개";
-      a.appendChild(ed);
-    }
-    info.appendChild(t);
-    info.appendChild(a);
-    btn.appendChild(info);
-
-    btn.addEventListener("click", function () { selectBook(b); });
-    li.appendChild(btn);
-    dom.bookResults.appendChild(li);
+    added++;
   });
+  if (!added && !local.length) dom.bookResults.appendChild(noteRow("검색 결과가 없어요."));
 }
 
 export function renderAuthBox() {

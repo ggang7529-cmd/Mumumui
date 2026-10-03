@@ -55,11 +55,12 @@ export async function onRequestPost(context) {
 
   if (isbn) {
     var dupIsbn = await env.DB.prepare("SELECT id FROM books WHERE isbn = ?1").bind(isbn).first();
-    if (dupIsbn) return json({ error: "이미 등록된 책이에요." }, { status: 409 });
+    // bookId를 같이 준다 — 화면은 이걸 받아 쓴 한줄평을 그 책에 붙인다(새 책은 안 만든다).
+    if (dupIsbn) return json({ error: "이미 등록된 책이에요.", bookId: dupIsbn.id }, { status: 409 });
   }
 
   var dupTitle = await env.DB.prepare("SELECT id FROM books WHERE lower(title) = lower(?1)").bind(title).first();
-  if (dupTitle) return json({ error: "이미 등록된 책 제목이에요." }, { status: 409 });
+  if (dupTitle) return json({ error: "이미 등록된 책 제목이에요.", bookId: dupTitle.id }, { status: 409 });
 
   // 판본만 다른 같은 책(정규화 제목 + 첫 번째 저자, js/bookIdentity.js). 검색 화면이 이미
   // 이 기준으로 묶어서 등록된 판본을 대표로 내밀지만, 화면을 거치지 않은 요청이나 책

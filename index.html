@@ -173,15 +173,15 @@
         <button class="btn-random" id="collageBtn" type="button">나의 독서 기록 만들기</button>
         <!-- PC 폭에서 강조 버튼 둘을 같은 줄에 나란히 놓기 위한 줄바꿈용 빈 칸.
              헤더 버튼을 다 합치면 한 줄에 안 들어가 어차피 두 줄이 되는데, 그냥 두면
-             "나를 위한 추천"과 "+ 책장에 추가하기"가 서로 다른 줄로 갈라진다. -->
+             "나를 위한 추천"과 "한 줄 남기기"가 서로 다른 줄로 갈라진다. -->
         <span class="header-actions-break" aria-hidden="true"></span>
         <button class="btn-primary stacked-btn" id="recommendBtn" type="button">
           <span class="stacked-btn-hint">뭘 읽을지 고민된다면</span>
           <span class="stacked-btn-label">나를 위한 추천</span>
         </button>
         <button class="btn-primary new-review-btn stacked-btn" id="newReviewBtn" type="button">
-          <span class="new-review-btn-hint">찾는 책이 없나요?</span>
-          <span class="new-review-btn-label">+ 책장에 추가하기</span>
+          <span class="new-review-btn-hint">읽은 책이 있다면</span>
+          <span class="new-review-btn-label">한 줄 남기기</span>
         </button>
       </div>
     </header>
@@ -225,66 +225,6 @@
   <main>
     <section id="libraryView">
       <div class="shelf" id="shelfGrid"></div>
-    </section>
-
-    <section id="formView" hidden>
-      <div class="panel">
-        <h2>새 책 기록하기</h2>
-        <form id="reviewForm">
-          <div class="field" id="bookSearchField">
-            <label for="bookSearchInput">책 검색</label>
-            <div class="book-search-row">
-              <!-- 자리표시자는 줄바꿈이 안 돼서 좁은 화면에선 그냥 잘린다(모바일에서
-                   "책 제목으로 검색 (예전에 읽은 책…"으로 끊겼다). 그래서 여기는 짧게
-                   두고, "지금 읽는 책이 아니어도 된다"는 안내는 줄바꿈이 되는 아래
-                   힌트 문장으로 옮겼다. 무엇을 검색하는 칸인지는 위 label("책 검색")과
-                   옆 버튼("검색")이 이미 말해준다. -->
-              <input type="search" id="bookSearchInput" placeholder="어떤 책이든 검색해보세요" autocomplete="off">
-              <button type="button" class="btn-ghost" id="bookSearchBtn">검색</button>
-            </div>
-            <p class="char-hint">예전에 읽은 책도 좋아요. 도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
-            <ul class="book-results" id="bookResults" hidden></ul>
-          </div>
-          <div class="field" id="selectedBookField" hidden>
-            <label>선택한 책</label>
-            <div class="selected-book">
-              <div class="selected-book-cover" id="selectedBookCover"></div>
-              <div class="selected-book-info">
-                <div class="selected-book-title" id="selectedBookTitle"></div>
-                <div class="selected-book-author" id="selectedBookAuthor"></div>
-              </div>
-              <button type="button" class="btn-ghost" id="clearSelectedBook">다시 검색</button>
-            </div>
-          </div>
-          <div class="field">
-            <label for="fNickname">닉네임</label>
-            <input type="text" id="fNickname" required maxlength="10" placeholder="예: 책벌레" autocomplete="off">
-          </div>
-          <div class="field">
-            <label>별점 (필수)</label>
-            <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
-          </div>
-          <!-- 감정 태그. 버튼은 js/render.js renderMoodPicker가 js/moodTags.js의 목록으로
-               그린다. 하나만 고를 수 있어서 role="radiogroup"을 쓴다.
-               라벨에 "(선택)"만 달았더니 "한 줄 리뷰를 쓰고 그 위에 덤으로 붙이는 것"으로
-               읽혔다 — 태그 하나로 리뷰를 대신할 수 있다는 게 핵심이라 그 말을 바로 밑에
-               적고, 아래 한 줄 리뷰에도 "(선택)"을 달아 둘이 같은 급으로 보이게 한다. -->
-          <div class="field">
-            <label>이런 책이었어요</label>
-            <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
-            <p class="char-hint">한 줄 쓰기 어려우면, 여기서 하나만 골라도 등록돼요</p>
-          </div>
-          <div class="field">
-            <label for="fText">한 줄 리뷰 (선택)</label>
-            <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
-            <p class="char-hint">최대 80자, 한 줄로 남겨주세요</p>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-ghost" id="cancelForm">취소</button>
-            <button type="submit" class="btn-primary">저장</button>
-          </div>
-        </form>
-      </div>
     </section>
 
     <section id="detailView" hidden>
@@ -544,6 +484,85 @@
 <!-- 등급 안내 팝업. 헤더의 등급 뱃지와 홈의 "기록할수록 등급이 올라가요" 줄에서 열린다.
      내용(진행 바·배점·20단계 표)은 js/render.js의 renderLevelGuide가 열 때마다 새로 그린다.
      모바일에서는 화면을 다 덮지 않도록 아래쪽 시트로 뜨고, 안에서만 스크롤된다. -->
+<!-- "한 줄 남기기" 시트 — 리뷰를 남기는 단 하나의 입구(헤더 버튼, 홈 검색이 비었을 때의
+     "등록하러 가기", 추천 화면의 "직접 등록하기"가 모두 여기로 온다). 책을 검색하면 이미
+     책장에 있는 책과 아직 없는 책(카카오)이 함께 나오고, 고른 책이 이미 있으면 그 책에
+     한줄평을 붙이고, 없으면 책 등록과 첫 한줄평을 한 번에 저장한다(js/main.js).
+     예전엔 별도 화면(#formView)이었는데, 페이지를 옮겨 다니지 않도록 PC는 가운데 창,
+     모바일은 아래에서 올라오는 시트로 바꿨다. 겉모양은 등급 안내(.level-guide)와 같은
+     틀을 그대로 쓴다 — 시트 모양이 두 벌이 되지 않게. -->
+<div class="level-guide write-sheet" id="writeSheet" hidden>
+  <div class="level-guide-panel write-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="writeSheetTitle">
+    <div class="level-guide-head">
+      <h2 class="level-guide-title" id="writeSheetTitle">한 줄 남기기</h2>
+      <button type="button" class="level-guide-close" id="writeSheetClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="level-guide-body write-sheet-body">
+            <form id="reviewForm">
+              <div class="field" id="bookSearchField">
+                <label for="bookSearchInput">책 검색</label>
+                <div class="book-search-row">
+                  <!-- 자리표시자는 줄바꿈이 안 돼서 좁은 화면에선 그냥 잘린다(모바일에서
+                       "책 제목으로 검색 (예전에 읽은 책…"으로 끊겼다). 그래서 여기는 짧게
+                       두고, "지금 읽는 책이 아니어도 된다"는 안내는 줄바꿈이 되는 아래
+                       힌트 문장으로 옮겼다. 무엇을 검색하는 칸인지는 위 label("책 검색")과
+                       옆 버튼("검색")이 이미 말해준다. -->
+                  <input type="search" id="bookSearchInput" placeholder="어떤 책이든 검색해보세요" autocomplete="off">
+                  <button type="button" class="btn-ghost" id="bookSearchBtn">검색</button>
+                </div>
+                <p class="char-hint">예전에 읽은 책도 좋아요. 도서 검색에서 골라야 제목·저자·표지가 정확하게 들어가요</p>
+                <ul class="book-results" id="bookResults" hidden></ul>
+              </div>
+              <div class="field" id="selectedBookField" hidden>
+                <label>선택한 책</label>
+                <div class="selected-book">
+                  <div class="selected-book-cover" id="selectedBookCover"></div>
+                  <div class="selected-book-info">
+                    <div class="selected-book-title" id="selectedBookTitle"></div>
+                    <div class="selected-book-author" id="selectedBookAuthor"></div>
+                  </div>
+                  <button type="button" class="btn-ghost" id="clearSelectedBook">다시 검색</button>
+                </div>
+                <!-- 이미 책장에 있는 책이면 "3명이 남긴 책이에요", 아니면 "첫 한 줄의 주인공이
+                     돼보세요". 저장하면 어디에 쌓이는지(기존 책 vs 새 책)를 미리 알려준다. -->
+                <p class="selected-book-note" id="selectedBookNote"></p>
+              </div>
+              <!-- 책을 고르기 전에는 숨긴다. 시트 안에서 검색창 아래로 닉네임·별점·태그가
+                   줄줄이 보이면 "무엇부터 해야 하는지"가 흐려진다. -->
+              <div id="writeFields" hidden>
+              <div class="field">
+                <label for="fNickname">닉네임</label>
+                <input type="text" id="fNickname" required maxlength="10" placeholder="예: 책벌레" autocomplete="off">
+              </div>
+              <div class="field">
+                <label>별점 (필수)</label>
+                <div class="star-picker" id="fStars" role="radiogroup" aria-label="리뷰 별점"></div>
+              </div>
+              <!-- 감정 태그. 버튼은 js/render.js renderMoodPicker가 js/moodTags.js의 목록으로
+                   그린다. 하나만 고를 수 있어서 role="radiogroup"을 쓴다.
+                   라벨에 "(선택)"만 달았더니 "한 줄 리뷰를 쓰고 그 위에 덤으로 붙이는 것"으로
+                   읽혔다 — 태그 하나로 리뷰를 대신할 수 있다는 게 핵심이라 그 말을 바로 밑에
+                   적고, 아래 한 줄 리뷰에도 "(선택)"을 달아 둘이 같은 급으로 보이게 한다. -->
+              <div class="field">
+                <label>이런 책이었어요</label>
+                <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
+                <p class="char-hint">한 줄 쓰기 어려우면, 여기서 하나만 골라도 등록돼요</p>
+              </div>
+              <div class="field">
+                <label for="fText">한 줄 리뷰 (선택)</label>
+                <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off">
+                <p class="char-hint" id="fTextHint">최대 80자, 한 줄로 남겨주세요</p>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" id="cancelForm">취소</button>
+                <button type="submit" class="btn-primary" id="writeSubmit">남기기</button>
+              </div>
+              </div>
+            </form>
+    </div>
+  </div>
+</div>
+
 <div class="level-guide" id="levelGuide" hidden>
   <div class="level-guide-panel" role="dialog" aria-modal="true" aria-labelledby="levelGuideTitle">
     <div class="level-guide-head">

@@ -114,24 +114,31 @@ export function api(path, opts) {
     body: opts.body ? JSON.stringify(opts.body) : undefined
   }).then(function (res) {
     return res.json().catch(function () { return null; }).then(function (data) {
-      if (!res.ok) throw new Error((data && data.error) || ("요청이 실패했어요 (" + res.status + ")"));
+      if (!res.ok) {
+        var err = new Error((data && data.error) || ("요청이 실패했어요 (" + res.status + ")"));
+        // 409처럼 응답에 다음 행동에 필요한 값(이미 있는 책의 bookId 등)이 실려 오는 경우가
+        // 있어서, 메시지만 남기지 않고 상태와 본문도 같이 넘긴다.
+        err.status = res.status;
+        err.data = data;
+        throw err;
+      }
       return data;
     });
   });
 }
 
 export function searchBooks(q) {
-  if (!q) { dom.bookResults.hidden = true; dom.bookResults.innerHTML = ""; return; }
+  if (!q) { renderBookResults(); return; }
   gtag("event", "search_book");
   api("/api/search-books?q=" + encodeURIComponent(q)).then(function (data) {
-    renderBookResults(data.books || []);
+    // 기다리는 동안 검색창을 고쳤다면 늦게 온 결과로 덮지 않는다.
+    if (dom.bookSearchInput.value.trim() !== q) return;
+    state.bookSearch = { query: q, results: data.books || [] };
+    renderBookResults();
   }).catch(function (e) {
-    dom.bookResults.hidden = false;
-    dom.bookResults.innerHTML = "";
-    var li = document.createElement("li");
-    li.className = "book-result-empty";
-    li.textContent = "검색에 실패했어요: " + e.message;
-    dom.bookResults.appendChild(li);
+    if (dom.bookSearchInput.value.trim() !== q) return;
+    state.bookSearch = { query: q, results: [], error: e.message };
+    renderBookResults();
   });
 }
 

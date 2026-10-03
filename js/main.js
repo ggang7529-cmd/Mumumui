@@ -5,7 +5,7 @@ import {
 } from "./api.js";
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
-  clearSelectedBook, findBook, renderRandomCard, bookRating, formatDate,
+  clearSelectedBook, renderBookResults, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, renderIntroLevelLine, buildIcon
 } from "./render.js";
@@ -79,6 +79,9 @@ export var state = {
   profile: null,
   // "나를 위한 추천" 화면의 응답. 아직 안 왔으면 null, 닉네임이 없어 아예 조회를 못 한
   // 경우는 recommendReady만 true가 되고 recommend는 null로 남는다.
+  // 한 줄 남기기 시트의 카카오 검색 결과. 검색창의 말이 query와 다르면(그 뒤로 더 쳤으면)
+  // 낡은 결과라 쓰지 않는다. results가 null이면 아직 검색 버튼을 안 누른 것이다.
+  bookSearch: { query: "", results: null },
   recommend: null,
   recommendReady: false,
   searchQuery: "",
@@ -115,7 +118,11 @@ export var dom = {
   categoryFilter: document.getElementById("categoryFilter"),
   libraryView: document.getElementById("libraryView"),
   libraryToolbar: document.getElementById("libraryToolbar"),
-  formView: document.getElementById("formView"),
+  writeSheet: document.getElementById("writeSheet"),
+  writeSheetClose: document.getElementById("writeSheetClose"),
+  writeFields: document.getElementById("writeFields"),
+  writeSubmit: document.getElementById("writeSubmit"),
+  selectedBookNote: document.getElementById("selectedBookNote"),
   detailView: document.getElementById("detailView"),
   randomView: document.getElementById("randomView"),
   feedbackView: document.getElementById("feedbackView"),
@@ -260,7 +267,6 @@ export function showView(name) {
   state.view = name;
   dom.libraryView.hidden = name !== "library";
   dom.libraryToolbar.hidden = name !== "library";
-  dom.formView.hidden = name !== "form";
   dom.detailView.hidden = name !== "detail";
   dom.randomView.hidden = name !== "random";
   dom.feedbackView.hidden = name !== "feedback";
@@ -295,35 +301,59 @@ export function showView(name) {
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
-// prefillQuery를 주면 카카오 책 검색창을 그 말로 채우고 바로 검색까지 돌린다. 홈에서
-// 검색했는데 등록된 책이 없어 "등록하러 가기"로 넘어온 경우, 방금 친 제목을 또 치게 하지
-// 않으려는 것이다.
+// "한 줄 남기기" 시트를 연다. prefillQuery를 주면 검색창을 그 말로 채우고 바로 검색까지
+// 돌린다. 홈에서 검색했는데 등록된 책이 없어 "이 제목으로 등록하기"로 넘어온 경우, 방금
+// 친 제목을 또 치게 하지 않으려는 것이다.
+//
+// 예전엔 별도 화면(showView("form"))이었다. 지금은 보던 화면 위에 시트로 뜨고, 닫으면
+// 보던 화면 그대로다 — 이미 있는 책에 한 줄을 남기는 경우엔 페이지를 옮길 이유가 없다.
+var writeSheetOpener = null;
+
 function openForm(prefillQuery) {
   dom.reviewForm.reset();
-  state.selectedBook = null;
-  state.formRating = 0;
-  dom.bookSearchField.hidden = false;
-  dom.selectedBookField.hidden = true;
+  clearSelectedBook();
+  state.bookSearch = { query: "", results: null };
   dom.bookResults.hidden = true;
   dom.bookResults.innerHTML = "";
+  state.formRating = 0;
   renderStars(dom.fStars, 0, true, selectFormRating);
   state.formMood = null;
   renderMoodPicker(dom.fMoods, null, selectFormMood);
   // 폼을 열 때마다 예시 문구를 하나 새로 뽑는다(같은 문구만 계속 보면 예시로 안 읽힌다).
   document.getElementById("fText").placeholder = pickReviewPlaceholder();
   if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
-  showView("form");
+
+  writeSheetOpener = document.activeElement;
+  dom.writeSheet.hidden = false;
+  void dom.writeSheet.offsetWidth;
+  dom.writeSheet.classList.add("show");
 
   // reset()이 입력값을 비우므로 채우는 건 그 뒤여야 한다.
   var prefill = String(prefillQuery || "").trim();
   if (prefill) {
     dom.bookSearchInput.value = prefill;
+    renderBookResults();
     searchBooks(prefill);
   }
   dom.bookSearchInput.focus();
 }
 
-// 책 등록 화면으로 들어가는 공통 진입점. 헤더의 "+ 책장에 추가하기" 버튼과, 홈 검색이
+// 쓰던 내용이 있으면 바깥을 잘못 눌러 날아가지 않게 한 번 묻는다.
+function writeSheetDirty() {
+  if (!state.selectedBook) return false;
+  return !!(document.getElementById("fText").value.trim() || state.formRating || state.formMood);
+}
+
+export function closeWriteSheet(force) {
+  if (dom.writeSheet.hidden) return;
+  if (!force && writeSheetDirty() && !confirm("쓰던 한 줄이 사라져요. 닫을까요?")) return;
+  dom.writeSheet.classList.remove("show");
+  setTimeout(function () { dom.writeSheet.hidden = true; }, 220);
+  if (writeSheetOpener && writeSheetOpener.focus) writeSheetOpener.focus();
+  writeSheetOpener = null;
+}
+
+// 한 줄 남기기 시트로 들어가는 공통 진입점. 헤더의 "한 줄 남기기" 버튼과, 홈 검색이
 // 비었을 때 뜨는 "등록하러 가기" 버튼이 같은 함수를 쓴다 — 로그인 모드일 때의 확인 절차가
 // 한쪽에만 빠지는 일이 없도록 한곳에 모아둔다.
 export function startBookRegistration(prefillQuery) {
@@ -750,6 +780,9 @@ function finishRandomDraw(b) {
 document.getElementById("bookSearchBtn").addEventListener("click", function () {
   searchBooks(dom.bookSearchInput.value.trim());
 });
+// 책장에 이미 있는 책은 치는 대로 바로 보여준다(이미 받아둔 목록에서 찾으니 공짜다).
+// 카카오 검색은 요청 한도가 있어서 예전처럼 검색 버튼/Enter에서만 돈다.
+dom.bookSearchInput.addEventListener("input", function () { renderBookResults(); });
 dom.bookSearchInput.addEventListener("keydown", function (e) {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -782,7 +815,15 @@ document.getElementById("newReviewBtn").addEventListener("click", function () {
   gtag("event", "click_add_book");
   startBookRegistration();
 });
-document.getElementById("cancelForm").addEventListener("click", function () { showView("library"); });
+document.getElementById("cancelForm").addEventListener("click", function () { closeWriteSheet(); });
+dom.writeSheetClose.addEventListener("click", function () { closeWriteSheet(); });
+// 바깥(어두운 배경)을 눌러도 닫는다.
+dom.writeSheet.addEventListener("click", function (e) {
+  if (e.target === dom.writeSheet) closeWriteSheet();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && !dom.writeSheet.hidden) closeWriteSheet();
+});
 document.getElementById("feedbackBtn").addEventListener("click", function () {
   gtag("event", "click_feedback");
   document.getElementById("feedbackForm").reset();
@@ -794,7 +835,7 @@ document.getElementById("recommendBtn").addEventListener("click", function () { 
 // 추천할 근거가 없을 때 뜨는 두 버튼. 기본은 책장으로 보내는 것이다 — 이미 등록된 책에
 // 별점만 남겨도 추천은 돌아가므로, 등록을 먼저 요구할 이유가 없다.
 document.getElementById("recommendCta").addEventListener("click", function () { showView("library"); });
-// 찾는 책이 없을 때의 다음 단계. 헤더의 "+ 책장에 추가하기"와 같은 진입점을 써서
+// 찾는 책이 없을 때의 다음 단계. 헤더의 "한 줄 남기기"와 같은 진입점을 써서
 // 로그인 모드일 때의 확인 절차가 한쪽에만 빠지는 일이 없게 한다.
 document.getElementById("recommendAddCta").addEventListener("click", function () { startBookRegistration(); });
 
@@ -930,6 +971,16 @@ dom.reviewForm.addEventListener("submit", function (e) {
 
   if (AUTH_MODE === "nickname") saveNickname(nickname);
 
+  var review = { text: text, rating: state.formRating, mood: state.formMood, name: nickname };
+  dom.writeSubmit.disabled = true;
+  var done = function () { dom.writeSubmit.disabled = false; };
+
+  // 이미 책장에 있는 책: 새 책을 만들지 않고 그 책에 한줄평만 붙인다.
+  if (state.selectedBook.existingId) {
+    addReviewToExisting(state.selectedBook.existingId, review).then(done, function (err) { done(); alert(err.message); });
+    return;
+  }
+
   api("/api/books", {
     method: "POST",
     body: {
@@ -945,6 +996,8 @@ dom.reviewForm.addEventListener("submit", function (e) {
       // 거치지 않기 때문이다. 어느 쪽인지 알 수 있게 경로별 이벤트를 따로 하나 더 보낸다.
       gtag("event", "complete_review", { book_id: data.book.id });
       gtag("event", "complete_book_add", { book_id: data.book.id });
+      done();
+      closeWriteSheet(true);
       renderAuthBox();
       refreshMyScore(10);
       state.books.unshift(normalizeBook(data.book));
@@ -961,11 +1014,39 @@ dom.reviewForm.addEventListener("submit", function (e) {
       if (data.firstRegistration) showCelebrationModal("이 책의 첫 번째 등록자예요! 🎉");
       else if (totalCount > 0 && totalCount % MILESTONE_STEP === 0) showMilestoneCelebration(totalCount);
     })
-    .catch(function (e) {
-      alert(e.message);
-      if (e.message.indexOf("이미 등록된") !== -1) clearSelectedBook();
+    .catch(function (err) {
+      // 화면은 "아직 없는 책"으로 알았는데 서버에는 이미 있는 경우(방금 누가 등록했거나,
+      // 목록을 받기 전에 골랐거나). 예전엔 여기서 알림만 띄우고 쓴 한 줄을 버렸다 —
+      // 이제는 서버가 알려준 그 책에 그대로 붙인다. 새 책은 절대 만들지 않는다.
+      if (err.status === 409 && err.data && err.data.bookId) {
+        return addReviewToExisting(err.data.bookId, review).then(done);
+      }
+      throw err;
+    })
+    .catch(function (err) {
+      done();
+      alert(err.message);
     });
 });
+
+// 이미 있는 책에 한줄평을 붙인다(시트에서). 책 상세의 한줄평 칸과 같은 API·같은 GA
+// 이벤트를 쓰고, from으로 시트에서 왔는지만 구분한다. 화면은 옮기지 않는다 — 시트만
+// 닫고, 보던 화면의 숫자(리뷰 수·별점)만 새로 받아 고친다.
+function addReviewToExisting(bookId, review) {
+  return api("/api/books/" + encodeURIComponent(bookId) + "/comments", {
+    method: "POST",
+    body: { text: review.text, rating: review.rating, mood: review.mood, name: review.name }
+  }).then(function () {
+    gtag("event", "complete_review", { book_id: bookId, from: "write_sheet" });
+    gtag("event", "complete_comment", { book_id: bookId, from: "write_sheet" });
+    closeWriteSheet(true);
+    renderAuthBox();
+    refreshMyScore(3);
+    var jobs = [refreshBooks()];
+    if (state.view === "detail" && state.currentId === bookId) jobs.push(refreshComments());
+    return Promise.all(jobs);
+  });
+}
 
 document.getElementById("deleteBtn").addEventListener("click", function () {
   var r = findBook(state.currentId);
