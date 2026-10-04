@@ -779,11 +779,8 @@ function buildBookCard(r) {
     card.setAttribute("aria-label", r.title + ", " + r.author + ", " +
       (rating ? "평점 " + rating.avg.toFixed(1) + "점, 참여자 " + rating.count + "명" : "아직 평점 없음"));
 
-    // 표지 영역을 별도 컨테이너(.b-cover)로 감싸서, PC에서는 지금처럼 표지 위에 정보가
-    // 절대위치로 겹치고(css/style.css 기본 규칙) 모바일에서는 표지 "아래"에 다크 정보
-    // 카드로 분리되도록(같은 미디어쿼리, .b-overlay를 static으로 전환) CSS만으로 두 레이아웃을
-    // 다 표현한다. 표지 이미지가 없는 책도 색상 배경이 이 컨테이너 크기를 그대로 차지해야
-    // 하므로, img 유무와 무관하게 항상 이 컨테이너를 만든다.
+    // 표지는 깨끗하게 둔다 — 그 위에는 NEW 표시만 얹는다. 표지 이미지가 없는 책은 색 배경에
+    // 제목을 조판한 "책등"(css .book-card--typo)이 표지 노릇을 한다.
     var coverBox = document.createElement("div");
     coverBox.className = "b-cover";
     coverBox.style.setProperty("--cover", coverFor(r.title));
@@ -808,48 +805,42 @@ function buildBookCard(r) {
 
     card.appendChild(coverBox);
 
-    var overlay = document.createElement("div");
-    overlay.className = "b-overlay";
+    // 표지 아래 정보: 제목 → 별점(평균 · 한 줄 수) → 대표 한 줄(최대 2줄). 예전엔 이걸 표지
+    // 위 어두운 그라데이션에 얹었는데, 표지를 가리고 글자도 표지 색에 따라 읽기 힘들었다.
+    // "아직 1명이 읽었어요" 같은 권유 문구와 마우스를 올리면 나오던 "별점 남기기 →"도 뺐다 —
+    // 행동은 홈 위쪽의 "한 줄 남기기" 하나로 모았다.
+    var info = document.createElement("div");
+    info.className = "b-info";
 
     var titleEl = document.createElement("div");
     titleEl.className = "b-title";
     titleEl.textContent = r.title;
+    info.appendChild(titleEl);
 
-    // 카드 하단 문구는 참여자 수에 따라 다르게 쓴다. 처음 온 사람이 카드를 "정보 표시"로만
-    // 읽고 지나가지 않도록, 아직 비어 있거나 한 명뿐인 책에서는 숫자 대신 사람 말로 상태를
-    // 알려주고 자리가 남아 있다는 걸 드러낸다. 두 명 이상 모인 책은 이미 읽을거리가 있으니
-    // 원래대로 별점과 참여자 수를 보여준다.
-    var starsEl = document.createElement("div");
-    starsEl.className = "b-stars";
-    if (!rating) {
-      starsEl.classList.add("b-stars--invite");
-      starsEl.textContent = "첫 리뷰를 남겨보세요";
-      // 터치 기기에는 hover가 없어서 아래 행동 유도 문구를 열 방법이 없다. 참여가 필요한
-      // 이런 카드에서만 상시 노출하도록 CSS가 이 클래스를 잡는다(모든 카드에 항상 띄우면
-      // 좁은 화면에서 줄만 늘어난다).
-      card.classList.add("book-card--invite");
-    } else if (rating.count === 1) {
-      starsEl.classList.add("b-stars--invite");
-      starsEl.textContent = "아직 1명이 읽었어요";
-      card.classList.add("book-card--invite");
+    var meta = document.createElement("div");
+    meta.className = "b-meta";
+    if (rating) {
+      meta.appendChild(buildStarIcon(true));
+      var avg = document.createElement("strong");
+      avg.textContent = rating.avg.toFixed(1);
+      meta.appendChild(avg);
+      meta.appendChild(document.createTextNode("· 한 줄 " + (r.commentCount || rating.count)));
     } else {
-      starsEl.appendChild(buildStarRow(Math.round(rating.avg)));
-      starsEl.appendChild(document.createTextNode(" " + rating.avg.toFixed(1) + " (" + rating.count + ")"));
+      meta.textContent = "아직 한 줄이 없어요";
     }
+    info.appendChild(meta);
 
-    // 마우스를 올리거나(PC) 누르는 동안(모바일) 나타나는 행동 유도 문구. 카드가 그냥
-    // 읽을거리가 아니라 "눌러서 참여하는 곳"이라는 신호를 준다. 링크 자체가 이미 상세로
-    // 가는 역할을 하고 위 aria-label이 책 정보를 읽어주므로, 이 줄은 화면에만 보이면
-    // 충분해서 스크린리더에서는 감춘다.
-    var cta = document.createElement("span");
-    cta.className = "b-cta";
-    cta.textContent = "별점 남기기 →";
-    cta.setAttribute("aria-hidden", "true");
-
-    overlay.appendChild(titleEl);
-    overlay.appendChild(starsEl);
-    overlay.appendChild(cta);
-    card.appendChild(overlay);
+    // 대표 한 줄: 좋아요 많은 한줄평(목록 API의 top_text) > 첫 한줄평 > 첫 한줄평의 태그.
+    // 한줄평이 다 지워진 책(rating 없음)은 books.text가 지워진 첫 한줄평이라 쓰지 않는다.
+    var lineText = r.topText || (rating ? r.text : "");
+    var tag = rating ? findMoodTag(r.mood) : null;
+    if (lineText || tag) {
+      var line = document.createElement("p");
+      line.className = "b-line";
+      line.textContent = lineText ? "“" + lineText + "”" : tag.emoji + " " + tag.label;
+      info.appendChild(line);
+    }
+    card.appendChild(info);
 
     card.addEventListener("click", function (id) {
       return function (e) {
@@ -1175,14 +1166,14 @@ export function renderRecommend() {
     card.addEventListener("click", function () {
       gtag("event", "click_recommend_book", { book_id: row.id, position: index + 1 });
     });
-    var overlay = card.querySelector(".b-overlay");
-    if (!overlay) return;
+    var info = card.querySelector(".b-info");
+    if (!info) return;
 
     var author = document.createElement("div");
     author.className = "b-author";
     author.textContent = row.author;
     // 제목 바로 아래에 둔다(별점 줄 위).
-    overlay.insertBefore(author, overlay.children[1] || null);
+    info.insertBefore(author, info.children[1] || null);
 
     // 추천 근거는 화면에 쓰지 않는다. "비슷한 분류 · 사회과학"은 알려주는 게 없었고,
     // "같은 작가 · 김훈"도 저자 줄이 바로 위에 있어서 같은 말을 두 번 하는 꼴이었다.

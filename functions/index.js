@@ -11,16 +11,22 @@ var SSR_BOOK_LIMIT = 100;
 
 var EMPTY_SHELF = '<div class="shelf" id="shelfGrid"></div>';
 
+// 카드 모양은 js/render.js buildBookCard와 맞춘다(표지 + 아래 제목·별점). JS가 뜨면 바로
+// 다시 그리므로 대표 한 줄·NEW 표시 같은 곁가지는 넣지 않는다.
 function renderShelfHtml(books) {
   var cards = books.map(function (b) {
     var rating = b.rating_count > 0 ? b.rating_sum / b.rating_count : null;
-    var ratingText = rating !== null ? rating.toFixed(1) + " (" + b.rating_count + ")" : "평점 없음";
+    var metaText = rating !== null ? "★ " + rating.toFixed(1) + " · 한 줄 " + b.comment_count : "아직 한 줄이 없어요";
     var title = escapeHtml(b.title);
+    var cover = b.cover
+      ? '<img class="b-cover-img" src="' + escapeHtml(b.cover) + '" alt="' + title + ' 표지" loading="lazy">'
+      : "";
     return (
-      '<a class="book-card" style="text-decoration:none" href="/book/' + encodeURIComponent(b.id) + '">' +
-      '<div class="b-overlay">' +
+      '<a class="book-card' + (b.cover ? "" : " book-card--typo") + '" href="/book/' + encodeURIComponent(b.id) + '">' +
+      '<div class="b-cover" data-title="' + title + '">' + cover + "</div>" +
+      '<div class="b-info">' +
       '<div class="b-title">' + title + "</div>" +
-      '<div class="b-stars">' + escapeHtml(ratingText) + "</div>" +
+      '<div class="b-meta">' + escapeHtml(metaText) + "</div>" +
       "</div>" +
       "</a>"
     );
@@ -40,7 +46,7 @@ export async function onRequestGet(context) {
   // 클라이언트 JS(refreshBooks → renderLibrary)가 평소처럼 전체 목록을 불러와 채운다.
   try {
     var rows = await env.DB.prepare(
-      "SELECT id, title, author, rating_sum, rating_count FROM books ORDER BY updated_at DESC LIMIT ?1"
+      "SELECT id, title, author, cover, rating_sum, rating_count, comment_count FROM books ORDER BY updated_at DESC LIMIT ?1"
     )
       .bind(SSR_BOOK_LIMIT)
       .all();

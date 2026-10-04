@@ -13,9 +13,15 @@ export async function onRequestGet(context) {
   // owner_uid는 내려주지 않는다. 책을 등록하면 같은 uid로 첫 한줄평이 함께 만들어지므로
   // (아래 onRequestPost), 이 값이 공개되면 그대로 X-Anon-Id에 넣어 그 사람의 한줄평을
   // 지울 수 있다. 클라이언트도 쓰지 않는 값이라 아예 select에서 뺀다.
+  // top_text: 카드 아래에 미리 보여줄 "대표 한 줄". 그 책의 한줄평(답글 제외, 본문 있는 것)
+  // 중 좋아요가 가장 많은 것, 같으면 최신 것. 책 수가 수백 권 단위라 책마다 하위 질의를
+  // 돌려도 가볍다. 본문 있는 한줄평이 없으면 NULL이고, 화면은 첫 한줄평의 태그로 대신한다.
   var rows = await env.DB.prepare(
     "SELECT id, title, author, cover, isbn, contents, category, class_no, text, mood, rating_sum, rating_count, comment_count, " +
-    "owner_name, owner_photo, created_at, updated_at FROM books ORDER BY updated_at DESC"
+    "owner_name, owner_photo, created_at, updated_at, " +
+    "(SELECT c.text FROM comments c WHERE c.book_id = books.id AND c.parent_id IS NULL AND trim(coalesce(c.text, '')) != '' " +
+    "ORDER BY (SELECT count(*) FROM comment_likes l WHERE l.comment_id = c.id) DESC, c.created_at DESC LIMIT 1) AS top_text " +
+    "FROM books ORDER BY updated_at DESC"
   ).all();
   return json({ books: rows.results });
 }

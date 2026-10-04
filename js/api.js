@@ -81,6 +81,9 @@ export function normalizeBook(row) {
     id: row.id, title: row.title, author: row.author, cover: row.cover, isbn: row.isbn, contents: row.contents || "",
     category: row.category || "", classNo: row.class_no || "", text: row.text, mood: row.mood || null,
     ratingSum: row.rating_sum, ratingCount: row.rating_count, commentCount: row.comment_count,
+    // 카드의 "대표 한 줄"(좋아요 많은 한줄평). 목록 API만 주고, 프로필·추천 응답에는 없어서
+    // 그때는 첫 한줄평(text)으로 대신한다.
+    topText: row.top_text || "",
     // ownerUid는 더 이상 서버가 내려주지 않는다(남의 uid를 알면 그 사람 한줄평을 지울 수
     // 있어서). 화면에서도 쓰지 않던 값이라 함께 뺐다.
     ownerName: row.owner_name, ownerPhoto: row.owner_photo,
