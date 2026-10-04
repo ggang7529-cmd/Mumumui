@@ -924,14 +924,14 @@ export function renderLibrary() {
   var filtered = !!(query || state.categoryFilter);
 
   // "모두의 책장" 옆 한마디. 숫자만("74권") 두면 표 같아서 서가에 책이 꽂혀 있는 모습으로
-  // 말한다. 분류로 거르면 그 칸 얘기로 바꾼다.
+  // 말한다("지금 74권이 있어요"). 분류로 거르면 그 칸 얘기로 바꾼다.
   if (!state.booksLoaded) {
     dom.countLabel.textContent = "";
   } else if (filtered) {
-    dom.countLabel.textContent = state.categoryFilter + " 칸에 " + visible.length + "권이 꽂혀 있어요";
+    dom.countLabel.textContent = state.categoryFilter + " 칸에 " + visible.length + "권이 있어요";
   } else {
     dom.countLabel.textContent = state.books.length
-      ? "지금 " + state.books.length + "권이 꽂혀 있어요"
+      ? "지금 " + state.books.length + "권이 있어요"
       : "아직 비어 있어요";
   }
 
