@@ -1,5 +1,5 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.js";
-import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderLatestHighlight } from "./render.js";
+import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderFeatured } from "./render.js";
 import { renderCollage } from "./collage.js";
 import { getLevel, levelParticle } from "./levels.js";
 
@@ -142,22 +142,27 @@ export function searchBooks(q) {
   });
 }
 
-export function normalizeRecentComment(row) {
-  return {
-    bookId: row.book_id, bookTitle: row.title, bookAuthor: row.author,
-    text: row.text, rating: row.rating, mood: row.mood || null, createdAt: row.created_at
-  };
+// 홈 "이번 주의 한 줄". 관리자 고정 > 최근 30일 좋아요 순(functions/api/featured.js).
+// 실패해도 홈은 멀쩡해야 하므로 조용히 칸만 숨긴다.
+export function refreshFeatured() {
+  return api("/api/featured").then(function (data) {
+    state.featured = {
+      source: data.source || "auto",
+      reviews: data.reviews || [],
+      pinnedIds: data.pinnedIds || []
+    };
+    renderFeatured();
+    if (state.view === "detail") renderDetail();
+  }).catch(function () {
+    state.featured = { source: "auto", reviews: [], pinnedIds: [] };
+    renderFeatured();
+  });
 }
 
 export function refreshBooks() {
-  return Promise.all([
-    api("/api/books"),
-    api("/api/comments/recent").catch(function () { return { comments: [] }; })
-  ]).then(function (results) {
-    state.books = (results[0].books || []).map(normalizeBook);
+  return api("/api/books").then(function (data) {
+    state.books = (data.books || []).map(normalizeBook);
     state.booksLoaded = true;
-    state.recentComments = (results[1].comments || []).map(normalizeRecentComment);
-    renderLatestHighlight();
     if (state.view === "library") renderLibrary();
     else if (state.view === "detail") renderDetail();
     // 책이 다 불러와지기 전에 표지 모음 화면을 열면 고를 칸이 비어 있다. 도착하면 채운다.

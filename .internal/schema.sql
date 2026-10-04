@@ -60,3 +60,9 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count INTEGER NOT NULL,
   window_start INTEGER NOT NULL
 );
+
+-- 홈 "이번 주의 한 줄"에 관리자가 고정한 한줄평 (functions/api/featured.js)
+CREATE TABLE IF NOT EXISTS featured_comments (
+  comment_id TEXT PRIMARY KEY,
+  pinned_at INTEGER NOT NULL
+);

@@ -1,10 +1,10 @@
 import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
-import { kdcOrder } from "./kdc.js";
+import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
 import {
-  googleConfigured, myUid, api, refreshBooks, refreshComments, refreshMyScore, getSavedNickname, saveNickname,
+  googleConfigured, myUid, api, refreshBooks, refreshComments, refreshFeatured, refreshMyScore, getSavedNickname, saveNickname,
   renderGoogleButtons, isAdminMode, getAdminKey, getNotifSeenMap, saveNotifSeenMap, normalizeBook
 } from "./api.js";
 import { LEVELS, SCORE_RULES, getLevel, levelProgress, formatNicknameShort, formatNicknameFull } from "./levels.js";
@@ -738,41 +738,34 @@ export function renderLevelGuide() {
 // functions/_lib/bookClass.js가 대분류로 줄여서 저장한다. 다만 예전에 도서관 정보나루로
 // 채우려 했던 시절의 행에는 "문학 > 한국문학 > 소설" 같은 경로가 남아 있을 수 있어,
 // 그런 값은 여기서 최상위 한 단계만 잘라 같은 옵션으로 묶는다.
-function genreOf(category) {
-  if (!category) return "";
-  return category.split(">")[0].trim();
-}
-
-function updateCategoryFilterOptions() {
-  var genres = [];
+// 분류 칩. 책이 한 권이라도 있는 갈래만 정해진 순서(js/kdc.js GENRE_ORDER)로 놓고 권수를
+// 붙인다. 골라둔 갈래가 사라지면(마지막 책이 지워짐) 전체로 돌아간다.
+function renderGenreChips() {
+  var counts = {};
   state.books.forEach(function (r) {
-    var g = genreOf(r.category);
-    if (g && genres.indexOf(g) === -1) genres.push(g);
+    var g = genreOfBook(r.classNo, r.category);
+    counts[g] = (counts[g] || 0) + 1;
   });
-  // 가나다순이 아니라 KDC 번호 순(총류 → 철학 → … → 역사)으로 놓는다. 서점 서가와
-  // 순서가 같아 훑어보기 쉽고, 책이 늘어나도 옵션 자리가 들쭉날쭉 바뀌지 않는다.
-  genres.sort(function (a, b) {
-    var d = kdcOrder(a) - kdcOrder(b);
-    return d !== 0 ? d : a.localeCompare(b, "ko");
-  });
+  if (state.categoryFilter && !counts[state.categoryFilter]) state.categoryFilter = "";
 
-  var current = dom.categoryFilter.value;
-  dom.categoryFilter.innerHTML = "";
-  var allOpt = document.createElement("option");
-  allOpt.value = "";
-  allOpt.textContent = "전체 분류";
-  dom.categoryFilter.appendChild(allOpt);
-  genres.forEach(function (g) {
-    var opt = document.createElement("option");
-    opt.value = g;
-    opt.textContent = g;
-    dom.categoryFilter.appendChild(opt);
+  dom.genreChips.innerHTML = "";
+  var chips = [["", "전체", state.books.length]];
+  GENRE_ORDER.forEach(function (g) { if (counts[g]) chips.push([g, g, counts[g]]); });
+  // 갈래가 하나뿐이면(아직 분류가 다 비어 "기타"만 있는 등) 칩을 늘어놓을 이유가 없다.
+  dom.genreChips.hidden = chips.length <= 2;
+  chips.forEach(function (c) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "genre-chip" + (state.categoryFilter === c[0] ? " active" : "");
+    b.dataset.genre = c[0];
+    b.setAttribute("aria-pressed", state.categoryFilter === c[0] ? "true" : "false");
+    b.appendChild(document.createTextNode(c[1]));
+    var n = document.createElement("span");
+    n.className = "genre-chip-count";
+    n.textContent = c[2];
+    b.appendChild(n);
+    dom.genreChips.appendChild(b);
   });
-
-  // 폴링으로 목록이 갱신되며 이 함수가 반복 호출될 때 사용자가 골라둔 필터가 풀리지
-  // 않도록 유지한다. 다만 그 분류가 더 이상 존재하지 않으면(옵션 자체가 없어짐) 전체로.
-  if (genres.indexOf(current) !== -1) dom.categoryFilter.value = current;
-  else state.categoryFilter = "";
 }
 
 // 홈 서가와 프로필의 "등록한 책"이 같은 카드를 쓴다. 원래 renderLibrary 안에 그대로
@@ -869,7 +862,7 @@ function buildBookCard(r) {
     return card;
 }
 export function renderLibrary() {
-  updateCategoryFilterOptions();
+  renderGenreChips();
 
   var query = state.searchQuery.trim().toLowerCase();
   var visible = query
@@ -877,7 +870,7 @@ export function renderLibrary() {
     : state.books.slice();
 
   if (state.categoryFilter) {
-    visible = visible.filter(function (r) { return genreOf(r.category) === state.categoryFilter; });
+    visible = visible.filter(function (r) { return genreOfBook(r.classNo, r.category) === state.categoryFilter; });
   }
 
   if (state.sortMode === "comments") {
@@ -895,23 +888,13 @@ export function renderLibrary() {
 
   var filtered = !!(query || state.categoryFilter);
 
+  // "모두의 책장 N권"의 N. 분류로 거르면 "소설 5권 / 12권"처럼 지금 보이는 수를 앞에 둔다.
   if (!state.booksLoaded) {
-    dom.countLabel.textContent = "불러오는 중...";
+    dom.countLabel.textContent = "";
   } else if (filtered) {
-    dom.countLabel.textContent = visible.length + "권 검색됨 (전체 " + state.books.length + "권)";
+    dom.countLabel.textContent = visible.length + "권 / " + state.books.length + "권";
   } else {
-    dom.countLabel.textContent = state.books.length ? "총 " + state.books.length + "권의 리뷰" : "";
-  }
-
-  // 검색어나 분류로 목록을 걸렀다면 인트로(헤드라인 + 참여 문구 + "방금 등록됐어요"
-  // 하이라이트)를 접는다. 결과를 보려고 거른 건데 그 위에 고정 안내가 한 화면을
-  // 차지하고 있으면 결과가 화면 밖으로 밀려서, 검색이 된 건지조차 바로 안 보인다.
-  //
-  // showView()도 같은 요소를 여닫는다(목록 화면이 아니면 항상 숨김). 그래서 여기서는
-  // 목록 화면일 때만 손대 — 안 그러면 폴링으로 이 함수가 돌 때 상세/등록 화면 위에
-  // 인트로가 되살아난다.
-  if (dom.headerIntro && !dom.libraryView.hidden) {
-    dom.headerIntro.hidden = filtered;
+    dom.countLabel.textContent = state.books.length + "권";
   }
 
   dom.shelf.innerHTML = "";
@@ -919,7 +902,7 @@ export function renderLibrary() {
   if (state.booksLoaded && state.books.length === 0) {
     var note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "아직 기록한 책이 없어요. 위쪽 '+ 책 기록하기' 버튼으로 첫 책을 남겨보세요.";
+    note.textContent = "아직 기록한 책이 없어요. 위쪽 '한 줄 남기기'로 첫 책을 남겨보세요.";
     dom.shelf.appendChild(note);
   } else if (filtered && visible.length === 0) {
     var noMatch = document.createElement("p");
@@ -1264,74 +1247,100 @@ export function renderRecommendSteps(steps, active) {
   });
 }
 
-// 정렬탭의 "최신순" 목록과 별개로, 홈 상단 설명 영역에 방금 등록된 한줄평 1~2개를
-// 별도로 하이라이트해서 보여준다. 책 등록 시에도 첫 리뷰가 댓글로 함께 저장되므로
-// (functions/api/books/index.js), 최신 댓글 목록 하나만 보면 "새로 등록된 책"과
-// "기존 책에 새로 달린 리뷰"가 자연히 함께 섞여 나온다.
-export function renderLatestHighlight() {
-  var container = dom.latestHighlight;
-  if (!container) return;
+// 홈 "이번 주의 한 줄". 카드를 가로로 넘겨 본다(모바일은 한 장 반쯤 보여서 옆으로 넘길
+// 수 있다는 게 보이고, PC는 세 장이 한 줄에 들어간다). 누르면 그 책 상세로 간다.
+// 관리자 모드에서는 카드에 "고정 해제"가 붙는다(고정은 책 상세의 한줄평 옆 버튼으로).
+export function renderFeatured() {
+  var section = dom.featuredSection;
+  var track = dom.featuredTrack;
+  if (!section) return;
+  var reviews = (state.featured && state.featured.reviews) || [];
+  track.innerHTML = "";
+  section.hidden = reviews.length === 0;
 
-  var latest = state.recentComments.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).slice(0, 2);
-
-  if (!state.booksLoaded || latest.length === 0) {
-    container.hidden = true;
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = "";
-  container.hidden = false;
-
-  latest.forEach(function (r) {
+  reviews.forEach(function (r, index) {
     var card = document.createElement("a");
-    card.href = "/book/" + encodeURIComponent(r.bookId);
-    card.className = "latest-highlight-card";
-    card.setAttribute("aria-label", "방금 등록된 한줄평: " + r.bookTitle + ", " + r.bookAuthor);
+    card.className = "featured-card";
+    card.href = "/book/" + encodeURIComponent(r.book_id);
 
-    var label = document.createElement("span");
-    label.className = "latest-highlight-label";
-    label.textContent = "방금 등록됐어요";
+    var head = document.createElement("div");
+    head.className = "featured-book";
+    var cover = document.createElement("span");
+    cover.className = "featured-cover";
+    cover.style.setProperty("--cover", coverFor(r.title || ""));
+    if (r.cover) {
+      var img = document.createElement("img");
+      img.src = r.cover;
+      img.alt = "";
+      img.loading = "lazy";
+      img.addEventListener("error", function () { img.remove(); });
+      cover.appendChild(img);
+    }
+    var bookText = document.createElement("span");
+    bookText.className = "featured-book-text";
+    var t = document.createElement("strong");
+    t.textContent = r.title;
+    var au = document.createElement("span");
+    au.textContent = r.author;
+    bookText.appendChild(t);
+    bookText.appendChild(au);
+    head.appendChild(cover);
+    head.appendChild(bookText);
+    card.appendChild(head);
 
-    var bookLine = document.createElement("div");
-    bookLine.className = "latest-highlight-book";
-    var titleEl = document.createElement("strong");
-    titleEl.textContent = r.bookTitle;
-    bookLine.appendChild(titleEl);
-    bookLine.appendChild(document.createTextNode(" · " + r.bookAuthor));
+    if (r.rating) card.appendChild(buildStarRow(r.rating, "star-row featured-stars"));
 
-    var starsEl = document.createElement("div");
-    starsEl.className = "latest-highlight-stars";
-    starsEl.appendChild(buildStarRow(r.rating));
+    var line = document.createElement("p");
+    line.className = "featured-line";
+    var tag = findMoodTag(r.mood);
+    if (r.text) line.textContent = "“" + r.text + "”";
+    else if (tag) line.textContent = tag.emoji + " " + tag.label;
+    card.appendChild(line);
 
-    var textEl = document.createElement("p");
-    textEl.className = "latest-highlight-text";
-    // 태그만 고르고 본문 없이 남긴 한줄평이면 빈 따옴표("")만 남는다. 그럴 땐 따옴표를
-    // 빼고 태그 문구를 그대로 보여준다 — 남이 쓴 문장이 아니니 인용처럼 감싸지 않는다.
-    var highlightTag = findMoodTag(r.mood);
-    if (r.text) {
-      textEl.textContent = "“" + r.text + "”";
-    } else if (highlightTag) {
-      textEl.textContent = highlightTag.emoji + " " + highlightTag.label;
-    } else {
-      textEl.hidden = true;
+    var foot = document.createElement("div");
+    foot.className = "featured-foot";
+    var who = document.createElement("span");
+    who.textContent = r.author_name || "익명";
+    foot.appendChild(who);
+    var likes = document.createElement("span");
+    likes.className = "featured-likes";
+    likes.appendChild(buildIcon("heart"));
+    likes.appendChild(document.createTextNode(" " + (r.likes || 0)));
+    foot.appendChild(likes);
+    card.appendChild(foot);
+
+    if (isAdminMode() && state.featured.source === "pinned") {
+      var unpin = document.createElement("button");
+      unpin.type = "button";
+      unpin.className = "featured-unpin";
+      unpin.textContent = "고정 해제";
+      unpin.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setFeaturedPin(r.id, false);
+      });
+      card.appendChild(unpin);
     }
 
-    card.appendChild(label);
-    card.appendChild(bookLine);
-    card.appendChild(starsEl);
-    card.appendChild(textEl);
-
-    card.addEventListener("click", function (id) {
-      return function (e) {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        e.preventDefault();
-        openDetail(id);
-      };
-    }(r.bookId));
-
-    container.appendChild(card);
+    card.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      gtag("event", "click_featured_review", { comment_id: r.id, book_id: r.book_id, position: index + 1, source: state.featured.source });
+      openDetail(r.book_id);
+    });
+    track.appendChild(card);
   });
+}
+
+// 관리자: 한줄평을 "이번 주의 한 줄"에 고정/해제.
+export function setFeaturedPin(commentId, pinned) {
+  return api("/api/featured", {
+    method: "POST",
+    headers: { "X-Admin-Key": getAdminKey() },
+    body: { commentId: commentId, pinned: pinned }
+  })
+    .then(function () { return refreshFeatured(); })
+    .catch(function (e) { alert(e.message); });
 }
 
 export function renderDetail() {
@@ -1604,6 +1613,17 @@ export function renderDetail() {
             .catch(function (e) { alert(e.message); });
         });
         item.appendChild(delBtn);
+      }
+
+      // 관리자: 이 한줄평을 홈 "이번 주의 한 줄"에 고정/해제(최대 3개, 서버가 막는다).
+      if (isAdminMode()) {
+        var isPinned = (state.featured.pinnedIds || []).indexOf(c.id) !== -1;
+        var pinBtn = document.createElement("button");
+        pinBtn.type = "button";
+        pinBtn.className = "c-pin" + (isPinned ? " is-pinned" : "");
+        pinBtn.textContent = isPinned ? "이번 주 고정 해제" : "이번 주의 한 줄로 고정";
+        pinBtn.addEventListener("click", function () { setFeaturedPin(c.id, !isPinned); });
+        item.appendChild(pinBtn);
       }
 
       var replyBtn = document.createElement("button");

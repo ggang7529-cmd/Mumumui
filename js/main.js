@@ -1,12 +1,12 @@
 import {
-  googleConfigured, api, refreshBooks, refreshComments, refreshNotifications, refreshMyScore,
+  googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
   getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
 import {
   renderStars, renderLibrary, renderDetail, renderAuthBox,
   clearSelectedBook, renderBookResults, renderSiteSearch, findBook, renderRandomCard, bookRating, formatDate,
-  toggleNotifDropdown, closeNotifDropdown, renderLatestHighlight, renderMoodPicker, renderProfile,
+  toggleNotifDropdown, closeNotifDropdown, renderMoodPicker, renderProfile,
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
@@ -62,7 +62,8 @@ export var state = {
   },
   books: [],
   booksLoaded: false,
-  recentComments: [],
+  // 홈 "이번 주의 한 줄"(js/api.js refreshFeatured). pinnedIds는 관리자 고정 버튼 표시용.
+  featured: { source: "auto", reviews: [], pinnedIds: [] },
   comments: [],
   libraryPollTimer: null,
   detailPollTimer: null,
@@ -119,7 +120,9 @@ export var dom = {
   siteSearchInput: document.getElementById("siteSearchInput"),
   siteSearchResults: document.getElementById("siteSearchResults"),
   themeBtn: document.getElementById("themeBtn"),
-  categoryFilter: document.getElementById("categoryFilter"),
+  genreChips: document.getElementById("genreChips"),
+  featuredSection: document.getElementById("featuredSection"),
+  featuredTrack: document.getElementById("featuredTrack"),
   libraryView: document.getElementById("libraryView"),
   libraryToolbar: document.getElementById("libraryToolbar"),
   writeSheet: document.getElementById("writeSheet"),
@@ -149,7 +152,6 @@ export var dom = {
   randomStreakMsg: document.getElementById("randomStreakMsg"),
   milestoneOverlay: document.getElementById("milestoneOverlay"),
   milestoneMessage: document.getElementById("milestoneMessage"),
-  latestHighlight: document.getElementById("latestHighlight"),
   headerIntro: document.getElementById("headerIntro"),
   stickyHeader: document.getElementById("stickyHeader"),
   fMoods: document.getElementById("fMoods"),
@@ -815,8 +817,12 @@ document.querySelectorAll(".sort-tab").forEach(function (btn) {
   });
 });
 
-dom.categoryFilter.addEventListener("change", function (e) {
-  state.categoryFilter = e.target.value;
+// 분류 칩은 책 목록이 바뀔 때마다 다시 그려지므로(js/render.js renderGenreChips) 칸에
+// 한 번만 달아 두고 눌린 칩을 찾는다.
+dom.genreChips.addEventListener("click", function (e) {
+  var chip = e.target.closest("[data-genre]");
+  if (!chip) return;
+  state.categoryFilter = chip.dataset.genre;
   gtag("event", "filter_category", { category: state.categoryFilter || "전체" });
   renderLibrary();
 });
@@ -1081,14 +1087,9 @@ dom.reviewForm.addEventListener("submit", function (e) {
       renderAuthBox();
       refreshMyScore(10);
       state.books.unshift(normalizeBook(data.book));
-      state.recentComments.unshift({
-        bookId: data.book.id, bookTitle: data.book.title, bookAuthor: data.book.author,
-        text: data.book.text, mood: data.book.mood || null, rating: data.book.rating_sum, createdAt: data.book.created_at
-      });
       var totalCount = state.books.length;
       showView("library");
       renderLibrary();
-      renderLatestHighlight();
       // 첫 등록자 축하와 N권째 기록 축하가 같은 순간에 겹칠 수 있는데, 같은 모달을
       // 동시에 두 번 못 띄우니 첫 등록자 쪽을 우선한다(더 개인적인 축하라서).
       if (data.firstRegistration) showCelebrationModal("이 책의 첫 번째 등록자예요! 🎉");
@@ -1136,10 +1137,9 @@ document.getElementById("deleteBtn").addEventListener("click", function () {
   api("/api/books/" + state.currentId, { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
     .then(function () {
       state.books = state.books.filter(function (b) { return b.id !== state.currentId; });
-      state.recentComments = state.recentComments.filter(function (c) { return c.bookId !== state.currentId; });
       showView("library");
       renderLibrary();
-      renderLatestHighlight();
+      refreshFeatured();
     })
     .catch(function (e) {
       alert(e.message);
@@ -1265,6 +1265,7 @@ else if (isCollagePath(window.location.pathname)) openCollage();
 else showView("library");
 
 refreshBooks();
+refreshFeatured();
 
 // PWA 서비스워커 등록. 새 워커가 설치되고 나서(즉 배포로 파일이 바뀌어서
 // 대기 상태가 되었을 때) 안내 배너를 띄워 새로고침을 유도한다.

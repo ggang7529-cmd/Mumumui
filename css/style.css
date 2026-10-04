@@ -324,15 +324,9 @@
   }
 
   .header-intro {
-    margin: 1.6rem 0 2.4rem;
+    margin: 1.6rem 0 0;
   }
 
-  /* 검색·분류로 걸러 인트로를 접으면 인트로가 갖고 있던 아래 여백(2.4rem)까지 같이
-     사라져서 결과가 도구 막대에 딱 붙는다. 접혔을 때만 목록이 그만큼을 대신 준다.
-     .shelf는 목록 화면 안에만 있으므로 상세·등록 화면에는 영향이 없다. */
-  .header-intro[hidden] + main .shelf {
-    margin-top: 1.5rem;
-  }
 
   .intro-headline {
     margin: 0;
@@ -696,74 +690,29 @@
 
   /* library grid */
 
+  /* 모두의 책장: 제목 + 정렬 칩 + 분류 칩. 예전엔 헤더 아래 붙어 따라다니던 도구 막대였는데,
+     홈 순서(인트로 → 이번 주의 한 줄 → 책장)에 맞춰 책 그리드 바로 위로 내려왔다. */
   .library-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 0.5rem 0 0.65rem;
-    border-top: 1px solid var(--line);
+    margin: 2.6rem 0 1.1rem;
   }
 
-  @media (max-width: 640px) {
-    .library-toolbar {
-      padding: 0.45rem 0 0.55rem;
-      gap: 0.5rem;
-    }
-
-    .sort-tabs {
-      flex: 1 1 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 0.1rem;
-    }
-
-    .sort-tab {
-      flex: none;
-      padding: 0.35rem 0.7rem;
-      font-size: 0.78rem;
-    }
-
-    .filter-row {
-      flex: 1 1 100%;
-      gap: 0.5rem;
-    }
-
-    .select-wrap {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    .category-filter {
-      width: 100%;
-    }
-
-    .search-box {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    .search-box input[type="search"] {
-      width: 100%;
-    }
-  }
-
-  .library-meta {
-    color: var(--ink-faint);
-    font-size: 0.85rem;
-    letter-spacing: 0.04em;
-    margin: 0;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .sort-tabs {
+  /* 칩 줄. 넘치면 옆으로 밀어 보게 한다(줄바꿈하면 분류가 많을 때 두세 줄을 먹는다). */
+  .chip-row {
     display: flex;
     gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.15rem;
   }
 
-  .sort-tab {
-    background: none;
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row + .chip-row { margin-top: 0.5rem; }
+
+  .sort-tab,
+  .genre-chip {
+    flex: none;
+    background: var(--paper-raised);
     border: 1px solid var(--line);
     color: var(--ink-soft);
     border-radius: 999px;
@@ -771,89 +720,34 @@
     font-family: inherit;
     font-size: 0.82rem;
     cursor: pointer;
+    white-space: nowrap;
   }
 
-  .sort-tab:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .sort-tab:hover,
+  .genre-chip:hover { border-color: var(--ink-soft); color: var(--ink); }
 
   .sort-tab.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: var(--paper-raised);
+    color: var(--btn-fill-ink);
   }
 
-  .search-box input[type="search"] {
-    width: 220px;
-    max-width: 100%;
-    font-family: inherit;
-    font-size: 0.9rem;
-    color: var(--ink);
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.45rem 0.9rem;
+  /* 분류 칩은 정렬과 구분되게 고른 것도 채우지 않고 테두리·글자만 버건디로. 정렬은
+     늘 하나가 골라져 있는 "방식"이고, 분류는 거르는 "조건"이라 무게를 달리 둔다. */
+  .genre-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
   }
 
-  .filter-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
+  .genre-chip-count {
+    margin-left: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
   }
 
-  /* 네이티브 <select>의 브라우저 기본 화살표 아이콘이 옆의 정렬 탭/검색창과
-     톤이 안 맞아 튀어 보여서, appearance:none으로 지우고 테마 색을 따라가는
-     CSS 화살표(::after)를 대신 그린다(currentColor를 못 쓰는 배경 이미지 방식
-     대신 실제 색상 변수를 쓰는 요소라 라이트/다크 전환에도 안전하다). */
-  .select-wrap {
-    position: relative;
-    display: inline-flex;
-  }
-
-  .select-wrap::after {
-    content: "";
-    position: absolute;
-    right: 0.8rem;
-    top: 50%;
-    width: 6px;
-    height: 6px;
-    border-right: 1.5px solid var(--ink-faint);
-    border-bottom: 1.5px solid var(--ink-faint);
-    transform: translateY(-70%) rotate(45deg);
-    pointer-events: none;
-  }
-
-  .category-filter {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    font-family: inherit;
-    font-size: 0.82rem;
-    color: var(--ink-soft);
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.4rem 1.7rem 0.4rem 0.85rem;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .category-filter:hover { border-color: var(--ink-soft); color: var(--ink); }
-
-  /* 모바일 iOS Safari에서 16px 미만 입력창/셀렉트는 포커스 시 자동 확대되므로 16px
-     유지한다. 분류 필터가 이 처리를 안 받아서 검색창보다 글자가 작고 위축돼
-     보였던 것도 같이 고친다. */
-  @media (max-width: 640px) {
-    .search-box input[type="search"],
-    .category-filter {
-      font-size: 16px;
-    }
-
-    .category-filter {
-      padding: 0.45rem 2rem 0.45rem 0.9rem;
-    }
-  }
+  .genre-chip.active .genre-chip-count { color: inherit; }
 
   .shelf {
     display: grid;
@@ -2800,84 +2694,167 @@
     margin: 0.35rem 0 0;
   }
 
-  .latest-highlight {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-    margin: 1.4rem 0 0;
+  /* 홈 섹션 제목("이번 주의 한 줄", "모두의 책장 N권"). */
+  .home-section-title {
+    margin: 0 0 0.8rem;
+    font-family: "Gowun Batang", serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ink);
   }
 
-  /* 종이 조각 느낌: 둥근 모서리+그림자 대신 각진 카드 + 왼쪽 리본. 리본은 위 .ribbon-mark와
-     같은 V자 모양을 카드 높이 전체에 세로로 세운 형태다. */
-  .latest-highlight-card {
+  .shelf-count {
+    margin-left: 0.2rem;
+    font-family: "Noto Sans KR", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 이번 주의 한 줄: 가로로 넘기는 흰 카드. 모바일은 한 장 반이 보여 옆으로 넘길 수 있다는 게
+     드러나고, PC(아래 641px 이상)는 세 장이 한 줄에 다 들어간다. */
+  .featured { margin-top: 2.4rem; }
+
+  .featured-track {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.2rem 0.1rem 0.6rem;
+    scrollbar-width: thin;
+  }
+
+  .featured-card {
     position: relative;
+    flex: 0 0 min(78%, 300px);
+    scroll-snap-align: start;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    flex: 1 1 260px;
-    min-width: 0;
+    gap: 0.55rem;
+    padding: 1rem 1.05rem 0.9rem;
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 0.8rem 0.95rem 0.85rem 1.35rem;
-    text-align: left;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px var(--shadow);
     color: inherit;
     text-decoration: none;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.15s ease;
   }
 
-  .latest-highlight-card::before {
-    content: "";
+  .featured-card:hover { border-color: var(--rose); transform: translateY(-1px); }
+
+  @media (min-width: 641px) {
+    .featured-card { flex-basis: calc((100% - 1.6rem) / 3); }
+  }
+
+  .featured-book {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .featured-cover {
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 44px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--cover, var(--accent));
+  }
+
+  .featured-cover img {
     position: absolute;
-    left: 0.55rem;
-    top: 0.8rem;
-    bottom: 0.8rem;
-    width: 4px;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 92%, 0 100%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  .latest-highlight-card:hover {
-    border-color: var(--accent);
-    background: var(--paper);
-  }
-
-  .latest-highlight-label {
-    display: inline-flex;
-    align-self: flex-start;
-    color: var(--ink-faint);
-    font-size: var(--t-micro);
-    font-weight: 500;
-    letter-spacing: 0.04em;
-  }
-
-  .latest-highlight-book {
-    color: var(--ink);
+  .featured-book-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
     font-size: var(--t-meta);
+    color: var(--ink-faint);
+    line-height: 1.35;
   }
 
-  .latest-highlight-book strong {
-    font-weight: 700;
-  }
-
-  .latest-highlight-stars {
-    color: var(--accent);
-    font-size: 0.78rem;
-  }
-
-  .latest-highlight-text {
-    margin: 0;
-    color: var(--ink-soft);
-    font-size: 0.85rem;
-    line-height: 1.4;
+  .featured-book-text strong,
+  .featured-book-text span {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .featured-book-text strong {
+    font-family: "Gowun Batang", serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .featured-stars { color: var(--accent); font-size: 0.8rem; }
+
+  .featured-line {
+    flex: 1;
+    margin: 0;
+    font-family: "Gowun Batang", serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--ink);
+    overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
   }
+
+  .featured-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--t-micro);
+    color: var(--ink-faint);
+  }
+
+  .featured-likes {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    color: var(--accent);
+  }
+
+  .featured-likes .icon { width: 0.95em; height: 0.95em; }
+
+  .featured-unpin {
+    align-self: flex-start;
+    background: none;
+    border: 1px dashed var(--accent);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-family: inherit;
+    font-size: var(--t-micro);
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* 관리자: 책 상세 한줄평 옆 "이번 주의 한 줄로 고정" */
+  #commentList .c-pin {
+    order: 6;
+    flex: none;
+    background: none;
+    border: 1px dashed var(--line);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+
+  #commentList .c-pin.is-pinned { border-color: var(--accent); color: var(--accent); }
 
   /* random pick */
 
