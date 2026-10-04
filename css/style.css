@@ -3125,9 +3125,16 @@
      화면을 다 덮지 않고(최대 76~78vh) 안에서만 스크롤돼서, 뒤의 화면이 계속 보인다.
      20단계 표가 들어가는데 전체 화면을 잡아먹으면 "닫는 법"부터 찾게 된다. */
 
+  /* 시트(등급 안내·한 줄 남기기·책 찾기)가 덮는 영역은 "지금 눈에 보이는 화면"이다. 아이폰
+     사파리는 키보드가 올라와도 fixed 요소의 기준(레이아웃 화면)을 줄이지 않아서, 아래에 붙은
+     시트가 키보드 뒤로 숨었다. js/main.js가 visualViewport로 보이는 높이·위치를 --vv-height/
+     --vv-top에 적어 주면 그 안에 맞춰 키보드 바로 위에 붙는다(값이 없으면 화면 전체). */
   .level-guide {
     position: fixed;
-    inset: 0;
+    left: 0;
+    right: 0;
+    top: var(--vv-top, 0px);
+    height: var(--vv-height, 100%);
     z-index: 1200;
     display: flex;
     align-items: center;
@@ -3638,6 +3645,8 @@
     .write-sheet-panel {
       max-height: 92vh;
       max-height: 92dvh;
+      /* 키보드가 올라와 보이는 높이가 줄면 그 안에 들어가게 한다(위 .level-guide 설명). */
+      max-height: calc(var(--vv-height, 100dvh) * 0.94);
     }
 
     /* 저장 버튼은 시트 아래에 붙인다 — 별점을 누르면 태그·한 줄이 펼쳐져 버튼이 밑으로

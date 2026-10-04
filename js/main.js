@@ -860,6 +860,22 @@ document.getElementById("brandLink").addEventListener("click", function (e) {
   showView("library");
 });
 
+// 키보드가 올라오면 "눈에 보이는 화면"이 줄어든다. 아이폰 사파리는 그래도 fixed 요소의 기준을
+// 그대로 둬서, 아래에서 올라오는 시트(한 줄 남기기·책 찾기)가 키보드 뒤에 숨었다. 보이는
+// 영역의 높이와 위치를 CSS 변수로 넘겨 시트가 그 안에 맞춰 앉게 한다(css .level-guide).
+(function trackVisualViewport() {
+  var vv = window.visualViewport;
+  if (!vv) return;
+  var root = document.documentElement;
+  function sync() {
+    root.style.setProperty("--vv-height", vv.height + "px");
+    root.style.setProperty("--vv-top", vv.offsetTop + "px");
+  }
+  vv.addEventListener("resize", sync);
+  vv.addEventListener("scroll", sync);
+  sync();
+})();
+
 // 테마. 기본은 크림(data-theme 없음)이고 다크를 고르면 이 브라우저에 기억한다. 첫 그림을
 // 그리기 전에 적용하는 부분은 index.html <head>의 작은 스크립트가 맡는다.
 var THEME_KEY = "chaekgalpi_theme";
