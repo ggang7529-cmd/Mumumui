@@ -173,6 +173,9 @@
         <h1 class="brand-name">책갈피</h1>
       </a>
       <div class="header-actions">
+        <!-- 지금 이 브라우저의 닉네임과 등급. 아이콘을 누르면 등급 안내, 닉네임을 누르면 내 기록.
+             닉네임이 아직 없으면 비어 있다(js/render.js renderHeaderMe). -->
+        <div class="header-me" id="headerMe" hidden></div>
         <button class="icon-btn" id="searchBtn" type="button" aria-label="책 찾기">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-search"></use></svg>
         </button>

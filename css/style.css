@@ -216,6 +216,38 @@
     gap: 0.25rem;
   }
 
+  /* 헤더의 내 닉네임·등급 칩. 로고와 아이콘 사이 남는 폭만 쓰고, 모자라면 닉네임 끝을
+     말줄임으로 자른다 — 헤더가 두 줄로 접히는 것보다 낫다. */
+  .header-me {
+    min-width: 0;
+    margin-right: 0.35rem;
+  }
+
+  .header-me .user-chip-name { min-width: 0; }
+
+  .header-me .user-name {
+    display: block;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-actions { min-width: 0; }
+
+  @media (max-width: 640px) {
+    .header-me-level { display: none; }
+    .header-me { margin-right: 0; }
+    .header-me .user-name { font-size: 0.88rem; }
+    /* 칩이 자리를 쓰는 만큼 아이콘 버튼 폭과 사이 간격을 줄인다. 높이는 44px 그대로라
+       누르는 자리는 세로로 넉넉하다. 그래도 아주 좁은 화면(320px)이나 긴 닉네임은 끝이
+       말줄임으로 잘린다. */
+    .site-header { gap: 0.5rem; }
+    .site-header .header-actions { gap: 0; }
+    .site-header .icon-btn { width: 36px; }
+    .header-me .lv-badge-btn { width: 26px; }
+  }
+
   /* 헤더의 아이콘 버튼(돋보기·해/달·알림 종). 손가락 기준 44px. */
   .icon-btn {
     position: relative;

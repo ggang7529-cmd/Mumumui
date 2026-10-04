@@ -430,7 +430,50 @@ export function renderBookResults() {
   if (!added && !local.length) dom.bookResults.appendChild(noteRow("검색 결과가 없어요."));
 }
 
+// 헤더의 "내 닉네임 · 등급" 칩. 4단계 리디자인 때 헤더에서 뺐다가 다시 들였다 — 지금 어떤
+// 이름으로 기록되는지와 등급이 늘 보이는 게 낫다는 판단. PC는 "아이콘 3 [등급명] 닉네임",
+// 휴대폰은 폭이 모자라 등급명을 빼고 "아이콘 3 닉네임"(css .header-me-level).
+// 점수가 바뀌면 renderAuthBox가 같이 부른다(js/api.js refreshMyScore).
+function renderHeaderMe() {
+  var box = document.getElementById("headerMe");
+  if (!box) return;
+  box.innerHTML = "";
+  var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  box.hidden = !nickname;
+  if (!nickname) return;
+
+  var lvl = getLevel(state.myScore);
+  var chip = document.createElement("div");
+  chip.className = "user-chip user-chip--level";
+
+  var badge = document.createElement("button");
+  badge.type = "button";
+  badge.className = "lv-badge-btn";
+  badge.setAttribute("aria-label", "등급 안내 보기 (지금 " + lvl.level + "등급 " + lvl.name + ")");
+  badge.appendChild(buildIcon(lvl.icon, "lv-icon lv-icon--" + lvl.icon));
+  badge.addEventListener("click", function () { openLevelGuide("badge"); });
+  chip.appendChild(badge);
+
+  var nameBtn = document.createElement("button");
+  nameBtn.type = "button";
+  nameBtn.className = "user-chip-name is-linked";
+  nameBtn.setAttribute("aria-label", nickname + "님의 기록 보기");
+  nameBtn.addEventListener("click", function () { openProfile(nickname); });
+  var name = document.createElement("span");
+  name.className = "user-name";
+  name.appendChild(document.createTextNode(lvl.level + " "));
+  var lvName = document.createElement("span");
+  lvName.className = "header-me-level";
+  lvName.textContent = "[" + lvl.name + "] ";
+  name.appendChild(lvName);
+  name.appendChild(document.createTextNode(nickname));
+  nameBtn.appendChild(name);
+  chip.appendChild(nameBtn);
+  box.appendChild(chip);
+}
+
 export function renderAuthBox() {
+  renderHeaderMe();
   var $box = document.getElementById("authBox");
   $box.innerHTML = "";
   if (AUTH_MODE === "nickname") {
