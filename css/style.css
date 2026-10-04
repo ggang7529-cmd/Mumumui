@@ -1427,6 +1427,14 @@
 
   /* "책 소개"/"한줄평·별점"과 같은 섹션 제목 규칙(위쪽 짧은 버건디 선)을 패널 제목에도
      그대로 적용해, 화면이 달라도 제목의 생김새가 일관되게 한다. */
+  /* 내 책장 한 컷: 제목 아래 한 줄 설명. 작은 안내(.char-hint)보다 한 단계 크게 — 처음 온
+     사람에게 이 화면이 뭘 하는 곳인지 알려주는 첫 문장이다. */
+  .collage-lead {
+    margin: -0.4rem 0 1.2rem;
+    color: var(--ink-soft);
+    font-size: var(--t-body);
+  }
+
   .panel h2,
   .panel .collage-title {
     position: relative;

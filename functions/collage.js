@@ -1,6 +1,6 @@
 import { canonicalOrigin } from "./_lib/origin.js";
 
-// /collage — "나의 독서 기록 만들기" 화면의 고유 주소.
+// /collage — "내 책장 한 컷"(예전 이름 "나의 독서 기록 만들기") 화면의 고유 주소.
 //
 // 주소를 주는 이유는 /u/:닉네임과 같다. (1) 뒤로가기가 자연스럽고, (2) 이 화면 링크만
 // 따로 공유할 수 있다. 화면 자체는 js/collage.js가 그리므로 여기서는 index.html을
@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
   var indexRes = await context.env.ASSETS.fetch(new URL("/", reqUrl));
   var html = await indexRes.text();
 
-  var title = "나의 독서 기록 만들기 | 책갈피";
+  var title = "내 책장 한 컷 | 책갈피";
   var desc = "읽은 책 표지를 골라 한 장의 이미지로 모아보세요. 저장해서 SNS에 바로 올릴 수 있어요.";
   var pageUrl = canonicalOrigin(context.request) + "/collage";
 
@@ -58,7 +58,7 @@ export async function onRequestGet(context) {
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<div class="header-intro" id="headerIntro">', '<div class="header-intro" id="headerIntro" hidden>')
     .replace('<section id="collageView" hidden>', '<section id="collageView">')
-    .replace('<h2>나의 독서 기록 만들기</h2>', '<h1 class="collage-title">나의 독서 기록 만들기</h1>');
+    .replace('<h2>내 책장 한 컷</h2>', '<h1 class="collage-title">내 책장 한 컷</h1>');
 
   return new Response(html, { headers: { "Content-Type": "text/html; charset=UTF-8" } });
 }
