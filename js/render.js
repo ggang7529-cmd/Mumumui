@@ -484,8 +484,9 @@ export function renderAuthBox() {
       // 등급은 하단 "등급 안내" 링크와 점수 토스트로 들어간다.
       var myRecords = document.createElement("button");
       myRecords.type = "button";
-      myRecords.className = "text-link";
-      myRecords.textContent = "내 기록 ›";
+      myRecords.className = "quick-tile";
+      myRecords.appendChild(buildIcon("books"));
+      myRecords.appendChild(document.createTextNode("내 기록"));
       myRecords.setAttribute("aria-label", nickname + "님의 기록 보기");
       myRecords.addEventListener("click", function () { openProfile(nickname); });
       $box.appendChild(myRecords);
@@ -922,13 +923,16 @@ export function renderLibrary() {
 
   var filtered = !!(query || state.categoryFilter);
 
-  // "모두의 책장 N권"의 N. 분류로 거르면 "소설 5권 / 12권"처럼 지금 보이는 수를 앞에 둔다.
+  // "모두의 책장" 옆 한마디. 숫자만("74권") 두면 표 같아서 서가에 책이 꽂혀 있는 모습으로
+  // 말한다. 분류로 거르면 그 칸 얘기로 바꾼다.
   if (!state.booksLoaded) {
     dom.countLabel.textContent = "";
   } else if (filtered) {
-    dom.countLabel.textContent = visible.length + "권 / " + state.books.length + "권";
+    dom.countLabel.textContent = state.categoryFilter + " 칸에 " + visible.length + "권이 꽂혀 있어요";
   } else {
-    dom.countLabel.textContent = state.books.length + "권";
+    dom.countLabel.textContent = state.books.length
+      ? "지금 " + state.books.length + "권이 꽂혀 있어요"
+      : "아직 비어 있어요";
   }
 
   dom.shelf.innerHTML = "";

@@ -225,9 +225,21 @@
 
   .header-me .user-chip-name { min-width: 0; }
 
+  /* 알약으로 감싸 "내 정보"가 아이콘 줄 사이에서 한 덩어리로 보이게 한다(글자만 두면 잘
+     안 보였다). */
+  .header-me .user-chip {
+    padding: 0.2rem 0.65rem 0.2rem 0.3rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--rose);
+    border-radius: 999px;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+
+  .header-me .lv-badge-btn .lv-icon { width: 1.25em; height: 1.25em; }
+
   .header-me .user-name {
     display: block;
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -238,7 +250,8 @@
   @media (max-width: 640px) {
     .header-me-level { display: none; }
     .header-me { margin-right: 0; }
-    .header-me .user-name { font-size: 0.88rem; }
+    .header-me .user-name { font-size: 0.95rem; }
+    .header-me .user-chip { padding: 0.15rem 0.55rem 0.15rem 0.2rem; }
     /* 칩이 자리를 쓰는 만큼 아이콘 버튼 폭과 사이 간격을 줄인다. 높이는 44px 그대로라
        누르는 자리는 세로로 넉넉하다. 그래도 아주 좁은 화면(320px)이나 긴 닉네임은 끝이
        말줄임으로 잘린다. */
@@ -260,12 +273,12 @@
     background: none;
     border: none;
     border-radius: 50%;
-    color: var(--ink-soft);
+    color: var(--ink);
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
 
-  .icon-btn svg { width: 20px; height: 20px; }
+  .icon-btn svg { width: 22px; height: 22px; stroke-width: 2; }
   .icon-btn:hover { background: var(--paper-soft); color: var(--ink); }
 
   .brand {
@@ -380,16 +393,62 @@
     box-shadow: 0 6px 16px rgba(140, 47, 57, 0.18);
   }
 
-  /* 큰 버튼 아래의 작은 글자 링크들(추천 · 한 컷 · 내 기록). */
+  /* 큰 버튼 아래 바로가기 셋(추천 · 한 컷 · 내 기록). 처음엔 작은 글자 링크였는데 "한 줄
+     남기기" 옆에서 존재감이 없어서, 아이콘을 얹은 흰 타일로 바꿨다. 모두 같은 폭으로 한 줄에
+     (내 기록은 닉네임이 있을 때만 있어서 2개일 때도 꽉 차게 grid-auto-flow: column). */
   .intro-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem 1.1rem;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 0.6rem;
     margin-top: 0.9rem;
+    max-width: 480px;
   }
 
-  .intro-links .auth-box:empty { display: none; }
+  /* #authBox는 "내 기록" 타일을 담는 칸일 뿐이라 상자를 만들지 않는다. */
+  .intro-links .auth-box { display: contents; }
+
+  .quick-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.85rem 0.4rem 0.75rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    word-break: keep-all;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .quick-tile .icon {
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+    border-radius: 50%;
+    background: var(--paper-soft);
+    color: var(--accent);
+  }
+
+  .quick-tile:hover { border-color: var(--rose); transform: translateY(-1px); }
+
+  /* 휴대폰에서만 줄을 바꾸는 <br> */
+  .br-m { display: none; }
+
+  @media (max-width: 640px) {
+    .br-m { display: inline; }
+    .intro-links { max-width: none; }
+  }
 
   /* 글자처럼 보이는 링크 버튼. */
   .text-link {
@@ -2631,12 +2690,11 @@
   }
 
   .shelf-count {
-    margin-left: 0.2rem;
+    margin-left: 0.35rem;
     font-family: "Noto Sans KR", sans-serif;
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--ink-faint);
-    font-variant-numeric: tabular-nums;
+    color: var(--accent);
   }
 
   /* 이번 주의 한 줄: 가로로 넘기는 흰 카드. 모바일은 한 장 반이 보여 옆으로 넘길 수 있다는 게
@@ -2705,7 +2763,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    font-size: var(--t-meta);
+    font-size: 0.86rem;
     color: var(--ink-faint);
     line-height: 1.35;
   }
@@ -2719,17 +2777,18 @@
 
   .featured-book-text strong {
     font-family: "Gowun Batang", serif;
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: var(--ink);
   }
 
-  .featured-stars { color: var(--accent); font-size: 0.8rem; }
+  .featured-stars { color: var(--accent); font-size: 0.9rem; }
 
   .featured-line {
     flex: 1;
     margin: 0;
     font-family: "Gowun Batang", serif;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 1.12rem;
     line-height: 1.55;
     color: var(--ink);
     overflow: hidden;
@@ -2742,7 +2801,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--t-micro);
+    font-size: 0.8rem;
+    font-weight: 500;
     color: var(--ink-faint);
   }
 
