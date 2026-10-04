@@ -394,7 +394,8 @@
   }
 
   /* 큰 버튼 아래 바로가기 셋(추천 · 한 컷 · 내 기록). 처음엔 작은 글자 링크였는데 "한 줄
-     남기기" 옆에서 존재감이 없어서, 아이콘을 얹은 흰 타일로 바꿨다. 모두 같은 폭으로 한 줄에
+     남기기" 옆에서 존재감이 없어서 흰 타일 버튼으로 바꿨다(한때 아이콘도 얹었는데 장식이
+     과해 보여 글자만 남겼다). 모두 같은 폭으로 한 줄에
      (내 기록은 닉네임이 있을 때만 있어서 2개일 때도 꽉 차게 grid-auto-flow: column). */
   .intro-links {
     display: grid;
@@ -415,29 +416,21 @@
     justify-content: center;
     gap: 0.4rem;
     min-width: 0;
-    padding: 0.85rem 0.4rem 0.75rem;
+    min-height: 3.2rem;
+    padding: 0.75rem 0.4rem;
     background: var(--paper-raised);
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: 0 2px 8px var(--shadow);
     color: var(--ink);
     font-family: inherit;
-    font-size: 0.86rem;
+    font-size: 0.9rem;
     font-weight: 700;
     line-height: 1.25;
     text-align: center;
     word-break: keep-all;
     cursor: pointer;
     transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-
-  .quick-tile .icon {
-    width: 38px;
-    height: 38px;
-    padding: 8px;
-    border-radius: 50%;
-    background: var(--paper-soft);
-    color: var(--accent);
   }
 
   .quick-tile:hover { border-color: var(--rose); transform: translateY(-1px); }

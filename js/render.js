@@ -485,8 +485,7 @@ export function renderAuthBox() {
       var myRecords = document.createElement("button");
       myRecords.type = "button";
       myRecords.className = "quick-tile";
-      myRecords.appendChild(buildIcon("books"));
-      myRecords.appendChild(document.createTextNode("내 기록"));
+      myRecords.textContent = "내 기록";
       myRecords.setAttribute("aria-label", nickname + "님의 기록 보기");
       myRecords.addEventListener("click", function () { openProfile(nickname); });
       $box.appendChild(myRecords);
