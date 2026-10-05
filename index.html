@@ -215,6 +215,13 @@
       <button class="quick-tile" id="collageBtn" type="button">내 책장 한 컷</button>
       <span class="auth-box" id="authBox"></span>
     </nav>
+    <!-- 등급 안내 · 의견 보내기. 한때 홈 맨 아래에 뒀는데 책 그리드를 끝까지 내려야 보여서,
+         바로가기 버튼 바로 밑 작은 글자 링크로 올렸다. -->
+    <nav class="home-footer-links" aria-label="더 보기">
+      <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
+      <span aria-hidden="true">·</span>
+      <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
+    </nav>
     <!-- 오늘의 한 줄 — 얇은 구분선 아래 가운데 정렬로 한 문장만. 후보 5개(관리자 고정 +
          최근 7일 좋아요 순, functions/api/featured.js) 중 접속할 때마다 하나를 고른다
          (js/render.js renderFeatured). 고를 게 없으면 칸째 숨긴다. -->
@@ -239,13 +246,6 @@
         <div class="chip-row" id="genreChips" role="group" aria-label="분류"></div>
       </div>
       <div class="shelf" id="shelfGrid"></div>
-      <!-- 예전엔 헤더 버튼(의견 보내기)과 홈 인트로의 등급 알약이었다. 자주 누를 일이 없는
-           것들이라 맨 아래 작은 링크로 내렸다. -->
-      <nav class="home-footer-links" aria-label="더 보기">
-        <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
-        <span aria-hidden="true">·</span>
-        <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
-      </nav>
     </section>
 
     <section id="detailView" hidden>

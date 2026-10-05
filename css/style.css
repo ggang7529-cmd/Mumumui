@@ -465,7 +465,8 @@
 
   @media (max-width: 640px) {
     .br-m { display: inline; }
-    .intro-links { max-width: none; }
+    .intro-links,
+    .home-footer-links { max-width: none; }
   }
 
   /* 글자처럼 보이는 링크 버튼. */
@@ -483,13 +484,14 @@
   .text-link:hover,
   .text-link:focus-visible { color: var(--accent); }
 
-  /* 홈 맨 아래: 등급 안내 · 의견 보내기 */
+  /* 바로가기 버튼 바로 밑: 등급 안내 · 의견 보내기. 버튼 줄과 같은 폭 안에서 가운데. */
   .home-footer-links {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.6rem;
-    margin-top: 3rem;
+    max-width: 480px;
+    margin-top: 0.55rem;
     color: var(--ink-faint);
     font-size: var(--t-meta);
   }
