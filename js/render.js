@@ -1284,54 +1284,121 @@ export function renderRecommendSteps(steps, active) {
   });
 }
 
-// 홈 "오늘의 한 줄". 카드·박스 없이 가운데 정렬로 한 문장만: 작은 라벨 → 한줄평(제목 글꼴)
-// → "책 제목 · 저자 ★별점". 후보 5개 중 이번 접속에 고른 하나(state.featured.pickId)를 그린다.
-// 문장을 누르면 그 책 상세로 간다. 관리자 모드에서 고정된 문장이면 "고정 해제"가 붙는다
-// (고정은 책 상세의 한줄평 옆 버튼으로).
+// 홈 "오늘의 한 줄". 카드·박스 없이 가운데 정렬로 한 문장씩: 작은 라벨 → 한줄평(제목 글꼴)
+// → "책 제목 · 저자 ★별점". 후보 5개를 옆으로 넘겨 본다(손가락으로 밀거나 아래 점을 눌러서).
+// 처음 보이는 문장은 접속할 때마다 무작위(state.featured.pickId) — 매번 같은 첫 문장만 읽히지
+// 않게. 저절로 넘어가게 하지는 않았다: 읽는 도중에 넘어가면 답답하다.
+// 문장을 누르면 그 책 상세로 간다. 관리자 모드에서 고정된 문장이면 "고정 해제"가 붙는다.
 export function renderFeatured() {
   var section = dom.featuredSection;
   var box = dom.featuredTrack;
   if (!section) return;
   var f = state.featured || {};
   var reviews = f.reviews || [];
-  var index = -1;
-  for (var i = 0; i < reviews.length; i++) if (reviews[i].id === f.pickId) index = i;
+  var start = 0;
+  for (var i = 0; i < reviews.length; i++) if (reviews[i].id === f.pickId) start = i;
   box.innerHTML = "";
-  section.hidden = index < 0;
-  if (index < 0) return;
-  var r = reviews[index];
+  section.hidden = reviews.length === 0;
+  if (!reviews.length) return;
 
-  var link = document.createElement("a");
-  link.className = "today-quote";
-  link.href = "/book/" + encodeURIComponent(r.book_id);
+  var track = document.createElement("div");
+  track.className = "today-track";
+  track.tabIndex = 0;
+  track.setAttribute("aria-roledescription", "carousel");
+  track.setAttribute("aria-label", "오늘의 한 줄 " + reviews.length + "개, 옆으로 넘겨 보세요");
 
-  var line = document.createElement("span");
-  line.className = "today-text";
-  var tag = findMoodTag(r.mood);
-  line.textContent = r.text ? "“" + r.text + "”" : (tag ? tag.emoji + " " + tag.label : "");
-  link.appendChild(line);
+  reviews.forEach(function (r, index) {
+    var slide = document.createElement("div");
+    slide.className = "today-slide";
+    slide.setAttribute("aria-roledescription", "slide");
+    slide.setAttribute("aria-label", (index + 1) + " / " + reviews.length);
 
-  var meta = document.createElement("span");
-  meta.className = "today-meta";
-  meta.textContent = r.title + " · " + r.author + (r.rating ? "  ★" + r.rating : "");
-  link.appendChild(meta);
+    var link = document.createElement("a");
+    link.className = "today-quote";
+    link.href = "/book/" + encodeURIComponent(r.book_id);
+    var line = document.createElement("span");
+    line.className = "today-text";
+    var tag = findMoodTag(r.mood);
+    line.textContent = r.text ? "“" + r.text + "”" : (tag ? tag.emoji + " " + tag.label : "");
+    link.appendChild(line);
+    var meta = document.createElement("span");
+    meta.className = "today-meta";
+    meta.textContent = r.title + " · " + r.author + (r.rating ? "  ★" + r.rating : "");
+    link.appendChild(meta);
+    link.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      gtag("event", "click_featured_review", { comment_id: r.id, book_id: r.book_id, position: index + 1, source: r.pinned ? "pinned" : "auto" });
+      openDetail(r.book_id);
+    });
+    slide.appendChild(link);
 
-  link.addEventListener("click", function (e) {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    gtag("event", "click_featured_review", { comment_id: r.id, book_id: r.book_id, position: index + 1, source: r.pinned ? "pinned" : "auto" });
-    openDetail(r.book_id);
+    if (isAdminMode() && r.pinned) {
+      var unpin = document.createElement("button");
+      unpin.type = "button";
+      unpin.className = "featured-unpin";
+      unpin.textContent = "고정 해제";
+      unpin.addEventListener("click", function () { setFeaturedPin(r.id, false); });
+      slide.appendChild(unpin);
+    }
+    track.appendChild(slide);
   });
-  box.appendChild(link);
+  box.appendChild(track);
 
-  if (isAdminMode() && r.pinned) {
-    var unpin = document.createElement("button");
-    unpin.type = "button";
-    unpin.className = "featured-unpin";
-    unpin.textContent = "고정 해제";
-    unpin.addEventListener("click", function () { setFeaturedPin(r.id, false); });
-    box.appendChild(unpin);
+  // 점이 하나뿐이면 넘길 게 없으니 그리지 않는다.
+  var dots = document.createElement("div");
+  dots.className = "today-dots";
+  dots.hidden = reviews.length < 2;
+  var dotEls = reviews.map(function (r, index) {
+    var d = document.createElement("button");
+    d.type = "button";
+    d.className = "today-dot";
+    d.setAttribute("aria-label", (index + 1) + "번째 한 줄 보기");
+    d.addEventListener("click", function () { goTo(index, true); });
+    dots.appendChild(d);
+    return d;
+  });
+  box.appendChild(dots);
+
+  var current = -1;
+  var swiped = {};
+  function mark(index, byUser) {
+    if (index === current) return;
+    current = index;
+    dotEls.forEach(function (d, i) {
+      d.classList.toggle("is-active", i === index);
+      d.setAttribute("aria-current", i === index ? "true" : "false");
+    });
+    // 다시 그려도(관리자 고정 등) 보던 문장에 머물게 기억해 둔다.
+    state.featured.pickId = reviews[index].id;
+    // 사람들이 실제로 넘겨 보는지 — 문장마다 한 번만 센다.
+    if (byUser && !swiped[index]) {
+      swiped[index] = true;
+      gtag("event", "swipe_featured", { position: index + 1 });
+    }
   }
+  function goTo(index, smooth) {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    track.scrollTo({ left: index * track.clientWidth, behavior: smooth && !reduce ? "smooth" : "auto" });
+    mark(index, smooth);
+  }
+  var userScrolling = false;
+  track.addEventListener("pointerdown", function () { userScrolling = true; });
+  track.addEventListener("touchstart", function () { userScrolling = true; }, { passive: true });
+  track.addEventListener("wheel", function () { userScrolling = true; }, { passive: true });
+  track.addEventListener("scroll", function () {
+    if (!track.clientWidth) return;
+    var index = Math.round(track.scrollLeft / track.clientWidth);
+    mark(Math.max(0, Math.min(reviews.length - 1, index)), userScrolling);
+  }, { passive: true });
+  track.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") { e.preventDefault(); goTo(Math.min(reviews.length - 1, current + 1), true); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(Math.max(0, current - 1), true); }
+  });
+
+  // 처음 위치: 무작위로 고른 문장. 칸이 그려진 다음에야 폭을 알 수 있다.
+  mark(start, false);
+  requestAnimationFrame(function () { track.scrollLeft = start * track.clientWidth; });
 }
 
 // 관리자: 한줄평을 "오늘의 한 줄" 후보에 고정/해제(최대 5개, 서버가 막는다).

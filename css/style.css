@@ -2733,6 +2733,74 @@
     color: var(--accent);
   }
 
+  /* 옆으로 넘기는 띠. 한 칸이 띠 폭 전체라 한 번에 한 문장만 보이고, 손가락으로 밀면 다음
+     문장에 딱 붙어 멈춘다(scroll-snap). 스크롤 막대는 감추고 아래 점으로 위치를 보여준다. */
+  .today-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .today-track::-webkit-scrollbar { display: none; }
+  .today-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+  .today-slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem;
+  }
+
+  .today-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 0.9rem;
+  }
+
+  /* 점 자체는 작게, 누르는 자리는 넉넉하게(버튼 22px 안에 6px 점). 지금 문장은 길쭉한 점. */
+  .today-dot {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  .today-dot::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--ink-faint);
+    opacity: 0.35;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  }
+
+  .today-dot.is-active::after {
+    width: 16px;
+    background: var(--accent);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .today-dot::after { transition: none; }
+  }
+
   .today-quote {
     display: inline-flex;
     flex-direction: column;
@@ -2761,7 +2829,7 @@
     color: var(--ink-faint);
   }
 
-  .today-line .featured-unpin { margin: 0.8rem auto 0; display: block; }
+  .today-line .featured-unpin { margin: 0.7rem auto 0; display: block; }
 
   .featured-unpin {
     align-self: flex-start;
