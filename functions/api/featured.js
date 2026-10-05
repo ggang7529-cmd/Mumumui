@@ -1,19 +1,20 @@
 import { json } from "../_lib/db.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
 
-// 홈 "이번 주의 한 줄" — 한줄평 카드 2~3개.
+// 홈 "오늘의 한 줄" — 화면에는 한 문장만 보이지만, 여기서는 후보 5개를 준다. 화면이 접속할
+// 때마다 그중 하나를 골라 보여준다(js/render.js renderFeatured).
 //
-// 관리자가 고정(pin)한 한줄평이 하나라도 있으면 그것만 보여준다(최대 MAX개, 최근에 고정한
-// 순). 없으면 최근 30일 한줄평을 좋아요 많은 순(같으면 최신순)으로 자동으로 고른다 — 본문
-// 없이 태그만 고른 한줄평은 카드에 보여줄 "한 줄"이 없어서 자동 선택에서는 뺀다. 30일 안에
-// 한줄평이 하나도 없으면 기간 없이 같은 기준으로 고른다(조용한 주에 칸이 통째로 비지 않게).
+// 후보 5개 = 관리자가 고정(pin)한 한줄평(최근 고정 순, 최대 5) + 모자란 자리를 자동 선택으로.
+// 자동 선택은 최근 7일 한줄평을 좋아요 많은 순(같으면 최신)으로 — 본문 없이 태그만 고른
+// 한줄평은 보여줄 "한 줄"이 없어서 뺀다. 7일 안에서 다 못 채우면 기간 없이 같은 기준으로
+// 채운다(조용한 주에 같은 문장만 돌거나 칸이 비지 않게).
 //
 // 고정 목록은 featured_comments 표에 있다. 이 표는 POST가 처음 불릴 때 스스로 만든다 —
 // 배포 전에 D1 Console에서 마이그레이션을 돌리는 순서를 지키지 않아도 깨지지 않게
 // (.internal/migrations/0007_add_featured_comments.sql에도 같은 문장이 있다). 표가 아직
-// 없으면 GET은 "고정 없음"으로 보고 자동 선택으로 간다.
-var MAX = 3;
-var WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+// 없으면 GET은 "고정 없음"으로 본다.
+var MAX = 5;
+var WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 var CREATE_TABLE =
   "CREATE TABLE IF NOT EXISTS featured_comments (comment_id TEXT PRIMARY KEY, pinned_at INTEGER NOT NULL)";
 
@@ -42,18 +43,25 @@ async function readPinned(env) {
 export async function onRequestGet(context) {
   var env = context.env;
   var pinned = await readPinned(env);
-  if (pinned.reviews.length) {
-    return json({ source: "pinned", reviews: pinned.reviews, pinnedIds: pinned.ids });
-  }
+  var reviews = pinned.reviews.map(function (r) { r.pinned = true; return r; });
+  var seen = {};
+  reviews.forEach(function (r) { seen[r.id] = true; });
 
   var auto = SELECT +
     "WHERE c.parent_id IS NULL AND trim(coalesce(c.text, '')) != '' AND c.created_at >= ?1 " +
     "ORDER BY likes DESC, c.created_at DESC LIMIT ?2";
-  var rows = (await env.DB.prepare(auto).bind(Date.now() - WINDOW_MS, MAX).all()).results || [];
-  if (!rows.length) {
-    rows = (await env.DB.prepare(auto).bind(0, MAX).all()).results || [];
+  // 7일 안 → 기간 없이, 순서대로 빈자리를 채운다. 이미 고른 것(고정 포함)은 건너뛴다.
+  var windows = [Date.now() - WINDOW_MS, 0];
+  for (var i = 0; i < windows.length && reviews.length < MAX; i++) {
+    var rows = (await env.DB.prepare(auto).bind(windows[i], MAX * 2).all()).results || [];
+    for (var j = 0; j < rows.length && reviews.length < MAX; j++) {
+      if (seen[rows[j].id]) continue;
+      seen[rows[j].id] = true;
+      rows[j].pinned = false;
+      reviews.push(rows[j]);
+    }
   }
-  return json({ source: "auto", reviews: rows, pinnedIds: pinned.ids });
+  return json({ reviews: reviews, pinnedIds: pinned.ids });
 }
 
 // 관리자: { commentId, pinned: true|false }

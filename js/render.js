@@ -1284,92 +1284,57 @@ export function renderRecommendSteps(steps, active) {
   });
 }
 
-// 홈 "이번 주의 한 줄". 카드를 가로로 넘겨 본다(모바일은 한 장 반쯤 보여서 옆으로 넘길
-// 수 있다는 게 보이고, PC는 세 장이 한 줄에 들어간다). 누르면 그 책 상세로 간다.
-// 관리자 모드에서는 카드에 "고정 해제"가 붙는다(고정은 책 상세의 한줄평 옆 버튼으로).
+// 홈 "오늘의 한 줄". 카드·박스 없이 가운데 정렬로 한 문장만: 작은 라벨 → 한줄평(제목 글꼴)
+// → "책 제목 · 저자 ★별점". 후보 5개 중 이번 접속에 고른 하나(state.featured.pickId)를 그린다.
+// 문장을 누르면 그 책 상세로 간다. 관리자 모드에서 고정된 문장이면 "고정 해제"가 붙는다
+// (고정은 책 상세의 한줄평 옆 버튼으로).
 export function renderFeatured() {
   var section = dom.featuredSection;
-  var track = dom.featuredTrack;
+  var box = dom.featuredTrack;
   if (!section) return;
-  var reviews = (state.featured && state.featured.reviews) || [];
-  track.innerHTML = "";
-  section.hidden = reviews.length === 0;
+  var f = state.featured || {};
+  var reviews = f.reviews || [];
+  var index = -1;
+  for (var i = 0; i < reviews.length; i++) if (reviews[i].id === f.pickId) index = i;
+  box.innerHTML = "";
+  section.hidden = index < 0;
+  if (index < 0) return;
+  var r = reviews[index];
 
-  reviews.forEach(function (r, index) {
-    var card = document.createElement("a");
-    card.className = "featured-card";
-    card.href = "/book/" + encodeURIComponent(r.book_id);
+  var link = document.createElement("a");
+  link.className = "today-quote";
+  link.href = "/book/" + encodeURIComponent(r.book_id);
 
-    var head = document.createElement("div");
-    head.className = "featured-book";
-    var cover = document.createElement("span");
-    cover.className = "featured-cover";
-    cover.style.setProperty("--cover", coverFor(r.title || ""));
-    if (r.cover) {
-      var img = document.createElement("img");
-      img.src = r.cover;
-      img.alt = "";
-      img.loading = "lazy";
-      img.addEventListener("error", function () { img.remove(); });
-      cover.appendChild(img);
-    }
-    var bookText = document.createElement("span");
-    bookText.className = "featured-book-text";
-    var t = document.createElement("strong");
-    t.textContent = r.title;
-    var au = document.createElement("span");
-    au.textContent = r.author;
-    bookText.appendChild(t);
-    bookText.appendChild(au);
-    head.appendChild(cover);
-    head.appendChild(bookText);
-    card.appendChild(head);
+  var line = document.createElement("span");
+  line.className = "today-text";
+  var tag = findMoodTag(r.mood);
+  line.textContent = r.text ? "“" + r.text + "”" : (tag ? tag.emoji + " " + tag.label : "");
+  link.appendChild(line);
 
-    if (r.rating) card.appendChild(buildStarRow(r.rating, "star-row featured-stars"));
+  var meta = document.createElement("span");
+  meta.className = "today-meta";
+  meta.textContent = r.title + " · " + r.author + (r.rating ? "  ★" + r.rating : "");
+  link.appendChild(meta);
 
-    var line = document.createElement("p");
-    line.className = "featured-line";
-    var tag = findMoodTag(r.mood);
-    if (r.text) line.textContent = "“" + r.text + "”";
-    else if (tag) line.textContent = tag.emoji + " " + tag.label;
-    card.appendChild(line);
-
-    var foot = document.createElement("div");
-    foot.className = "featured-foot";
-    var who = document.createElement("span");
-    who.textContent = r.author_name || "익명";
-    foot.appendChild(who);
-    var likes = document.createElement("span");
-    likes.className = "featured-likes";
-    likes.appendChild(buildIcon("heart"));
-    likes.appendChild(document.createTextNode(" " + (r.likes || 0)));
-    foot.appendChild(likes);
-    card.appendChild(foot);
-
-    if (isAdminMode() && state.featured.source === "pinned") {
-      var unpin = document.createElement("button");
-      unpin.type = "button";
-      unpin.className = "featured-unpin";
-      unpin.textContent = "고정 해제";
-      unpin.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        setFeaturedPin(r.id, false);
-      });
-      card.appendChild(unpin);
-    }
-
-    card.addEventListener("click", function (e) {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      gtag("event", "click_featured_review", { comment_id: r.id, book_id: r.book_id, position: index + 1, source: state.featured.source });
-      openDetail(r.book_id);
-    });
-    track.appendChild(card);
+  link.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    gtag("event", "click_featured_review", { comment_id: r.id, book_id: r.book_id, position: index + 1, source: r.pinned ? "pinned" : "auto" });
+    openDetail(r.book_id);
   });
+  box.appendChild(link);
+
+  if (isAdminMode() && r.pinned) {
+    var unpin = document.createElement("button");
+    unpin.type = "button";
+    unpin.className = "featured-unpin";
+    unpin.textContent = "고정 해제";
+    unpin.addEventListener("click", function () { setFeaturedPin(r.id, false); });
+    box.appendChild(unpin);
+  }
 }
 
-// 관리자: 한줄평을 "이번 주의 한 줄"에 고정/해제.
+// 관리자: 한줄평을 "오늘의 한 줄" 후보에 고정/해제(최대 5개, 서버가 막는다).
 export function setFeaturedPin(commentId, pinned) {
   return api("/api/featured", {
     method: "POST",
@@ -1652,13 +1617,13 @@ export function renderDetail() {
         item.appendChild(delBtn);
       }
 
-      // 관리자: 이 한줄평을 홈 "이번 주의 한 줄"에 고정/해제(최대 3개, 서버가 막는다).
+      // 관리자: 이 한줄평을 홈 "오늘의 한 줄" 후보에 고정/해제(최대 5개, 서버가 막는다).
       if (isAdminMode()) {
         var isPinned = (state.featured.pinnedIds || []).indexOf(c.id) !== -1;
         var pinBtn = document.createElement("button");
         pinBtn.type = "button";
         pinBtn.className = "c-pin" + (isPinned ? " is-pinned" : "");
-        pinBtn.textContent = isPinned ? "이번 주 고정 해제" : "이번 주의 한 줄로 고정";
+        pinBtn.textContent = isPinned ? "오늘의 한 줄 고정 해제" : "오늘의 한 줄로 고정";
         pinBtn.addEventListener("click", function () { setFeaturedPin(c.id, !isPinned); });
         item.appendChild(pinBtn);
       }

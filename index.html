@@ -62,12 +62,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="책갈피">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 글꼴(2026-10-04): 제목은 나눔스퀘어라운드(사이트에 직접 올린 /fonts, css/style.css @font-face),
-     본문은 프리텐다드(쓰는 글자 범위만 받아오는 dynamic-subset), "이번 주의 한 줄"은 나눔손글씨 펜. -->
+     본문은 프리텐다드(쓰는 글자 범위만 받아오는 dynamic-subset). -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard-dynamic-subset.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- 사이트 자체를 설명하는 구조화 데이터. 검색 결과에 출처 이름이 "Cloudflare"(호스팅
      업체)로 뜨던 걸 "책갈피"로 잡아주는 것이 주 목적이다. 책 페이지에도 그대로 남는데,
@@ -218,12 +215,12 @@
       <button class="quick-tile" id="collageBtn" type="button">내 책장 한 컷</button>
       <span class="auth-box" id="authBox"></span>
     </nav>
-    <!-- 이번 주의 한 줄 — 한줄평 카드 2~3개를 가로로 넘겨 본다. 관리자가 고정한 게 있으면
-         그것, 없으면 최근 30일 좋아요 많은 순(functions/api/featured.js). 고를 게 없으면
-         칸째 숨긴다. -->
-    <section class="featured" id="featuredSection" hidden aria-labelledby="featuredTitle">
-      <h2 class="home-section-title" id="featuredTitle">이번 주의 한 줄</h2>
-      <div class="featured-track" id="featuredTrack"></div>
+    <!-- 오늘의 한 줄 — 얇은 구분선 아래 가운데 정렬로 한 문장만. 후보 5개(관리자 고정 +
+         최근 7일 좋아요 순, functions/api/featured.js) 중 접속할 때마다 하나를 고른다
+         (js/render.js renderFeatured). 고를 게 없으면 칸째 숨긴다. -->
+    <section class="today-line" id="featuredSection" hidden aria-labelledby="featuredTitle">
+      <p class="today-label" id="featuredTitle">오늘의 한 줄</p>
+      <div id="featuredTrack"></div>
     </section>
   </div>
 

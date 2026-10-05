@@ -145,19 +145,25 @@ export function searchBooks(q) {
   });
 }
 
-// 홈 "이번 주의 한 줄". 관리자 고정 > 최근 30일 좋아요 순(functions/api/featured.js).
-// 실패해도 홈은 멀쩡해야 하므로 조용히 칸만 숨긴다.
+// 홈 "오늘의 한 줄". 서버는 후보 5개(관리자 고정 + 최근 7일 좋아요 순, functions/api/
+// featured.js)를 주고, 여기서 접속할 때마다 하나를 고른다. 고른 문장은 이 페이지에 머무는
+// 동안은 바꾸지 않는다 — 관리자가 고정을 바꿔 다시 받아와도 그 문장이 후보에 남아 있으면
+// 그대로 둔다(보던 문장이 갑자기 바뀌면 이상하다). 실패해도 홈은 멀쩡해야 하므로 조용히
+// 칸만 숨긴다.
 export function refreshFeatured() {
   return api("/api/featured").then(function (data) {
+    var reviews = data.reviews || [];
+    var keep = state.featured && state.featured.pickId;
+    var stillThere = reviews.some(function (r) { return r.id === keep; });
     state.featured = {
-      source: data.source || "auto",
-      reviews: data.reviews || [],
-      pinnedIds: data.pinnedIds || []
+      reviews: reviews,
+      pinnedIds: data.pinnedIds || [],
+      pickId: stillThere ? keep : (reviews.length ? reviews[Math.floor(Math.random() * reviews.length)].id : null)
     };
     renderFeatured();
     if (state.view === "detail") renderDetail();
   }).catch(function () {
-    state.featured = { source: "auto", reviews: [], pinnedIds: [] };
+    state.featured = { reviews: [], pinnedIds: [], pickId: null };
     renderFeatured();
   });
 }

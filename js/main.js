@@ -62,8 +62,9 @@ export var state = {
   },
   books: [],
   booksLoaded: false,
-  // 홈 "이번 주의 한 줄"(js/api.js refreshFeatured). pinnedIds는 관리자 고정 버튼 표시용.
-  featured: { source: "auto", reviews: [], pinnedIds: [] },
+  // 홈 "오늘의 한 줄"(js/api.js refreshFeatured). reviews는 후보 5개, pickId는 이번 접속에
+  // 보여줄 하나, pinnedIds는 관리자 고정 버튼 표시용.
+  featured: { reviews: [], pinnedIds: [], pickId: null },
   comments: [],
   libraryPollTimer: null,
   detailPollTimer: null,
