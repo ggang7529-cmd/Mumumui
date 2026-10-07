@@ -507,6 +507,30 @@
     .intro-cta { max-width: none; }
   }
 
+  /* PC·태블릿: 인트로 전체를 가운데로. 왼쪽에 480px 기둥만 서 있으면 오른쪽 절반이 비고,
+     바로 아래 "오늘의 한 줄"은 가운데라 두 덩어리의 축이 어긋났다. 휴대폰은 폭을 꽉 채워서
+     이미 균형이 맞으므로 건드리지 않는다. 버튼 줄은 넓은 화면에 맞게 조금 넓히고(560px),
+     큰 버튼은 아래 타일과 높이가 비슷하게 키운다 — .btn-primary가 이 파일에서 더 뒤에
+     나오므로 두 클래스로 이겨야 한다. */
+  @media (min-width: 641px) {
+    .header-intro { margin-top: 2.4rem; text-align: center; }
+    .intro-subtext { margin-top: 0.6rem; }
+    .btn-primary.intro-cta,
+    .intro-links,
+    .home-footer-links {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-primary.intro-cta {
+      margin-top: 1.6rem;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .quick-tile { min-height: 3.4rem; font-size: 0.95rem; }
+  }
+
   /* 헤더 돋보기 "책 찾기" 시트 */
   .search-sheet-panel { max-width: 520px; max-height: min(80vh, 680px); }
 
