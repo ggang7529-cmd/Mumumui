@@ -405,12 +405,16 @@
     font-weight: 400;
   }
 
-  /* 첫 화면의 단 하나의 큰 행동. 폭을 화면만큼 쓰지 않고 글자보다 넉넉한 알약으로 —
-     모바일에서는 가로로 꽉 채운다(아래 640px). */
+  /* 첫 화면의 단 하나의 큰 행동. 아래 바로가기 타일 줄과 같은 폭(480px)으로 맞춘다 —
+     글자만큼만 넓으면 PC에서 넓은 타일 줄 위에 작게 얹혀 균형이 안 맞았다.
+     모바일에서는 가로로 꽉 채운다(아래 640px). 이 규칙이 .btn-primary보다 앞에 있어서
+     모서리·여백·글자 크기는 실제로는 .btn-primary 값이 이긴다(지금 보이는 각진 버튼). */
   .intro-cta {
     display: block;
+    width: 100%;
+    max-width: 480px;
     margin: 1.4rem 0 0;
-    padding: 0.95rem 2.4rem;
+    padding: 0.95rem 1rem;
     border-radius: 999px;
     font-size: 1.05rem;
     font-weight: 700;
@@ -500,7 +504,7 @@
   .home-footer-links .text-link:hover { color: var(--accent); }
 
   @media (max-width: 640px) {
-    .intro-cta { width: 100%; padding: 0.95rem 1rem; }
+    .intro-cta { max-width: none; }
   }
 
   /* 헤더 돋보기 "책 찾기" 시트 */
