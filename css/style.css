@@ -4293,3 +4293,126 @@
     .detail-card #deleteBtn { grid-column: 1 / -1; }
     .detail-card #deleteBtn { justify-self: start; }
   }
+
+  /* ── 내 책장(/my) ─────────────────────────────────────────────────────────────── */
+  .my-shelf-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--t-section, 1.35rem);
+  }
+
+  .my-shelf-title::before { content: none; }
+
+  .my-shelf-sub {
+    margin: 0.4rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .my-shelf-sub .link-btn { font-size: inherit; color: var(--accent); }
+
+  /* 탭: 고른 쪽만 글자가 진하고 아래 버건디 줄. */
+  .my-tabs {
+    display: flex;
+    gap: 1.4rem;
+    margin: 1.2rem 0 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .my-tab {
+    position: relative;
+    padding: 0.6rem 0.1rem;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .my-tab.is-on { color: var(--ink); }
+
+  .my-tab.is-on::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .my-tab-count { margin-left: 0.15rem; font-variant-numeric: tabular-nums; }
+
+  .my-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem 0.75rem;
+  }
+
+  @media (min-width: 641px) {
+    .my-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.4rem 1.1rem; }
+  }
+
+  .my-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .my-tile-cover {
+    position: relative;
+    height: 0;
+    padding-bottom: 150%;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--cover, var(--accent));
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .my-tile-cover img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 표지가 없을 때만 보이는 책등 제목. */
+  .my-tile-spine {
+    position: absolute;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    display: none;
+    color: var(--card-info-ink, #fff);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.3;
+    word-break: keep-all;
+  }
+
+  .my-tile-cover.is-typo .my-tile-spine { display: block; }
+
+  .my-tile-title {
+    overflow: hidden;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .my-tile-stars { color: var(--accent); font-size: 0.75rem; }
+
+  .my-empty {
+    margin: 1.5rem 0;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    text-align: center;
+  }

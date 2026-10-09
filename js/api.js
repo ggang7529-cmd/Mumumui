@@ -31,7 +31,21 @@ export function getSavedNickname() {
 }
 
 export function saveNickname(name) {
+  var before = getSavedNickname();
   try { localStorage.setItem(NICKNAME_KEY, name); } catch (e) {}
+  if (name && name !== before) linkMyRecords(name);
+}
+
+// 이 기기가 닉네임 없이 남긴 별점·읽고 싶어요를 그 닉네임으로 잇는다(functions/api/my-shelf.js).
+// 닉네임을 처음 정하거나 바꿀 때, 그리고 페이지를 열 때 한 번 — 다른 탭에서 닉네임 없이 남긴
+// 별점도 따라오게. 이어진 게 있으면 점수가 달라졌으니 다시 받는다(토스트 없이).
+export function linkMyRecords(name) {
+  if (AUTH_MODE !== "nickname" || !name) return Promise.resolve();
+  return api("/api/my-shelf", { method: "POST", body: { name: name } })
+    .then(function (res) {
+      if (res && res.linked) refreshMyScore();
+    })
+    .catch(function () {});
 }
 
 export function myUid() {

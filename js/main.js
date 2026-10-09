@@ -1,10 +1,10 @@
 import {
   googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
-  getSavedNickname, saveNickname, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
+  getSavedNickname, saveNickname, linkMyRecords, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
 import {
-  renderStars, renderLibrary, renderDetail, renderRateCard, renderAuthBox,
+  renderStars, renderLibrary, renderDetail, renderRateCard, renderMyShelf, renderAuthBox,
   clearSelectedBook, renderBookResults, renderSiteSearch, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderMoodPicker, renderProfile,
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
@@ -79,6 +79,9 @@ export var state = {
   mySeq: 0,
   ratePop: 0,
   lineMood: null,
+  // 내 책장(/my): 서버에서 받은 { rated, wants }(아직 안 왔으면 null)와 보고 있는 탭.
+  myShelf: null,
+  myShelfTab: "rated",
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
   formMood: null,
@@ -219,7 +222,8 @@ export var dom = {
   lineNickInput: document.getElementById("lineNickInput"),
   actionToast: document.getElementById("actionToast"),
   actionToastText: document.getElementById("actionToastText"),
-  actionToastBtn: document.getElementById("actionToastBtn")
+  actionToastBtn: document.getElementById("actionToastBtn"),
+  myShelfView: document.getElementById("myShelfView")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -300,6 +304,7 @@ export function showView(name) {
   dom.profileView.hidden = name !== "profile";
   dom.recommendView.hidden = name !== "recommend";
   dom.collageView.hidden = name !== "collage";
+  dom.myShelfView.hidden = name !== "myShelf";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
@@ -320,6 +325,7 @@ export function showView(name) {
   else if (name === "profile" && state.profileName) path = "/u/" + encodeURIComponent(state.profileName);
   else if (name === "recommend") path = "/recommend";
   else if (name === "collage") path = "/collage";
+  else if (name === "myShelf") path = "/my";
   if (window.location.pathname !== path) history.pushState(null, "", path);
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -392,6 +398,31 @@ export function startBookRegistration(prefillQuery) {
 
 // 닉네임 한 명분의 기록 화면으로 간다. 헤더의 내 닉네임과 한줄평의 남의 닉네임이 같은
 // 함수를 쓴다 — 보는 대상만 다르고 화면은 하나다.
+// 내 책장(/my). 이 기기가 평가한 책과 읽고 싶은 책 — 닉네임이 없어도 열린다. 먼저 갖고 있는
+// 값(없으면 "불러오는 중")으로 그리고 새로 받아 고친다.
+export function openMyShelf(tab) {
+  if (tab) state.myShelfTab = tab;
+  gtag("event", "view_my_shelf", { tab: state.myShelfTab });
+  renderMyShelf();
+  showView("myShelf");
+  api("/api/my-shelf")
+    .then(function (data) {
+      state.myShelf = { rated: data.rated || [], wants: data.wants || [] };
+      if (state.view === "myShelf") renderMyShelf();
+    })
+    .catch(function (e) {
+      if (state.view !== "myShelf") return;
+      document.getElementById("myShelfSub").textContent = "불러오지 못했어요: " + e.message;
+    });
+}
+
+["myTabRated", "myTabWants"].forEach(function (id) {
+  document.getElementById(id).addEventListener("click", function (e) {
+    state.myShelfTab = e.currentTarget.dataset.tab;
+    renderMyShelf();
+  });
+});
+
 export function openProfile(nickname) {
   var name = String(nickname || "").trim();
   if (!name) return;
@@ -815,7 +846,7 @@ export function rateBook(n) {
         ["별점을 남겼어요 · ", starText(n)],
         count >= MY_SHELF_GOAL
           ? { label: "내 책장 한 컷 만들기 ›", onClick: function () { closeLineSheet(); openCollage(); } }
-          : { label: "내 책장 " + count + "/" + MY_SHELF_GOAL }
+          : { label: "내 책장 " + count + "/" + MY_SHELF_GOAL, onClick: function () { closeLineSheet(); openMyShelf("rated"); } }
       );
       // 평균 별점·"평가 N"이 바뀌었다. 점수는 닉네임이 있을 때만 붙고(별점만 1점) 토스트는
       // 띄우지 않는다 — 방금 뜬 알림 띠를 덮는다.
@@ -945,11 +976,7 @@ document.getElementById("wantBtn").addEventListener("click", function () {
   state.wantCount = Math.max(0, state.wantCount + (want ? 1 : -1));
   renderDetail();
   if (want) {
-    var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
-    showActionToast(
-      "읽고 싶은 책에 담았어요",
-      nickname ? { label: "보기 ›", onClick: function () { openProfile(nickname); } } : null
-    );
+    showActionToast("읽고 싶은 책에 담았어요", { label: "보기 ›", onClick: function () { openMyShelf("wants"); } });
   } else {
     hideActionToast();
   }
@@ -1439,6 +1466,7 @@ if (AUTH_MODE === "google") {
 } else {
   renderAuthBox();
   refreshMyScore();
+  if (getSavedNickname()) linkMyRecords(getSavedNickname());
 }
 
 initCollage();
@@ -1477,6 +1505,10 @@ function isRecommendPath(pathname) {
   return /^\/recommend\/?$/.test(pathname);
 }
 
+function isMyShelfPath(pathname) {
+  return /^\/my\/?$/.test(pathname);
+}
+
 function isCollagePath(pathname) {
   return /^\/collage\/?$/.test(pathname);
 }
@@ -1488,6 +1520,7 @@ window.addEventListener("popstate", function () {
   if (who) { openProfile(who); return; }
   if (isRecommendPath(window.location.pathname)) { openRecommend(); return; }
   if (isCollagePath(window.location.pathname)) { openCollage(); return; }
+  if (isMyShelfPath(window.location.pathname)) { openMyShelf(); return; }
   showView("library");
 });
 
@@ -1497,6 +1530,7 @@ if (initialBookId) openDetail(initialBookId);
 else if (initialNickname) openProfile(initialNickname);
 else if (isRecommendPath(window.location.pathname)) openRecommend();
 else if (isCollagePath(window.location.pathname)) openCollage();
+else if (isMyShelfPath(window.location.pathname)) openMyShelf();
 else showView("library");
 
 refreshBooks();

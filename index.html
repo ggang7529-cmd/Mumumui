@@ -351,6 +351,21 @@
     <!-- 책표지 모음판 — 고른 책 표지를 한 장짜리 이미지로 만들어 준다. 아래에 책갈피
          마크와 주소가 늘 들어가서, 만든 사람이 그대로 올리면 소개가 된다.
          내용은 js/collage.js가 채운다. -->
+    <!-- 내 책장(/my) — 이 기기가 평가한 책과 읽고 싶은 책. 닉네임 없이도 보인다(기기 = X-Anon-Id).
+         그리기는 js/render.js renderMyShelf, 목록은 GET /api/my-shelf. -->
+    <section id="myShelfView" hidden>
+      <div class="panel my-shelf">
+        <h2 class="my-shelf-title">내 책장</h2>
+        <p class="my-shelf-sub" id="myShelfSub"></p>
+        <div class="my-tabs" role="tablist" aria-label="내 책장">
+          <button type="button" class="my-tab" role="tab" id="myTabRated" data-tab="rated">평가한 책 <span class="my-tab-count" id="myRatedCount"></span></button>
+          <button type="button" class="my-tab" role="tab" id="myTabWants" data-tab="wants">읽고 싶은 책 <span class="my-tab-count" id="myWantsCount"></span></button>
+        </div>
+        <div class="my-grid" id="myShelfGrid" role="tabpanel"></div>
+        <p class="my-empty" id="myShelfEmpty" hidden></p>
+      </div>
+    </section>
+
     <section id="collageView" hidden>
       <div class="panel">
         <!-- 제목 문자열은 functions/collage.js가 그대로 찾아 <h1>로 바꾼다 — 고치면 같이 고칠 것. -->

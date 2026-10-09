@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, rateBook, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -478,19 +478,15 @@ export function renderAuthBox() {
   var $box = document.getElementById("authBox");
   $box.innerHTML = "";
   if (AUTH_MODE === "nickname") {
-    var nickname = getSavedNickname();
-    if (nickname) {
-      // 내 기록으로 가는 길. 예전엔 헤더에 "등급아이콘 3 [등급명] 닉네임 · 내 기록" 칩이
-      // 있었는데, 헤더를 로고·아이콘만으로 줄이면서 홈 첫 화면의 작은 링크 줄로 옮겼다.
-      // 등급은 하단 "등급 안내" 링크와 점수 토스트로 들어간다.
-      var myRecords = document.createElement("button");
-      myRecords.type = "button";
-      myRecords.className = "quick-tile";
-      myRecords.textContent = "내 기록";
-      myRecords.setAttribute("aria-label", nickname + "님의 기록 보기");
-      myRecords.addEventListener("click", function () { openProfile(nickname); });
-      $box.appendChild(myRecords);
-    }
+    // 내 책장(이 기기가 평가한 책 · 읽고 싶은 책)으로 가는 길. 닉네임이 없어도 별점은 남길 수
+    // 있게 되면서(2026-10-09) 늘 보인다. 예전엔 닉네임이 있을 때만 "내 기록"(공개 프로필)이었고,
+    // 그 프로필은 헤더의 닉네임 칩과 내 책장 화면 위쪽 링크로 간다.
+    var myShelfTile = document.createElement("button");
+    myShelfTile.type = "button";
+    myShelfTile.className = "quick-tile";
+    myShelfTile.textContent = "내 책장";
+    myShelfTile.addEventListener("click", function () { openMyShelf("rated"); });
+    $box.appendChild(myShelfTile);
     return;
   }
   if (state.currentUser) {
@@ -993,6 +989,87 @@ export function renderLibrary() {
 // 닉네임 한 명분의 기록 화면. 서버가 이미 다 계산해서 내려주므로(functions/api/nickname/
 // [name]/reviews.js) 여기서는 그리기만 한다. state.profile이 비어 있으면 아직 불러오는
 // 중이라는 뜻이다.
+// 내 책장. 탭 둘(평가한 책 N / 읽고 싶은 책 N)에 표지 3열. 평가한 책은 표지 아래 내 별점.
+export function renderMyShelf() {
+  var data = state.myShelf;
+  var tab = state.myShelfTab === "wants" ? "wants" : "rated";
+  var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+
+  var $sub = document.getElementById("myShelfSub");
+  $sub.innerHTML = "";
+  if (nickname) {
+    $sub.appendChild(document.createTextNode(nickname + "님의 책장이에요 · "));
+    var profileLink = document.createElement("button");
+    profileLink.type = "button";
+    profileLink.className = "link-btn";
+    profileLink.textContent = "공개 기록 보기";
+    profileLink.addEventListener("click", function () { openProfile(nickname); });
+    $sub.appendChild(profileLink);
+  } else {
+    $sub.textContent = "가입 없이 이 기기에서 남긴 기록이 모여요. 한 줄을 남기며 닉네임을 정하면 그 이름으로 이어져요.";
+  }
+
+  var counts = { rated: data ? data.rated.length : null, wants: data ? data.wants.length : null };
+  [["rated", "myTabRated", "myRatedCount"], ["wants", "myTabWants", "myWantsCount"]].forEach(function (t) {
+    var $tab = document.getElementById(t[1]);
+    var on = t[0] === tab;
+    $tab.classList.toggle("is-on", on);
+    $tab.setAttribute("aria-selected", on ? "true" : "false");
+    document.getElementById(t[2]).textContent = counts[t[0]] === null ? "" : String(counts[t[0]]);
+  });
+
+  var $grid = document.getElementById("myShelfGrid");
+  var $empty = document.getElementById("myShelfEmpty");
+  $grid.innerHTML = "";
+  if (!data) {
+    $empty.hidden = false;
+    $empty.textContent = "불러오는 중이에요…";
+    return;
+  }
+  var items = data[tab];
+  $empty.hidden = items.length > 0;
+  $empty.textContent = tab === "rated"
+    ? "아직 평가한 책이 없어요. 읽은 책을 찾아 별을 눌러보세요."
+    : "아직 담은 책이 없어요. 책 상세에서 \"읽고 싶어요\"를 눌러 담아보세요.";
+
+  items.forEach(function (b) {
+    var a = document.createElement("a");
+    a.className = "my-tile";
+    a.href = "/book/" + encodeURIComponent(b.id);
+    a.addEventListener("click", function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      openDetail(b.id);
+    });
+
+    // 표지 칸은 aspect-ratio 대신 퍼센트 여백으로 높이를 잡는다(사파리 표지 모음판 사건, CLAUDE.md).
+    var cover = document.createElement("div");
+    cover.className = "my-tile-cover" + (b.cover ? "" : " is-typo");
+    cover.style.setProperty("--cover", coverFor(b.title));
+    if (b.cover) {
+      var img = document.createElement("img");
+      img.src = b.cover;
+      img.alt = "";
+      img.loading = "lazy";
+      img.addEventListener("error", function () { img.remove(); cover.classList.add("is-typo"); });
+      cover.appendChild(img);
+    }
+    var spine = document.createElement("span");
+    spine.className = "my-tile-spine";
+    spine.textContent = b.title;
+    cover.appendChild(spine);
+    a.appendChild(cover);
+
+    var title = document.createElement("span");
+    title.className = "my-tile-title";
+    title.textContent = b.title;
+    a.appendChild(title);
+
+    if (tab === "rated" && b.rating) a.appendChild(buildStarRow(b.rating, "my-tile-stars"));
+    $grid.appendChild(a);
+  });
+}
+
 export function renderProfile() {
   var data = state.profile;
   var isMe = !!data && data.nickname === getSavedNickname();
