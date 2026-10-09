@@ -843,7 +843,12 @@ export function rateBook(n) {
     .then(function (res) {
       if (state.currentId === bookId) {
         state.my = res.review;
-        renderRateCard();
+        // 서버가 읽고 싶은 책에서 뺐다(평가한 책 = 읽은 책).
+        if (state.wanted) {
+          state.wanted = false;
+          state.wantCount = Math.max(0, state.wantCount - 1);
+        }
+        renderDetail();
       }
       var count = res.ratedCount || 0;
       showActionToast(

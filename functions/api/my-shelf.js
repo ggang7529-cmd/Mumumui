@@ -27,7 +27,11 @@ export async function onRequestGet(context) {
     wants = (await env.DB.prepare(
       "SELECT b.id, b.title, b.author, b.cover, max(w.created_at) AS at " +
       "FROM wants w JOIN books b ON b.id = w.book_id " +
-      "WHERE w.device_id = ?1 OR (?2 != '' AND w.nickname = ?2) GROUP BY w.book_id ORDER BY at DESC"
+      "WHERE (w.device_id = ?1 OR (?2 != '' AND w.nickname = ?2)) " +
+      // 이미 평가한 책은 읽은 책이라 뺀다(평가할 때 지우지만, 그 전에 남은 기록·다른 기기 몫까지).
+      "AND NOT EXISTS (SELECT 1 FROM comments c WHERE c.book_id = w.book_id AND c.parent_id IS NULL " +
+      "AND (c.author_uid = ?1 OR (?2 != '' AND c.author_name = ?2))) " +
+      "GROUP BY w.book_id ORDER BY at DESC"
     ).bind(uid, name).all()).results || [];
   } catch (e) {}
 

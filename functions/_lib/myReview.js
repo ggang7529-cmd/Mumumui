@@ -83,6 +83,14 @@ export async function upsertMyReview(env, bookId, uid, input) {
   }
   await env.DB.batch(statements);
 
+  // 평가했으면 읽은 책이다 — 읽고 싶은 책에서 뺀다(이 기기 것과 같은 닉네임 것 모두).
+  // wants 표가 아직 없을 수 있어 별점 저장과 따로, 실패해도 그냥 넘어간다.
+  try {
+    await env.DB.prepare(
+      "DELETE FROM wants WHERE book_id = ?1 AND (device_id = ?2 OR (?3 != '' AND nickname = ?3))"
+    ).bind(bookId, uid, next.author_name || "").run();
+  } catch (e) {}
+
   return {
     id: id,
     created: !existing,
