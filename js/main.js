@@ -826,6 +826,8 @@ export function rateBook(n) {
   if (!bookId) return;
   var prev = state.my;
   var hadLine = !!(prev && (String(prev.text || "").trim() || prev.mood));
+  // edit: 이 기기가 이미 별점을 남긴 책에서 다시 누른 것(수정)인지.
+  gtag("event", "rate_star", { book_id: bookId, rating: n, edit: !!(prev && prev.rating) });
   state.mySeq++;
   state.my = Object.assign({}, prev || {}, { rating: n });
   state.ratePop = n;
@@ -869,6 +871,8 @@ export function rateBook(n) {
 // 별점은 이미 저장돼 있다. 여기서 남기면 같은 평가 행에 태그·한 줄·닉네임이 합쳐진다.
 // 태그나 한 줄은 남들에게 보이는 기록이라 닉네임이 있어야 한다.
 var lineMoodTouched = false;
+// 시트가 "남기기"로 닫혔는지. 아니면 닫힐 때 skip_line을 보낸다(버튼이든 바깥 누르기·Esc든).
+var lineSheetDone = true;
 
 function selectLineMood(id) {
   state.lineMood = id;
@@ -897,6 +901,8 @@ function openLineSheet() {
   renderLineNickname(false);
   if (typeof dom.lineSheet.showModal === "function") dom.lineSheet.showModal();
   else dom.lineSheet.setAttribute("open", "");
+  gtag("event", "open_line_sheet", { book_id: state.currentId });
+  lineSheetDone = false;
   // 열자마자 칸에 초점을 주면 휴대폰 키보드가 튀어 올라 태그가 가려진다. 시트 자체에 둔다.
   dom.lineForm.setAttribute("tabindex", "-1");
   dom.lineForm.focus({ preventScroll: true });
@@ -908,7 +914,18 @@ function closeLineSheet() {
   else dom.lineSheet.removeAttribute("open");
 }
 
-document.getElementById("lineSkip").addEventListener("click", closeLineSheet);
+// skip_line의 method: "button"은 "별점만 남길게요", "dismiss"는 바깥 누르기·Esc·화면 이동.
+function skipLine(method) {
+  if (lineSheetDone) return;
+  lineSheetDone = true;
+  gtag("event", "skip_line", { book_id: state.currentId, method: method });
+}
+
+document.getElementById("lineSkip").addEventListener("click", function () {
+  skipLine("button");
+  closeLineSheet();
+});
+dom.lineSheet.addEventListener("close", function () { skipLine("dismiss"); });
 document.getElementById("lineNickChange").addEventListener("click", function () {
   renderLineNickname(true);
   dom.lineNickInput.focus();
@@ -948,6 +965,8 @@ dom.lineForm.addEventListener("submit", function (e) {
     .then(function (res) {
       submitBtn.disabled = false;
       // 기존 GA(리뷰 완료 총합·상세 경로)는 그대로 보낸다 — 이 시트가 상세의 한 줄 칸을 대신한다.
+      lineSheetDone = true;
+      gtag("event", "complete_line", { book_id: bookId, type: text ? "with_text" : "tag_only", mood: mood || "" });
       gtag("event", "complete_review", { book_id: bookId, from: "line_sheet" });
       gtag("event", "complete_comment", { book_id: bookId, from: "line_sheet" });
       state.mySeq++;
@@ -970,6 +989,7 @@ document.getElementById("wantBtn").addEventListener("click", function () {
   var bookId = state.currentId;
   if (!bookId) return;
   var want = !state.wanted;
+  gtag("event", want ? "click_want" : "cancel_want", { book_id: bookId });
   var prev = { wanted: state.wanted, count: state.wantCount };
   state.mySeq++;
   state.wanted = want;
