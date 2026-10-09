@@ -66,3 +66,17 @@ CREATE TABLE IF NOT EXISTS featured_comments (
   comment_id TEXT PRIMARY KEY,
   pinned_at INTEGER NOT NULL
 );
+
+-- 이 기기가 이 책에 남긴 평가 찾기 (0008). 별점만 남긴 기록도 comments에 들어간다.
+CREATE INDEX IF NOT EXISTS idx_comments_book_author ON comments (book_id, author_uid) WHERE parent_id IS NULL;
+
+-- 읽고 싶어요 (0008, functions/_lib/wants.js). device_id = 브라우저의 X-Anon-Id.
+CREATE TABLE IF NOT EXISTS wants (
+  book_id TEXT NOT NULL,
+  device_id TEXT NOT NULL,
+  nickname TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (book_id, device_id)
+);
+CREATE INDEX IF NOT EXISTS idx_wants_device ON wants (device_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wants_nickname ON wants (nickname);

@@ -1,4 +1,5 @@
 import { escapeHtml } from "../_lib/html.js";
+import { hasLineSql } from "../_lib/lines.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 
 // /u/:닉네임 — 프로필 화면의 고유 주소.
@@ -39,7 +40,7 @@ export async function onRequestGet(context) {
   try {
     var counts = await env.DB.batch([
       env.DB.prepare("SELECT COUNT(*) AS n FROM books WHERE owner_name = ?1").bind(name),
-      env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE author_name = ?1 AND parent_id IS NULL").bind(name)
+      env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE author_name = ?1 AND parent_id IS NULL AND " + hasLineSql()).bind(name)
     ]);
     bookCount = (counts[0].results[0] || {}).n || 0;
     reviewCount = (counts[1].results[0] || {}).n || 0;

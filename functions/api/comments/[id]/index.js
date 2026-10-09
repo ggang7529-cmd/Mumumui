@@ -1,6 +1,7 @@
 import { getAnonUid } from "../../../_lib/identity.js";
 import { json } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
+import { rowHasLine } from "../../../_lib/lines.js";
 
 // 한줄평/답글 수정. 본문은 작성 때와 같은 규칙으로 다듬고(줄바꿈 제거, 60자), 한줄평은
 // 별점도 함께 바꿀 수 있다.
@@ -47,12 +48,15 @@ export async function onRequestPatch(context) {
       env.DB.prepare("UPDATE comments SET text = ?1, rating = ?2 WHERE id = ?3").bind(text, rating, id)
     );
 
-    // 별점이 바뀌면 책의 평균에도 반영해야 한다. 리뷰 개수는 그대로이므로 rating_count는
-    // 건드리지 않고 합계만 차이만큼 옮긴다.
+    // 별점이 바뀌면 책의 평균에도 반영해야 한다. 평가 개수는 그대로이므로 rating_count는
+    // 건드리지 않고 합계만 차이만큼 옮긴다. 별점만 있던 행에 본문이 생기면 "한 줄"이 하나
+    // 늘어난다(functions/_lib/lines.js).
     var delta = rating - comment.rating;
-    if (delta !== 0) {
+    var lineDelta = (rowHasLine({ text: text, mood: comment.mood }) ? 1 : 0) - (rowHasLine(comment) ? 1 : 0);
+    if (delta !== 0 || lineDelta !== 0) {
       statements.push(
-        env.DB.prepare("UPDATE books SET rating_sum = rating_sum + ?1 WHERE id = ?2").bind(delta, comment.book_id)
+        env.DB.prepare("UPDATE books SET rating_sum = rating_sum + ?1, comment_count = comment_count + ?3 WHERE id = ?2")
+          .bind(delta, comment.book_id, lineDelta)
       );
     }
 
@@ -80,7 +84,7 @@ export async function onRequestDelete(context) {
   var id = context.params.id;
   var uid = getAnonUid(context.request);
 
-  var comment = await env.DB.prepare("SELECT book_id, rating, author_uid, parent_id FROM comments WHERE id = ?1").bind(id).first();
+  var comment = await env.DB.prepare("SELECT book_id, rating, author_uid, parent_id, text, mood FROM comments WHERE id = ?1").bind(id).first();
   if (!comment) return json({ error: "존재하지 않는 댓글이에요." }, { status: 404 });
 
   var isOwner = !!uid && comment.author_uid === uid;
@@ -108,8 +112,9 @@ export async function onRequestDelete(context) {
       env.DB.prepare("DELETE FROM comments WHERE parent_id = ?1").bind(id),
       env.DB.prepare("DELETE FROM comments WHERE id = ?1").bind(id),
       env.DB.prepare(
-        "UPDATE books SET rating_sum = rating_sum - ?1, rating_count = rating_count - 1, comment_count = comment_count - 1 WHERE id = ?2"
-      ).bind(comment.rating, comment.book_id)
+        // 별점만 남긴 행은 "한 줄"로 센 적이 없다(functions/_lib/lines.js).
+        "UPDATE books SET rating_sum = rating_sum - ?1, rating_count = rating_count - 1, comment_count = comment_count - ?3 WHERE id = ?2"
+      ).bind(comment.rating, comment.book_id, rowHasLine(comment) ? 1 : 0)
     ];
   }
 

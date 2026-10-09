@@ -1,5 +1,6 @@
 import { json } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
+import { deleteWantsForBook } from "../../../_lib/wants.js";
 
 export async function onRequestDelete(context) {
   var env = context.env;
@@ -21,6 +22,7 @@ export async function onRequestDelete(context) {
     env.DB.prepare("DELETE FROM comments WHERE book_id = ?1").bind(id),
     env.DB.prepare("DELETE FROM books WHERE id = ?1").bind(id)
   ]);
+  await deleteWantsForBook(env, id);
 
   return json({ ok: true });
 }

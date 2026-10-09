@@ -1,4 +1,5 @@
 import { json } from "../../_lib/db.js";
+import { hasLineSql } from "../../_lib/lines.js";
 
 // 홈 상단 "방금 등록됐어요" 하이라이트용. 책 등록 시에도 comments 테이블에 첫 리뷰가
 // 함께 들어가므로(functions/api/books/index.js), 별점 있는 최상위 댓글만 최신순으로
@@ -8,7 +9,7 @@ export async function onRequestGet(context) {
   var rows = await env.DB.prepare(
     "SELECT c.id, c.book_id, c.text, c.rating, c.mood, c.created_at, b.title, b.author " +
     "FROM comments c JOIN books b ON b.id = c.book_id " +
-    "WHERE c.parent_id IS NULL ORDER BY c.created_at DESC LIMIT 5"
+    "WHERE c.parent_id IS NULL AND " + hasLineSql("c") + " ORDER BY c.created_at DESC LIMIT 5"
   ).all();
   return json({ comments: rows.results });
 }

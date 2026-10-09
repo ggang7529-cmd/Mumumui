@@ -1,4 +1,5 @@
 import { json } from "../../_lib/db.js";
+import { hasLineSql } from "../../_lib/lines.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
 import { bookKey, editionlessTitle } from "../../../js/bookIdentity.js";
 
@@ -39,7 +40,7 @@ export async function onRequestGet(context) {
 
   var rows = (await env.DB.prepare(
     "SELECT b.id, b.title, b.author, b.isbn, b.cover, b.category, b.class_no, b.created_at, b.updated_at, " +
-    "(SELECT count(*) FROM comments c WHERE c.book_id = b.id AND c.parent_id IS NULL) AS reviews, " +
+    "(SELECT count(*) FROM comments c WHERE c.book_id = b.id AND c.parent_id IS NULL AND " + hasLineSql("c") + ") AS reviews, " +
     "(SELECT count(*) FROM comments c WHERE c.book_id = b.id AND c.parent_id IS NOT NULL) AS replies " +
     "FROM books b ORDER BY b.created_at"
   ).all()).results || [];
@@ -91,12 +92,15 @@ export async function onRequestGet(context) {
 
     sql.push("-- " + (i + 1) + ". " + editionlessTitle(g.keep.title) + " : " + g.merge.length + "권을 " + keepId + "(으)로 합침");
     sql.push("UPDATE comments SET book_id = " + q(keepId) + " WHERE book_id IN (" + ids + ");");
+    // 읽고 싶어요도 남길 책으로 옮긴다. 같은 기기가 두 판본 모두 담았으면 하나만 남는다.
+    sql.push("UPDATE OR IGNORE wants SET book_id = " + q(keepId) + " WHERE book_id IN (" + ids + ");");
+    sql.push("DELETE FROM wants WHERE book_id IN (" + ids + ");");
     sql.push("DELETE FROM books WHERE id IN (" + ids + ");");
     sql.push(
       "UPDATE books SET " +
       "rating_sum = (SELECT coalesce(sum(rating), 0) FROM comments WHERE book_id = " + q(keepId) + " AND parent_id IS NULL), " +
       "rating_count = (SELECT count(*) FROM comments WHERE book_id = " + q(keepId) + " AND parent_id IS NULL), " +
-      "comment_count = (SELECT count(*) FROM comments WHERE book_id = " + q(keepId) + " AND parent_id IS NULL), " +
+      "comment_count = (SELECT count(*) FROM comments WHERE book_id = " + q(keepId) + " AND parent_id IS NULL AND " + hasLineSql() + "), " +
       "updated_at = " + latest + ", " +
       "cover = coalesce(cover, " + q(firstOf("cover")) + "), " +
       "isbn = coalesce(isbn, " + q(firstOf("isbn")) + "), " +

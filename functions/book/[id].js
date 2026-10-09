@@ -1,4 +1,5 @@
 import { fetchScoreMap } from "../_lib/scores.js";
+import { hasLineSql } from "../_lib/lines.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
 import { escapeHtml } from "../_lib/html.js";
@@ -85,7 +86,7 @@ export async function onRequestGet(context) {
   var html = await indexRes.text();
 
   var book = await env.DB.prepare(
-    "SELECT id, title, author, cover, isbn, contents, text, mood, rating_sum, rating_count, owner_name, created_at FROM books WHERE id = ?1"
+    "SELECT id, title, author, cover, isbn, contents, text, mood, rating_sum, rating_count, comment_count, owner_name, created_at FROM books WHERE id = ?1"
   )
     .bind(id)
     .first();
@@ -199,12 +200,10 @@ export async function onRequestGet(context) {
   // 미리 채워 넣는 것이다. 화면에 그대로 남아도 무방한 이유: js/render.js의 renderDetail()이
   // 페이지 로드 직후 같은 엘리먼트에 동일한 값을 textContent로 다시 써서 자연스럽게
   // 이어받는다 (state.books가 아직 없을 때만 잠깐 비어있다가 채워짐).
-  var ratingMetaText = avgRating !== null ? avgRating.toFixed(1) + " (" + book.rating_count + ")" : "아직 평점 없음";
-  var createdDate = new Date(book.created_at || Date.now());
-  var dateText =
-    createdDate.getFullYear() + "." + String(createdDate.getMonth() + 1).padStart(2, "0") + "." +
-    String(createdDate.getDate()).padStart(2, "0") + " 기록";
-  var ownerName = escapeHtml(book.owner_name || "알 수 없음");
+  // 화면의 "★ 4.8 · 평가 5 · 한 줄 3"과 같은 문구(js/render.js detailStatsText).
+  var ratingMetaText =
+    (avgRating !== null ? "★ " + avgRating.toFixed(1) + " · 평가 " + book.rating_count : "아직 평가가 없어요") +
+    " · 한 줄 " + (book.comment_count || 0);
 
   // 댓글(한줄평)은 페이지의 핵심 콘텐츠지만 부가 조회이므로, 실패해도 상세 페이지
   // 자체(제목/평점/설명)는 그대로 나가야 한다 — 실패 시 빈 목록으로 두면
@@ -213,14 +212,14 @@ export async function onRequestGet(context) {
   var commentListHtml = "";
   try {
     var commentRows = await env.DB.prepare(
-      "SELECT text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL " +
+      "SELECT text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
       "ORDER BY created_at DESC LIMIT 20"
     )
       .bind(id)
       .all();
     var topLevelComments = commentRows.results || [];
     if (topLevelComments.length > 0) {
-      commentCountText = "(" + topLevelComments.length + ")";
+      commentCountText = String(book.comment_count || topLevelComments.length);
       var scoreMap = await fetchScoreMap(env);
       commentListHtml = topLevelComments.map(function (c) {
         var starsHtml = "";
@@ -263,16 +262,8 @@ export async function onRequestGet(context) {
       '<p class="detail-author" id="detailAuthor">' + escapeHtml(book.author) + "</p>"
     )
     .replace(
-      '<span class="rating-meta" id="detailRatingMeta"></span>',
-      '<span class="rating-meta" id="detailRatingMeta">' + escapeHtml(ratingMetaText) + "</span>"
-    )
-    .replace(
-      '<p class="meta-date" id="detailDate"></p>',
-      '<p class="meta-date" id="detailDate">' + escapeHtml(dateText) + "</p>"
-    )
-    .replace(
-      '<p class="meta-owner" id="detailOwner"></p>',
-      '<p class="meta-owner" id="detailOwner">등록: <span class="meta-owner-name">' + ownerName + "</span></p>"
+      '<p class="rating-meta" id="detailRatingMeta"></p>',
+      '<p class="rating-meta" id="detailRatingMeta">' + escapeHtml(ratingMetaText) + "</p>"
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")

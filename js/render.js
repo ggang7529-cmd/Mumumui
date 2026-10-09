@@ -1,5 +1,5 @@
-import { state, dom, AUTH_MODE, openDetail, showView, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
-import { MOOD_TAGS, findMoodTag } from "./moodTags.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
+import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
@@ -116,12 +116,13 @@ function buildStarIcon(filled) {
 export function renderMoodPicker(container, selectedId, onSelect) {
   if (!container) return;
   container.innerHTML = "";
-  MOOD_TAGS.forEach(function (tag) {
+  // 고르는 칸은 글자만(이모지는 목록의 배지에만 붙는다 — 칩마다 이모지가 달리면 줄이 시끄럽다).
+  PICKABLE_MOOD_TAGS.forEach(function (tag) {
     var btn = document.createElement("button");
     btn.type = "button";
     var isOn = tag.id === selectedId;
     btn.className = "mood-chip" + (isOn ? " is-on" : "");
-    btn.textContent = tag.label + " " + tag.emoji;
+    btn.textContent = tag.label;
     // 하나만 고를 수 있으므로 라디오로 읽히게 한다.
     btn.setAttribute("role", "radio");
     btn.setAttribute("aria-checked", isOn ? "true" : "false");
@@ -1412,6 +1413,65 @@ export function setFeaturedPin(commentId, pinned) {
     .catch(function (e) { alert(e.message); });
 }
 
+// 제목 아래 "★ 4.8 · 평가 5 · 한 줄 3". 평가는 별점만 남긴 것까지, 한 줄은 문장·태그가 있는
+// 것만 센다(functions/_lib/lines.js). 3명 이상 담았을 때만 "N명이 읽고 싶어해요"를 붙인다 —
+// 1~2명은 오히려 "아무도 관심 없는 책"처럼 읽힌다.
+function renderDetailStats(r) {
+  var $meta = document.getElementById("detailRatingMeta");
+  $meta.innerHTML = "";
+  var rating = bookRating(r);
+  if (rating) {
+    var avg = document.createElement("span");
+    avg.className = "rating-avg";
+    avg.textContent = "★ " + rating.avg.toFixed(1);
+    $meta.appendChild(avg);
+    $meta.appendChild(document.createTextNode(" · 평가 " + rating.count));
+  } else {
+    $meta.appendChild(document.createTextNode("아직 평가가 없어요"));
+  }
+  $meta.appendChild(document.createTextNode(" · 한 줄 " + (r.commentCount || 0)));
+
+  var $want = document.getElementById("detailWantCount");
+  $want.hidden = !(state.wantCount >= 3);
+  $want.textContent = state.wantCount >= 3 ? state.wantCount + "명이 읽고 싶어해요" : "";
+}
+
+// 별점 카드. 이 기기로 평가한 책이면 "내 평가" + 채운 별, 아니면 안내 문구 + 빈 별.
+// 누르면 js/main.js rateBook이 바로 저장하고 시트를 연다.
+export function renderRateCard() {
+  var mine = state.my && state.my.rating ? state.my.rating : 0;
+  var $label = document.getElementById("rateLabel");
+  $label.textContent = mine ? "내 평가" : "읽으셨나요? 별을 눌러주세요";
+  $label.classList.toggle("is-mine", !!mine);
+
+  var $stars = document.getElementById("rateStars");
+  var popUpTo = state.ratePop || 0;
+  state.ratePop = 0;
+  $stars.innerHTML = "";
+  for (var i = 1; i <= 5; i++) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = (i <= mine ? "is-on" : "") + (i <= popUpTo ? " is-pop" : "");
+    if (i <= popUpTo) btn.style.animationDelay = "0s";
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", i === mine ? "true" : "false");
+    btn.setAttribute("aria-label", i + "점");
+    // 빈 별도 속이 찬 연한 베이지라 .star-icon(테두리만 있는 별)이 아니라 따로 칠한다.
+    btn.appendChild(buildIcon("star", "rate-star"));
+    // 하나씩 차오르는 느낌 — 앞 별부터 조금씩 늦게 튄다.
+    if (i <= popUpTo) btn.querySelector(".icon").style.animationDelay = (i - 1) * 0.04 + "s";
+    btn.addEventListener("click", function (idx) {
+      return function () { rateBook(idx); };
+    }(i));
+    $stars.appendChild(btn);
+  }
+
+  var $want = document.getElementById("wantBtn");
+  $want.classList.toggle("is-on", !!state.wanted);
+  $want.setAttribute("aria-pressed", state.wanted ? "true" : "false");
+  document.getElementById("wantLabel").textContent = state.wanted ? "읽고 싶은 책에 담김" : "읽고 싶어요";
+}
+
 export function renderDetail() {
   var r = findBook(state.currentId);
   if (!r) {
@@ -1423,21 +1483,10 @@ export function renderDetail() {
   }
 
   document.getElementById("detailTitle").textContent = r.title;
-  document.getElementById("detailAuthor").textContent = r.author;
-  document.getElementById("detailDate").textContent = formatDate(r.createdAt) + " 기록";
-  var $detailOwner = document.getElementById("detailOwner");
-  $detailOwner.innerHTML = "";
-  $detailOwner.appendChild(document.createTextNode("등록: "));
-  var ownerNameSpan = document.createElement("span");
-  ownerNameSpan.className = "meta-owner-name";
-  ownerNameSpan.textContent = r.ownerName || "알 수 없음";
-  $detailOwner.appendChild(ownerNameSpan);
-
-  var rating = bookRating(r);
-  renderStars(document.getElementById("detailStars"), rating ? Math.round(rating.avg) : 0, false);
-  document.getElementById("detailRatingMeta").textContent = rating
-    ? rating.avg.toFixed(1) + " (" + rating.count + ")"
-    : "아직 평점 없음";
+  // "저자 · 분류". 출판사는 아직 DB에 저장하지 않아서(카카오 결과에는 있음) 빠져 있다.
+  var genre = genreOfBook(r);
+  document.getElementById("detailAuthor").textContent = r.author + (genre && genre !== "기타" ? " · " + genre : "");
+  renderDetailStats(r);
 
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";
@@ -1466,25 +1515,7 @@ export function renderDetail() {
 
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
-
-  var $commentForm = document.getElementById("commentForm");
-  var $commentSignin = document.getElementById("commentSignin");
-  var $commentHint = document.getElementById("commentHint");
-  if (AUTH_MODE === "nickname") {
-    $commentForm.hidden = false;
-    $commentSignin.hidden = true;
-    $commentHint.hidden = false;
-  } else {
-    $commentForm.hidden = !state.currentUser;
-    $commentSignin.hidden = !!state.currentUser;
-    $commentHint.hidden = !state.currentUser;
-    if (!state.currentUser) {
-      document.getElementById("commentSigninText").textContent = googleConfigured()
-        ? "로그인하면 이 책에 한줄평을 남길 수 있어요."
-        : "아직 Google 로그인이 설정되지 않았어요.";
-      document.getElementById("googleBtnComment").hidden = !googleConfigured();
-    }
-  }
+  renderRateCard();
 
   var $list = document.getElementById("commentList");
   // $list.innerHTML을 비우면 그 안에 포커스가 있던 답글 입력창은 (removal로 인해) blur된다.
@@ -1513,13 +1544,13 @@ export function renderDetail() {
     repliesByParent[pid].sort(function (a, b) { return a.createdAt - b.createdAt; });
   });
 
-  document.getElementById("commentCount").textContent = topLevel.length ? "(" + topLevel.length + ")" : "";
+  document.getElementById("commentCount").textContent = String(topLevel.length);
 
   if (topLevel.length === 0) {
     var li = document.createElement("li");
     li.style.color = "var(--ink-faint)";
     li.style.fontSize = "0.88rem";
-    li.textContent = "아직 댓글이 없어요. 별점과 함께 첫 한 줄을 남겨보세요.";
+    li.textContent = "아직 한 줄이 없어요. 별을 누르고 첫 한 줄을 남겨보세요.";
     $list.appendChild(li);
   } else {
     var sortedComments = topLevel.slice().sort(function (a, b) { return b.likes - a.likes; });

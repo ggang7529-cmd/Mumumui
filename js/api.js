@@ -184,8 +184,18 @@ export function refreshBooks() {
 
 export function refreshComments() {
   if (!state.currentId) return Promise.resolve();
-  return api("/api/books/" + state.currentId + "/comments").then(function (data) {
+  var bookId = state.currentId;
+  // 별·읽고 싶어요를 누른 직후에 출발한 요청이 누르기 전 상태를 들고 늦게 도착하면 화면이
+  // 잠깐 되돌아간다. 그 사이 누른 적이 있으면(mySeq가 바뀌었으면) 내 평가 쪽 값은 버린다.
+  var seq = state.mySeq;
+  return api("/api/books/" + bookId + "/comments").then(function (data) {
+    if (state.currentId !== bookId) return;
     state.comments = (data.comments || []).map(normalizeComment);
+    if (seq === state.mySeq) {
+      state.my = data.my || null;
+      state.wanted = !!data.wanted;
+      state.wantCount = data.wantCount || 0;
+    }
     if (state.view === "detail") renderDetail();
   }).catch(function () {});
 }

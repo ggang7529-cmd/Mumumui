@@ -255,44 +255,26 @@
           <header id="detailHeaderInfo">
             <h2 id="detailTitle"></h2>
             <p class="detail-author" id="detailAuthor"></p>
-            <div class="rating-line">
-              <div class="stars" id="detailStars"></div>
-              <span class="rating-meta" id="detailRatingMeta"></span>
-            </div>
-            <p class="meta-date" id="detailDate"></p>
-            <p class="meta-owner" id="detailOwner"></p>
+            <p class="rating-meta" id="detailRatingMeta"></p>
+            <p class="detail-want-count" id="detailWantCount" hidden></p>
           </header>
         </div>
 
+        <!-- 별점과 "읽고 싶어요"를 한 상자에. 읽은 사람은 별, 안 읽은 사람은 버튼 — 첫 화면에서
+             스크롤 없이 보여야 한다. 별을 누르면 바로 저장되고(PUT /api/books/:id/mine) 아래에서
+             "한 줄도 남겨볼래요?" 시트가 올라온다. 그리기는 js/render.js renderRateCard. -->
+        <div class="rate-card" id="rateCard">
+          <p class="rate-label" id="rateLabel">읽으셨나요? 별을 눌러주세요</p>
+          <div class="rate-stars" id="rateStars" role="radiogroup" aria-label="내 별점"></div>
+          <button type="button" class="want-btn" id="wantBtn" aria-pressed="false">
+            <svg class="icon want-icon" aria-hidden="true" focusable="false"><use href="#i-bookmark"></use></svg>
+            <span id="wantLabel">읽고 싶어요</span>
+          </button>
+        </div>
+
         <section class="comments">
-          <h3>한줄평 · 별점 <span class="count" id="commentCount"></span> <span class="count">· 좋아요 많은 순</span></h3>
+          <h3>한 줄 <span class="count" id="commentCount"></span></h3>
           <ul id="commentList"></ul>
-          <form id="commentForm" hidden>
-            <div class="field">
-              <label for="cNickname">닉네임</label>
-              <input type="text" id="cNickname" required maxlength="10" placeholder="예: 책벌레" autocomplete="off">
-            </div>
-            <div class="field">
-              <label>별점 (필수)</label>
-              <div class="star-picker" id="cStars" role="radiogroup" aria-label="댓글 별점"></div>
-            </div>
-            <div class="field">
-              <label>이런 책이었어요</label>
-              <div class="mood-picker" id="cMoods" role="radiogroup" aria-label="감정 태그"></div>
-              <p class="char-hint">한 줄 쓰기 어려우면, 여기서 하나만 골라도 남길 수 있어요</p>
-            </div>
-            <div class="comment-input-row">
-              <input type="text" id="commentInput" maxlength="60" placeholder="이 책에 대한 한 줄 감상을 남겨보세요" autocomplete="off">
-              <button type="submit">남기기</button>
-            </div>
-          </form>
-          <!-- "별점만 필수"라고 적어뒀었는데 사실이 아니다 — 닉네임도 필수고, 별점 없이
-               감정 태그만 고르는 것도 안 된다. 잘못된 안내를 지우고 글자 수만 남긴다. -->
-          <p class="char-hint" id="commentHint">한 줄 감상은 최대 60자</p>
-          <div class="signin-prompt" id="commentSignin" hidden>
-            <span id="commentSigninText">로그인하면 이 책에 한줄평을 남길 수 있어요.</span>
-            <div id="googleBtnComment"></div>
-          </div>
         </section>
 
         <button class="btn-ghost-danger" id="deleteBtn" type="button" hidden>이 책 리뷰 삭제하기</button>
@@ -629,6 +611,36 @@
      목록을 가리지 않는다. 누르면 등급 안내가 열린다 — "+3점!"을 본 순간이 "점수가 뭔데?"가
      가장 궁금한 때라, 안내로 가는 입구 중 여기가 제일 잘 눌린다. -->
 <button type="button" class="score-toast" id="scoreToast" hidden aria-live="polite"></button>
+
+<!-- 별을 누른 뒤 올라오는 "한 줄도 남겨볼래요?" 시트. 건너뛰어도 별점은 이미 저장돼 있다.
+     남기면 같은 평가 행에 태그·한 줄·닉네임이 합쳐진다(새 한줄평을 따로 만들지 않음).
+     휴대폰은 아래에서 올라오고 PC는 가운데. 키보드가 올라오면 --vv-height/--vv-top(js/main.js
+     trackVisualViewport)으로 보이는 화면 바닥에 붙는다. -->
+<dialog class="line-sheet" id="lineSheet" aria-labelledby="lineSheetTitle">
+  <form class="line-sheet-panel" id="lineForm" method="dialog">
+    <span class="line-sheet-grip" aria-hidden="true"></span>
+    <h2 class="line-sheet-title" id="lineSheetTitle">한 줄도 남겨볼래요?</h2>
+    <p class="line-sheet-sub">태그만 골라도 OK</p>
+    <div class="mood-picker line-moods" id="lineMoods" role="radiogroup" aria-label="감정 태그"></div>
+    <input type="text" class="line-input" id="lineText" maxlength="60" placeholder="한 줄로 남겨보세요" autocomplete="off" aria-label="한 줄">
+    <div class="line-nickname">
+      <p class="nickname-line" id="lineNickLine" hidden><strong id="lineNickName"></strong> 님으로 남겨요 · <button type="button" class="link-btn" id="lineNickChange">변경</button></p>
+      <label class="line-nick-input" id="lineNickInputWrap">
+        <span>처음이라면 닉네임만 정해주세요</span>
+        <input type="text" id="lineNickInput" maxlength="10" placeholder="예: 책벌레" autocomplete="off">
+      </label>
+    </div>
+    <button type="submit" class="btn-primary line-submit" id="lineSubmit" value="save">남기기</button>
+    <button type="button" class="link-btn line-skip" id="lineSkip">별점만 남길게요</button>
+  </form>
+</dialog>
+
+<!-- 별점·읽고 싶어요 알림. 어두운 띠 하나에 왼쪽 문구, 오른쪽 할 일(있을 때만 누를 수 있음).
+     점수 토스트(#scoreToast)와 같은 자리(화면 위)지만 따로 둔다 — 그쪽은 누르면 등급 안내다. -->
+<div class="action-toast" id="actionToast" hidden aria-live="polite">
+  <span class="action-toast-text" id="actionToastText"></span>
+  <button type="button" class="action-toast-btn" id="actionToastBtn"></button>
+</div>
 
 <script type="module" src="js/main.js"></script>
 </body>

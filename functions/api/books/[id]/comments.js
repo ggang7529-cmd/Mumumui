@@ -3,6 +3,9 @@ import { json, newId } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { fetchScoreMap } from "../../../_lib/scores.js";
 import { normalizeMoodId } from "../../../../js/moodTags.js";
+import { hasLineSql } from "../../../_lib/lines.js";
+import { findMyReview, upsertMyReview } from "../../../_lib/myReview.js";
+import { wantStatus } from "../../../_lib/wants.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -13,7 +16,10 @@ export async function onRequestGet(context) {
     "SELECT c.id, c.text, c.rating, c.mood, c.author_uid, c.author_name, c.author_photo, c.created_at, c.parent_id, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id AND user_id = ?2) AS liked_by_me " +
-    "FROM comments c WHERE c.book_id = ?1 ORDER BY c.created_at ASC"
+    // 별점만 남긴 행(본문·태그 없음)은 한줄평 목록에 넣지 않는다 — 별점은 평균과 "평가 N"에만
+    // 들어가고, 이 기기의 것은 아래 my로 따로 내려 별점 카드에 채운다.
+    "FROM comments c WHERE c.book_id = ?1 AND (c.parent_id IS NOT NULL OR " + hasLineSql("c") + ") " +
+    "ORDER BY c.created_at ASC"
   ).bind(bookId, myUid).all();
 
   // 활동 점수/등급 표시(js/render.js buildAuthorChip)용으로 작성자 닉네임마다 현재 점수를
@@ -50,7 +56,16 @@ export async function onRequestGet(context) {
     };
   });
 
-  return json({ comments: comments });
+  // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태.
+  var mine = await findMyReview(env, bookId, myUid);
+  var want = await wantStatus(env, bookId, myUid);
+
+  return json({
+    comments: comments,
+    my: mine ? { id: mine.id, rating: mine.rating, text: mine.text, mood: mine.mood, name: mine.author_name } : null,
+    wanted: want.wanted,
+    wantCount: want.count
+  });
 }
 
 export async function onRequestPost(context) {
@@ -96,29 +111,26 @@ export async function onRequestPost(context) {
     if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
   }
 
+  // 한줄평은 이 기기의 평가 하나에 합쳐진다 — 별점만 남겨둔 행이 있으면 거기에 채우고, 이미
+  // 한 줄을 남긴 책이면 새로 붙이지 않고 그 한 줄을 고친다(같은 기기는 책당 하나).
+  if (!parentId) {
+    var result = await upsertMyReview(env, bookId, uid, { rating: rating, text: text, mood: mood, name: name });
+    if (result.error) return json({ error: result.error }, { status: result.status });
+    return json({ id: result.id, updated: !result.created, points: result.points }, { status: result.created ? 201 : 200 });
+  }
+
   var id = newId();
   var now = Date.now();
-  var statements = [
+  // 답글은 rating_sum/comment_count(리뷰순 정렬 기준)에는 반영하지 않지만, 홈 화면 NEW
+  // 배지와 기본 정렬(최신순)은 updated_at 하나만 보므로 답글이 달려도 갱신해줘야
+  // 책 등록 때와 마찬가지로 새 활동으로 보인다.
+  await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO comments (id, book_id, text, rating, author_uid, author_name, author_photo, created_at, parent_id, mood) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, ?9)"
-    ).bind(id, bookId, text, rating, uid, name, now, parentId, mood)
-  ];
-  if (!parentId) {
-    statements.push(
-      env.DB.prepare(
-        "UPDATE books SET rating_sum = rating_sum + ?1, rating_count = rating_count + 1, comment_count = comment_count + 1, updated_at = ?3 WHERE id = ?2"
-      ).bind(rating, bookId, now)
-    );
-  } else {
-    // 답글은 rating_sum/comment_count(리뷰순 정렬 기준)에는 반영하지 않지만, 홈 화면 NEW
-    // 배지와 기본 정렬(최신순)은 updated_at 하나만 보므로 답글이 달려도 갱신해줘야
-    // 책 등록 때와 마찬가지로 새 활동으로 보인다.
-    statements.push(
-      env.DB.prepare("UPDATE books SET updated_at = ?2 WHERE id = ?1").bind(bookId, now)
-    );
-  }
-  await env.DB.batch(statements);
+    ).bind(id, bookId, text, rating, uid, name, now, parentId, mood),
+    env.DB.prepare("UPDATE books SET updated_at = ?2 WHERE id = ?1").bind(bookId, now)
+  ]);
 
   return json({ id: id }, { status: 201 });
 }

@@ -4,7 +4,7 @@ import {
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
 import {
-  renderStars, renderLibrary, renderDetail, renderAuthBox,
+  renderStars, renderLibrary, renderDetail, renderRateCard, renderAuthBox,
   clearSelectedBook, renderBookResults, renderSiteSearch, findBook, renderRandomCard, bookRating, formatDate,
   toggleNotifDropdown, closeNotifDropdown, renderMoodPicker, renderProfile,
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
@@ -70,10 +70,17 @@ export var state = {
   detailPollTimer: null,
   view: "library",
   currentId: null,
-  commentRating: 0,
+  // 책 상세: 이 기기가 이 책에 남긴 평가({rating,text,mood,name})와 읽고 싶어요 상태.
+  // refreshComments가 채우고, 별·버튼을 누르면 응답을 기다리지 않고 먼저 바꾼다(mySeq로
+  // 그 사이 출발한 폴링 응답이 되돌리지 못하게).
+  my: null,
+  wanted: false,
+  wantCount: 0,
+  mySeq: 0,
+  ratePop: 0,
+  lineMood: null,
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
-  commentMood: null,
   formMood: null,
   selectedBook: null,
   // 프로필 화면에서 보고 있는 닉네임과, 서버에서 받아온 그 사람의 기록. 아직 안 왔으면 null.
@@ -138,7 +145,6 @@ export var dom = {
   detailView: document.getElementById("detailView"),
   randomView: document.getElementById("randomView"),
   feedbackView: document.getElementById("feedbackView"),
-  cStars: document.getElementById("cStars"),
   fStars: document.getElementById("fStars"),
   reviewForm: document.getElementById("reviewForm"),
   bookSearchInput: document.getElementById("bookSearchInput"),
@@ -156,7 +162,6 @@ export var dom = {
   headerIntro: document.getElementById("headerIntro"),
   stickyHeader: document.getElementById("stickyHeader"),
   fMoods: document.getElementById("fMoods"),
-  cMoods: document.getElementById("cMoods"),
   recommendView: document.getElementById("recommendView"),
   recommendAnalyze: document.getElementById("recommendAnalyze"),
   recommendScanTrack: document.getElementById("recommendScanTrack"),
@@ -203,7 +208,18 @@ export var dom = {
   levelProgress: document.getElementById("levelProgress"),
   levelRuleList: document.getElementById("levelRuleList"),
   levelTable: document.getElementById("levelTable"),
-  scoreToast: document.getElementById("scoreToast")
+  scoreToast: document.getElementById("scoreToast"),
+  lineSheet: document.getElementById("lineSheet"),
+  lineForm: document.getElementById("lineForm"),
+  lineMoods: document.getElementById("lineMoods"),
+  lineText: document.getElementById("lineText"),
+  lineNickLine: document.getElementById("lineNickLine"),
+  lineNickName: document.getElementById("lineNickName"),
+  lineNickInputWrap: document.getElementById("lineNickInputWrap"),
+  lineNickInput: document.getElementById("lineNickInput"),
+  actionToast: document.getElementById("actionToast"),
+  actionToastText: document.getElementById("actionToastText"),
+  actionToastBtn: document.getElementById("actionToastBtn")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -221,11 +237,6 @@ var MILESTONE_STEP = 50;
 
 function renderAdminToggle() {
   if (state.view === "detail") renderDetail();
-}
-
-function selectCommentRating(idx) {
-  state.commentRating = idx;
-  renderStars(dom.cStars, state.commentRating, true, selectCommentRating);
 }
 
 // 별점이 유일한 필수 항목이라, 별점을 누르는 순간 나머지(태그·한 줄·닉네임)를 펼친다.
@@ -259,11 +270,6 @@ function selectFormMood(id) {
   renderMoodPicker(dom.fMoods, state.formMood, selectFormMood);
 }
 
-function selectCommentMood(id) {
-  state.commentMood = id;
-  renderMoodPicker(dom.cMoods, state.commentMood, selectCommentMood);
-}
-
 function stopLibraryPolling() {
   if (state.libraryPollTimer) { clearInterval(state.libraryPollTimer); state.libraryPollTimer = null; }
 }
@@ -284,6 +290,8 @@ function startDetailPolling() {
 
 export function showView(name) {
   state.view = name;
+  // 책 상세를 떠나면 그 책의 한 줄 시트도 닫는다(뒤로가기 등).
+  if (name !== "detail") closeLineSheet();
   dom.libraryView.hidden = name !== "library";
   dom.libraryToolbar.hidden = name !== "library";
   dom.detailView.hidden = name !== "detail";
@@ -489,15 +497,13 @@ export function openRecommend() {
 export function openDetail(id) {
   state.currentId = id;
   state.comments = [];
-  state.commentRating = 0;
-  state.commentMood = null;
+  state.my = null;
+  state.wanted = false;
+  state.wantCount = 0;
+  state.mySeq++;
   state.openReplies = {};
   state.openReplyNames = {};
   state.detailCoverAnimatePending = true;
-  renderStars(dom.cStars, 0, true, selectCommentRating);
-  renderMoodPicker(dom.cMoods, null, selectCommentMood);
-  document.getElementById("commentInput").placeholder = pickReviewPlaceholder();
-  if (AUTH_MODE === "nickname") document.getElementById("cNickname").value = getSavedNickname();
   renderDetail();
   showView("detail");
   renderGoogleButtons();
@@ -680,6 +686,7 @@ var scoreToastTimer = null;
 
 export function showScoreToast(text, iconName) {
   clearTimeout(scoreToastTimer);
+  hideActionToast();
   dom.scoreToast.innerHTML = "";
   if (iconName) dom.scoreToast.appendChild(buildIcon(iconName, "lv-icon lv-icon--" + iconName));
   var label = document.createElement("span");
@@ -713,6 +720,260 @@ function hideScoreToast() {
 dom.scoreToast.addEventListener("click", function () {
   hideScoreToast();
   openLevelGuide("toast");
+});
+
+// ── 별점·읽고 싶어요 알림 띠 ────────────────────────────────────────────────
+//
+// "한 줄도 남겨볼래요?" 시트(<dialog>)가 떠 있는 동안에도 그 위에 보여야 한다. 모달 dialog는
+// 최상위 층에 올라가서 z-index로는 못 이기므로, popover를 아는 브라우저에서는 이것도 popover로
+// 최상위 층에 올린다(나중에 연 쪽이 위). 모르면 그냥 fixed로 띄운다(시트 뒤로 가려질 수 있음).
+var actionToastTimer = null;
+var actionToastHandler = null;
+var actionToastPopover = typeof dom.actionToast.showPopover === "function";
+if (actionToastPopover) {
+  dom.actionToast.setAttribute("popover", "manual");
+  dom.actionToast.hidden = false;
+}
+
+// action: { label, onClick } — onClick이 없으면 누를 수 없는 글자(예: "내 책장 1/3")다.
+export function showActionToast(textNodes, action) {
+  clearTimeout(actionToastTimer);
+  hideScoreToast();
+  dom.actionToastText.innerHTML = "";
+  (Array.isArray(textNodes) ? textNodes : [textNodes]).forEach(function (n) {
+    dom.actionToastText.appendChild(typeof n === "string" ? document.createTextNode(n) : n);
+  });
+  actionToastHandler = action && action.onClick ? action.onClick : null;
+  dom.actionToastBtn.hidden = !action;
+  dom.actionToastBtn.textContent = action ? action.label : "";
+  dom.actionToastBtn.disabled = !actionToastHandler;
+
+  if (actionToastPopover) {
+    // 이미 떠 있으면 한 번 내렸다 올려야 다시 맨 위(시트보다 위)로 온다.
+    try { dom.actionToast.hidePopover(); } catch (e) {}
+    try { dom.actionToast.showPopover(); } catch (e) {}
+  } else {
+    dom.actionToast.hidden = false;
+  }
+  void dom.actionToast.offsetWidth;
+  dom.actionToast.classList.add("show");
+  actionToastTimer = setTimeout(hideActionToast, 3500);
+}
+
+function hideActionToast() {
+  clearTimeout(actionToastTimer);
+  dom.actionToast.classList.remove("show");
+  setTimeout(function () {
+    if (dom.actionToast.classList.contains("show")) return;
+    if (actionToastPopover) { try { dom.actionToast.hidePopover(); } catch (e) {} }
+    else dom.actionToast.hidden = true;
+  }, 240);
+}
+
+dom.actionToastBtn.addEventListener("click", function () {
+  var handler = actionToastHandler;
+  hideActionToast();
+  if (handler) handler();
+});
+
+// ── 책 상세: 별점 바로 저장 ─────────────────────────────────────────────────
+//
+// 별을 누르면 그 자리에서 저장한다(닉네임 없어도 됨 — 이 브라우저의 X-Anon-Id로). 같은 기기는
+// 책당 평가 하나라 다시 누르면 고친다. 아직 한 줄이 없는 평가면 "한 줄도 남겨볼래요?" 시트를
+// 올리고, 이미 한 줄이 있으면(별점만 고치는 것) 시트 없이 알림만.
+var MY_SHELF_GOAL = 3;
+
+function starText(n) {
+  var span = document.createElement("span");
+  span.className = "toast-stars";
+  span.textContent = "★★★★★".slice(0, n);
+  return span;
+}
+
+export function rateBook(n) {
+  var bookId = state.currentId;
+  if (!bookId) return;
+  var prev = state.my;
+  var hadLine = !!(prev && (String(prev.text || "").trim() || prev.mood));
+  state.mySeq++;
+  state.my = Object.assign({}, prev || {}, { rating: n });
+  state.ratePop = n;
+  renderRateCard();
+  if (!hadLine) openLineSheet();
+
+  var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  var body = { rating: n };
+  if (nickname) body.name = nickname;
+  api("/api/books/" + encodeURIComponent(bookId) + "/mine", { method: "PUT", body: body })
+    .then(function (res) {
+      if (state.currentId === bookId) {
+        state.my = res.review;
+        renderRateCard();
+      }
+      var count = res.ratedCount || 0;
+      showActionToast(
+        ["별점을 남겼어요 · ", starText(n)],
+        count >= MY_SHELF_GOAL
+          ? { label: "내 책장 한 컷 만들기 ›", onClick: function () { closeLineSheet(); openCollage(); } }
+          : { label: "내 책장 " + count + "/" + MY_SHELF_GOAL }
+      );
+      // 평균 별점·"평가 N"이 바뀌었다. 점수는 닉네임이 있을 때만 붙고(별점만 1점) 토스트는
+      // 띄우지 않는다 — 방금 뜬 알림 띠를 덮는다.
+      refreshBooks();
+      if (res.points) refreshMyScore();
+    })
+    .catch(function (e) {
+      if (state.currentId === bookId) {
+        state.mySeq++;
+        state.my = prev;
+        renderRateCard();
+      }
+      closeLineSheet();
+      alert(e.message);
+    });
+}
+
+// ── 책 상세: "한 줄도 남겨볼래요?" 시트 ──────────────────────────────────────
+//
+// 별점은 이미 저장돼 있다. 여기서 남기면 같은 평가 행에 태그·한 줄·닉네임이 합쳐진다.
+// 태그나 한 줄은 남들에게 보이는 기록이라 닉네임이 있어야 한다.
+var lineMoodTouched = false;
+
+function selectLineMood(id) {
+  state.lineMood = id;
+  lineMoodTouched = true;
+  renderMoodPicker(dom.lineMoods, state.lineMood, selectLineMood);
+}
+
+function renderLineNickname(editing) {
+  var saved = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  var showLine = !!saved && !editing;
+  dom.lineNickLine.hidden = !showLine;
+  dom.lineNickInputWrap.hidden = showLine;
+  dom.lineNickName.textContent = saved;
+  dom.lineNickInput.value = editing ? saved : "";
+}
+
+function openLineSheet() {
+  if (dom.lineSheet.open) return;
+  var my = state.my || {};
+  // 옛 목록의 태그(감동적이었어요 등)는 고르는 칸에 없다. 손대지 않으면 그대로 두려고,
+  // 고른 값과 "건드렸는지"를 따로 둔다.
+  state.lineMood = my.mood || null;
+  lineMoodTouched = false;
+  renderMoodPicker(dom.lineMoods, state.lineMood, selectLineMood);
+  dom.lineText.value = my.text || "";
+  renderLineNickname(false);
+  if (typeof dom.lineSheet.showModal === "function") dom.lineSheet.showModal();
+  else dom.lineSheet.setAttribute("open", "");
+  // 열자마자 칸에 초점을 주면 휴대폰 키보드가 튀어 올라 태그가 가려진다. 시트 자체에 둔다.
+  dom.lineForm.setAttribute("tabindex", "-1");
+  dom.lineForm.focus({ preventScroll: true });
+}
+
+function closeLineSheet() {
+  if (!dom.lineSheet.open) return;
+  if (typeof dom.lineSheet.close === "function") dom.lineSheet.close();
+  else dom.lineSheet.removeAttribute("open");
+}
+
+document.getElementById("lineSkip").addEventListener("click", closeLineSheet);
+document.getElementById("lineNickChange").addEventListener("click", function () {
+  renderLineNickname(true);
+  dom.lineNickInput.focus();
+});
+// 어두운 바깥을 누르면 닫는다(별점만 남긴 것과 같다).
+dom.lineSheet.addEventListener("click", function (e) {
+  if (e.target === dom.lineSheet) closeLineSheet();
+});
+
+dom.lineForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var bookId = state.currentId;
+  var my = state.my;
+  if (!bookId || !my || !my.rating) { closeLineSheet(); return; }
+
+  var text = dom.lineText.value.replace(/[\r\n]+/g, " ").trim().slice(0, 60);
+  var mood = lineMoodTouched ? state.lineMood : (my.mood || null);
+  if (!text && !mood) {
+    alert("태그를 고르거나 한 줄을 써주세요. 별점만 남기려면 아래 \"별점만 남길게요\"를 눌러주세요.");
+    return;
+  }
+
+  var nickname = dom.lineNickInputWrap.hidden ? getSavedNickname() : dom.lineNickInput.value.trim().slice(0, 10);
+  if (!nickname) {
+    alert("닉네임을 정해주세요.");
+    dom.lineNickInput.focus();
+    return;
+  }
+  saveNickname(nickname);
+
+  var submitBtn = document.getElementById("lineSubmit");
+  submitBtn.disabled = true;
+  api("/api/books/" + encodeURIComponent(bookId) + "/mine", {
+    method: "PUT",
+    body: { rating: my.rating, text: text, mood: mood, name: nickname }
+  })
+    .then(function (res) {
+      submitBtn.disabled = false;
+      // 기존 GA(리뷰 완료 총합·상세 경로)는 그대로 보낸다 — 이 시트가 상세의 한 줄 칸을 대신한다.
+      gtag("event", "complete_review", { book_id: bookId, from: "line_sheet" });
+      gtag("event", "complete_comment", { book_id: bookId, from: "line_sheet" });
+      state.mySeq++;
+      state.my = res.review;
+      closeLineSheet();
+      renderAuthBox();
+      refreshMyScore(res.points > 0 ? res.points : undefined);
+      return Promise.all([refreshBooks(), refreshComments()]);
+    })
+    .catch(function (err) {
+      submitBtn.disabled = false;
+      alert(err.message);
+    });
+});
+
+// ── 책 상세: 읽고 싶어요 ────────────────────────────────────────────────────
+//
+// 누르면 담기고 다시 누르면 빠진다. 더 묻는 것 없이 알림만.
+document.getElementById("wantBtn").addEventListener("click", function () {
+  var bookId = state.currentId;
+  if (!bookId) return;
+  var want = !state.wanted;
+  var prev = { wanted: state.wanted, count: state.wantCount };
+  state.mySeq++;
+  state.wanted = want;
+  state.wantCount = Math.max(0, state.wantCount + (want ? 1 : -1));
+  renderDetail();
+  if (want) {
+    var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+    showActionToast(
+      "읽고 싶은 책에 담았어요",
+      nickname ? { label: "보기 ›", onClick: function () { openProfile(nickname); } } : null
+    );
+  } else {
+    hideActionToast();
+  }
+
+  var body = { want: want };
+  var name = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  if (name) body.name = name;
+  api("/api/books/" + encodeURIComponent(bookId) + "/want", { method: "PUT", body: body })
+    .then(function (res) {
+      if (state.currentId !== bookId) return;
+      state.wanted = !!res.wanted;
+      state.wantCount = res.count || 0;
+      renderDetail();
+    })
+    .catch(function (e) {
+      if (state.currentId === bookId) {
+        state.mySeq++;
+        state.wanted = prev.wanted;
+        state.wantCount = prev.count;
+        renderDetail();
+      }
+      hideActionToast();
+      alert(e.message);
+    });
 });
 
 function drawRandomBook() {
@@ -1134,12 +1395,14 @@ function addReviewToExisting(bookId, review) {
   return api("/api/books/" + encodeURIComponent(bookId) + "/comments", {
     method: "POST",
     body: { text: review.text, rating: review.rating, mood: review.mood, name: review.name }
-  }).then(function () {
+  }).then(function (res) {
     gtag("event", "complete_review", { book_id: bookId, from: "write_sheet" });
     gtag("event", "complete_comment", { book_id: bookId, from: "write_sheet" });
     closeWriteSheet(true);
     renderAuthBox();
-    refreshMyScore(3);
+    // 같은 기기가 이미 남긴 책이면 새로 붙지 않고 그 평가를 고친다 — 점수 차이는 서버가 준다
+    // (별점만 있던 것에 한 줄을 채우면 +2, 이미 있던 한 줄을 고치면 0).
+    refreshMyScore(res && typeof res.points === "number" ? res.points : 3);
     var jobs = [refreshBooks()];
     if (state.view === "detail" && state.currentId === bookId) jobs.push(refreshComments());
     return Promise.all(jobs);
@@ -1162,51 +1425,6 @@ document.getElementById("deleteBtn").addEventListener("click", function () {
       alert(e.message);
       if (e.message.indexOf("권한이 없") !== -1) { clearAdminKey(); renderAdminToggle(); }
     });
-});
-
-document.getElementById("commentForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  if (AUTH_MODE !== "nickname" && !state.currentUser) return;
-
-  var nickname = "";
-  if (AUTH_MODE === "nickname") {
-    nickname = document.getElementById("cNickname").value.trim().slice(0, 10);
-    if (!nickname) { alert("닉네임을 입력해주세요."); return; }
-  }
-
-  var input = document.getElementById("commentInput");
-  var text = input.value.replace(/[\r\n]+/g, " ").trim();
-  if (!text && !state.commentMood) {
-    alert("한 줄 감상을 쓰거나 위에서 태그를 골라주세요.");
-    return;
-  }
-  if (state.commentRating === 0) {
-    alert("별점을 선택해주세요.");
-    return;
-  }
-
-  if (AUTH_MODE === "nickname") saveNickname(nickname);
-
-  api("/api/books/" + state.currentId + "/comments", {
-    method: "POST",
-    body: { text: text, rating: state.commentRating, mood: state.commentMood, name: nickname }
-  })
-    .then(function () {
-      // 총합(complete_review)과 경로별(complete_comment)을 같이 보낸다 — 위 새 책 등록
-      // 경로와 같은 이유다.
-      gtag("event", "complete_review", { book_id: state.currentId });
-      gtag("event", "complete_comment", { book_id: state.currentId });
-      input.value = "";
-      input.placeholder = pickReviewPlaceholder();
-      state.commentRating = 0;
-      state.commentMood = null;
-      renderStars(dom.cStars, 0, true, selectCommentRating);
-      renderMoodPicker(dom.cMoods, null, selectCommentMood);
-      renderAuthBox();
-      refreshMyScore(3);
-      return Promise.all([refreshBooks(), refreshComments()]);
-    })
-    .catch(function (e) { alert(e.message); });
 });
 
 if (AUTH_MODE === "google") {

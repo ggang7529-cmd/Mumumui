@@ -1961,7 +1961,7 @@
 
   .detail-cover {
     position: relative;
-    width: clamp(160px, 26vw, 240px);
+    width: clamp(140px, 18vw, 176px);
     aspect-ratio: 2 / 3;
     flex: none;
     border-radius: 6px;
@@ -2036,27 +2036,27 @@
     min-width: 200px;
   }
 
+  /* 휴대폰도 표지 왼쪽·정보 오른쪽 한 줄이다(시안 ①). 예전엔 표지를 가운데 크게(206px) 세워서
+     별점 칸이 첫 화면 밖으로 밀렸다 — 별점 카드는 스크롤 없이 보여야 한다. */
   @media (max-width: 640px) {
     .detail-top {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+      flex-wrap: nowrap;
+      align-items: flex-end;
       gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0;
+      border-bottom: none;
     }
 
     .detail-cover {
-      width: clamp(180px, 55vw, 260px);
+      width: 112px;
     }
 
     .detail-card header {
-      align-items: center;
       min-width: 0;
-      width: 100%;
     }
 
-    .rating-line {
-      justify-content: center;
-    }
+    .detail-card h2 { font-size: 1.45rem; }
   }
 
   /* 책 제목은 섹션 제목이 아니라 그 페이지의 주인공이므로, .panel h2에 붙는 짧은 선은
@@ -2073,7 +2073,7 @@
     content: none;
   }
 
-  .detail-author { color: var(--ink-soft); margin: 0; font-size: 1.15rem; }
+  .detail-author { color: var(--ink-soft); margin: 0; font-size: 0.95rem; }
 
   /* 별점이 이제 svg라 letter-spacing이 안 먹는다 — 간격은 flex gap으로 준다. */
   .stars { color: var(--accent); font-size: 1.5rem; display: flex; align-items: center; gap: 0.12em; }
@@ -2085,11 +2085,111 @@
     gap: 0.6rem;
   }
 
+  /* "★ 4.8 · 평가 5 · 한 줄 3" — 별과 평균만 버건디. */
   .rating-meta {
+    margin: 0;
     color: var(--ink-faint);
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
   }
+
+  .rating-meta .rating-avg { color: var(--accent); font-weight: 600; }
+
+  .detail-want-count {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+  }
+
+  /* 책 상세는 흰 패널로 감싸지 않는다(시안 ①) — 크림 바탕 위에 흰 별점 카드 하나만 떠 있어야
+     "여기를 누르세요"가 된다. 패널까지 흰색이면 카드가 배경에 묻혔다. */
+  .panel.detail-card {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 0 0;
+  }
+
+  /* 별점 + 읽고 싶어요 한 상자. 별은 비어 있을 때도 속이 찬 연한 베이지라 "누르는 자리"로
+     읽히고, 고르면 버건디로 바뀐다. */
+  .rate-card {
+    --star-off: #DCCFC0;
+    margin: 0 0 0.5rem;
+    padding: 1.15rem 1.25rem 1.25rem;
+    background: var(--paper-raised);
+    border-radius: 18px;
+    box-shadow: 0 4px 18px var(--shadow);
+    text-align: center;
+  }
+
+  :root[data-theme="dark"] .rate-card { --star-off: #4A3F3B; border: 1px solid var(--line); }
+
+  .rate-label {
+    margin: 0 0 0.6rem;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+
+  .rate-label.is-mine { color: var(--accent); font-weight: 700; }
+
+  .rate-stars {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .rate-stars button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--star-off);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .rate-stars .icon {
+    width: 38px;
+    height: 38px;
+    fill: currentColor;
+    stroke: none;
+    transition: color 0.12s ease, transform 0.15s ease;
+  }
+
+  .rate-stars button.is-on { color: var(--accent); }
+  .rate-stars button.is-pop .icon { animation: ratePop 0.32s ease-out both; }
+  .rate-stars button:active .icon { transform: scale(0.9); }
+
+  @keyframes ratePop {
+    0% { transform: scale(0.7); }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  .want-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    margin-top: 0.9rem;
+    padding: 0.85rem 1rem;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    border-radius: 12px;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .want-btn .want-icon { width: 20px; height: 20px; }
+  .want-btn.is-on { background: var(--accent); color: var(--paper-raised); }
+  .want-btn.is-on .want-icon { fill: currentColor; }
 
   .meta-date {
     color: var(--ink-faint);
@@ -3974,4 +4074,222 @@
     border-color: var(--btn-fill);
     color: var(--btn-fill-ink);
     font-weight: 700;
+  }
+
+  /* ── 책 상세: "한 줄도 남겨볼래요?" 시트 (<dialog id="lineSheet">) ─────────────────
+     휴대폰은 보이는 화면 바닥에 붙어 아래에서 올라오고, PC는 가운데 창. 키보드가 올라오면
+     --vv-top/--vv-height(js/main.js trackVisualViewport)가 줄어들어 그 바로 위로 올라간다 —
+     아이폰 사파리는 키보드가 떠도 fixed 기준 화면을 줄이지 않아서 이걸 직접 써야 한다. */
+  .line-sheet {
+    position: fixed;
+    inset: auto 0 auto 0;
+    top: calc(var(--vv-top, 0px) + var(--vv-height, 100dvh));
+    transform: translateY(-100%);
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    overflow: visible;
+  }
+
+  .line-sheet::backdrop { background: rgba(35, 32, 29, 0.42); }
+
+  .line-sheet[open] .line-sheet-panel { animation: lineSheetUp 0.24s ease-out both; }
+
+  @keyframes lineSheetUp {
+    0% { transform: translateY(24px); opacity: 0.6; }
+    100% { transform: none; opacity: 1; }
+  }
+
+  .line-sheet-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: calc(var(--vv-height, 100dvh) * 0.92);
+    overflow-y: auto;
+    padding: 0.6rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom));
+    background: var(--paper-raised);
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -6px 24px var(--shadow);
+  }
+
+  .line-sheet-grip {
+    align-self: center;
+    width: 40px;
+    height: 4px;
+    margin-bottom: 0.4rem;
+    border-radius: 2px;
+    background: var(--line);
+  }
+
+  .line-sheet-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .line-sheet-sub {
+    margin: -0.5rem 0 0.2rem;
+    color: var(--ink-faint);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  .line-moods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .line-moods .mood-chip { padding: 0.55rem 0.95rem; font-size: 0.9rem; }
+
+  /* 16px 이상이어야 아이폰이 칸을 누를 때 화면을 확대하지 않는다. */
+  .line-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 1rem;
+  }
+
+  .line-input:focus { outline: none; border-color: var(--accent); }
+
+  .line-nickname { font-size: 0.88rem; color: var(--ink-soft); }
+  .line-nickname .nickname-line { margin: 0; }
+
+  .line-nick-input {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .line-nick-input span { flex: none; }
+
+  .line-nick-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.35rem 0.1rem;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 1rem;
+  }
+
+  .line-nick-input input:focus { outline: none; border-bottom-color: var(--accent); }
+
+  .btn-primary.line-submit {
+    width: 100%;
+    margin-top: 0.3rem;
+    padding: 0.95rem 1rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .line-skip { align-self: center; text-decoration: none; font-size: 0.9rem; padding: 0.4rem; }
+
+  @media (min-width: 641px) {
+    .line-sheet {
+      top: calc(var(--vv-top, 0px) + var(--vv-height, 100dvh) / 2);
+      transform: translateY(-50%);
+      width: min(440px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .line-sheet-panel {
+      border-radius: 18px;
+      padding: 0.9rem 1.5rem 1.2rem;
+    }
+
+    .line-sheet-grip { display: none; }
+  }
+
+  /* ── 별점·읽고 싶어요 알림 띠 ──────────────────────────────────────────────────────
+     시트(<dialog>)가 떠 있어도 그 위에 보여야 해서, 지원하는 브라우저에서는 popover로 최상위
+     층에 올린다(js/main.js showActionToast). popover 기본 모양(테두리·여백·가운데 배치)은
+     여기서 모두 덮어쓴다. */
+  .action-toast {
+    position: fixed;
+    inset: calc(0.9rem + env(safe-area-inset-top)) 0 auto 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: min(440px, calc(100vw - 2rem));
+    height: auto;
+    margin: 0 auto;
+    padding: 0.8rem 1rem 0.8rem 1.15rem;
+    border: none;
+    border-radius: 14px;
+    background: #2A211F;
+    color: #FFFFFF;
+    font-size: 0.92rem;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+    overflow: visible;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+
+  .action-toast[hidden] { display: none; }
+  .action-toast.show { opacity: 1; transform: none; }
+
+  :root[data-theme="dark"] .action-toast { background: #F2EBE3; color: #2A211F; }
+
+  .action-toast-text { flex: 1; min-width: 0; }
+  .action-toast-text .toast-stars { letter-spacing: 0.04em; }
+
+  .action-toast-btn {
+    flex: none;
+    padding: 0.2rem 0;
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.78;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .action-toast-btn:disabled { cursor: default; }
+  .action-toast-btn[hidden] { display: none; }
+
+  /* PC 책 상세: 표지 왼쪽, 그 오른쪽에 제목·숫자와 별점 카드를 차례로. 카드가 화면 폭을 다
+     쓰면 별 다섯 개가 넓은 흰 띠 가운데 덩그러니 떠 보였다. .detail-top을 contents로 풀어
+     표지·제목과 카드를 한 격자에 넣는다(마크업 순서는 휴대폰과 같다). */
+  @media (min-width: 641px) {
+    .panel.detail-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 2rem;
+    }
+
+    .detail-top { display: contents; }
+    .detail-cover { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+    .detail-card header { grid-column: 2; grid-row: 1; align-self: end; }
+
+    .rate-card {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: start;
+      width: 100%;
+      max-width: 460px;
+      margin: 1.1rem 0 0;
+    }
+
+    .detail-card .comments,
+    .detail-card #deleteBtn { grid-column: 1 / -1; }
+    .detail-card #deleteBtn { justify-self: start; }
   }

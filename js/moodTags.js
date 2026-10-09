@@ -6,13 +6,23 @@
 //
 // DB(comments.mood, books.mood)에는 label이 아니라 id를 저장한다. 문구나 이모지는
 // 나중에 바꿀 수 있어야 하는데, label을 저장해두면 그때마다 기존 행을 손봐야 한다.
+//
+// 고르는 칸에는 legacy가 아닌 것만 나온다(2026-10-09에 목록을 바꿈). 예전 목록의
+// "감동적이었어요"(moved)·"다시 읽고 싶어요"(reread)는 이미 그 태그로 남긴 한줄평이 있어서
+// 지우지 않고 legacy로 남겨 둔다 — findMoodTag가 찾아 주니 옛 한줄평의 배지는 그대로 보인다.
 export var MOOD_TAGS = [
   { id: "fun", label: "재밌었어요", emoji: "📖" },
-  { id: "moved", label: "감동적이었어요", emoji: "🥹" },
+  { id: "comfort", label: "위로받았어요", emoji: "🫂" },
+  { id: "underline", label: "밑줄 많이 그었어요", emoji: "✏️" },
+  { id: "binge", label: "단숨에 읽었어요", emoji: "⚡" },
+  { id: "tears", label: "눈물 났어요", emoji: "🥲" },
+  { id: "thoughtful", label: "생각이 많아지는 책", emoji: "🤔" },
   { id: "meh", label: "아쉬웠어요", emoji: "😐" },
-  { id: "reread", label: "다시 읽고 싶어요", emoji: "🔁" },
-  { id: "thoughtful", label: "생각이 많아지는 책", emoji: "🤔" }
+  { id: "moved", label: "감동적이었어요", emoji: "🥹", legacy: true },
+  { id: "reread", label: "다시 읽고 싶어요", emoji: "🔁", legacy: true }
 ];
+
+export var PICKABLE_MOOD_TAGS = MOOD_TAGS.filter(function (t) { return !t.legacy; });
 
 // 알 수 없는 값(옛 id, 손으로 만든 요청)은 조용히 없는 것으로 친다 — 태그는 선택
 // 항목이라 여기서 막아 세울 이유가 없다.

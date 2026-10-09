@@ -1,4 +1,5 @@
 import { json } from "../../../_lib/db.js";
+import { hasLineSql } from "../../../_lib/lines.js";
 import { fetchScoreMap } from "../../../_lib/scores.js";
 
 // 닉네임 한 명분의 기록을 한 번에 돌려준다 — 그 사람이 등록한 책, 남긴 한줄평, 요약 숫자.
@@ -41,7 +42,7 @@ export async function onRequestGet(context) {
       "SELECT c.id, c.book_id, c.text, c.rating, c.mood, c.created_at, b.title AS book_title, b.author AS book_author, b.cover AS book_cover, " +
       "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes " +
       "FROM comments c JOIN books b ON b.id = c.book_id " +
-      "WHERE c.author_name = ?1 AND c.parent_id IS NULL ORDER BY c.created_at DESC"
+      "WHERE c.author_name = ?1 AND c.parent_id IS NULL AND " + hasLineSql("c") + " ORDER BY c.created_at DESC"
     ).bind(name),
     // 답글 수와 받은 좋아요는 요약 숫자에만 쓰므로 개수만 센다.
     env.DB.prepare(
