@@ -22,8 +22,8 @@ export async function onRequestGet(context) {
   // 아래 문자열이 index.html과 한 글자라도 어긋나면 치환이 조용히 실패해서 링크
   // 미리보기가 홈 것으로 나간다 — og:title이 1개인지로 확인할 것.
   var staticOgBlock =
-    '<meta property="og:title" content="책갈피 - 읽은 책마다 별점과 한 줄 감상을 남겨보세요">\n' +
-    '<meta property="og:description" content="닉네임만 입력하면 누구나 참여할 수 있는 책 리뷰 커뮤니티. 읽은 책을 등록하고 별점과 한 줄 감상을 남겨보세요.">\n' +
+    '<meta property="og:title" content="책갈피 - 읽은 책이 쌓이면, 나만의 책장이 돼요">\n' +
+    '<meta property="og:description" content="별점 하나, 한 줄 하나면 충분해요. 예전에 읽은 책도 좋아요. 가입 없이 닉네임만으로 쌓는 나만의 책장.">\n' +
     '<meta property="og:image" content="https://book-galpi.com/og-image.png">\n' +
     '<meta property="og:image:width" content="1200">\n' +
     '<meta property="og:image:height" content="630">\n' +
@@ -44,7 +44,7 @@ export async function onRequestGet(context) {
   html = html
     .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
     .replace(
-      '<meta name="description" content="가입 없이 닉네임만으로 참여하는 책 리뷰 커뮤니티. 읽은 책에 별점과 한 줄 감상을 남기고, 다른 사람들이 남긴 한줄평을 구경하며 다음에 읽을 책을 골라보세요.">',
+      '<meta name="description" content="읽은 책에 별점 하나, 한 줄 하나면 나만의 책장이 쌓여요. 예전에 읽은 책도 좋아요. 가입 없이 닉네임만으로 남기고, 다른 사람들의 한줄평을 구경하며 다음에 읽을 책도 골라보세요.">',
       '<meta name="description" content="' + desc + '">'
     )
     .replace(
