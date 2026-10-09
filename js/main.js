@@ -405,7 +405,9 @@ export function openMyShelf(tab) {
   gtag("event", "view_my_shelf", { tab: state.myShelfTab });
   renderMyShelf();
   showView("myShelf");
-  api("/api/my-shelf")
+  // 닉네임이 있으면 그 이름으로 다른 기기에서 남긴 것까지 합쳐 받는다.
+  var nickname = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  api("/api/my-shelf" + (nickname ? "?name=" + encodeURIComponent(nickname) : ""))
     .then(function (data) {
       state.myShelf = { rated: data.rated || [], wants: data.wants || [] };
       if (state.view === "myShelf") renderMyShelf();

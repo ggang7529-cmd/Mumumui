@@ -3,27 +3,32 @@ import { json } from "../_lib/db.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
 
 // 내 책장 — 이 기기(X-Anon-Id)가 평가한 책과 읽고 싶은 책. 닉네임이 없어도 보인다.
+// ?name=닉네임을 주면 그 닉네임으로 남긴 것(다른 폰·PC에서 남긴 것)까지 합친다 — 책마다
+// 하나로, 평가는 가장 최근 별점으로.
 //
 // 평가한 책: 이 기기가 남긴 최상위 행(별점만 포함)의 책. 같은 책에 둘 남긴 옛 기록은 가장
 // 최근 것의 별점을 쓴다(SQLite는 max()와 함께 고른 다른 열을 그 최댓값 행에서 가져온다).
 // 읽고 싶은 책: wants 표. 표가 아직 없으면 빈 목록.
 export async function onRequestGet(context) {
   var env = context.env;
-  var uid = getAnonUid(context.request);
-  if (!uid) return json({ rated: [], wants: [] });
+  var uid = getAnonUid(context.request) || "";
+  var name = String(new URL(context.request.url).searchParams.get("name") || "").trim().slice(0, 10);
+  if (!uid && !name) return json({ rated: [], wants: [] });
 
   var rated = (await env.DB.prepare(
     "SELECT b.id, b.title, b.author, b.cover, c.rating, max(c.created_at) AS at " +
     "FROM comments c JOIN books b ON b.id = c.book_id " +
-    "WHERE c.author_uid = ?1 AND c.parent_id IS NULL GROUP BY c.book_id ORDER BY at DESC"
-  ).bind(uid).all()).results || [];
+    "WHERE c.parent_id IS NULL AND (c.author_uid = ?1 OR (?2 != '' AND c.author_name = ?2)) " +
+    "GROUP BY c.book_id ORDER BY at DESC"
+  ).bind(uid, name).all()).results || [];
 
   var wants = [];
   try {
     wants = (await env.DB.prepare(
-      "SELECT b.id, b.title, b.author, b.cover, w.created_at AS at " +
-      "FROM wants w JOIN books b ON b.id = w.book_id WHERE w.device_id = ?1 ORDER BY w.created_at DESC"
-    ).bind(uid).all()).results || [];
+      "SELECT b.id, b.title, b.author, b.cover, max(w.created_at) AS at " +
+      "FROM wants w JOIN books b ON b.id = w.book_id " +
+      "WHERE w.device_id = ?1 OR (?2 != '' AND w.nickname = ?2) GROUP BY w.book_id ORDER BY at DESC"
+    ).bind(uid, name).all()).results || [];
   } catch (e) {}
 
   return json({ rated: rated, wants: wants });

@@ -58,7 +58,8 @@ export async function onRequestGet(context) {
 
   // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태.
   var mine = await findMyReview(env, bookId, myUid);
-  var want = await wantStatus(env, bookId, myUid);
+  var myName = String(new URL(context.request.url).searchParams.get("name") || "").trim().slice(0, 10);
+  var want = await wantStatus(env, bookId, myUid, myName);
 
   return json({
     comments: comments,

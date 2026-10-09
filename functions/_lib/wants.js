@@ -12,11 +12,15 @@ export async function ensureWants(env) {
   await env.DB.batch(CREATE.map(function (s) { return env.DB.prepare(s); }));
 }
 
-export async function wantStatus(env, bookId, deviceId) {
+// 담은 사람 수는 사람 단위로 센다 — 같은 닉네임이 폰과 PC에서 각각 담았으면 한 명이다
+// (닉네임이 없는 기록은 기기 하나를 한 사람으로). "내가 담았나"도 이 기기 또는 같은 닉네임.
+export async function wantStatus(env, bookId, deviceId, nickname) {
   try {
     var row = await env.DB.prepare(
-      "SELECT count(*) AS n, sum(CASE WHEN device_id = ?2 THEN 1 ELSE 0 END) AS mine FROM wants WHERE book_id = ?1"
-    ).bind(bookId, deviceId || "").first();
+      "SELECT count(DISTINCT coalesce(nullif(nickname, ''), device_id)) AS n, " +
+      "sum(CASE WHEN device_id = ?2 OR (?3 != '' AND nickname = ?3) THEN 1 ELSE 0 END) AS mine " +
+      "FROM wants WHERE book_id = ?1"
+    ).bind(bookId, deviceId || "", nickname || "").first();
     return { count: (row && row.n) || 0, wanted: !!(row && row.mine) };
   } catch (e) {
     return { count: 0, wanted: false };

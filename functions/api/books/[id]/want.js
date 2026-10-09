@@ -25,13 +25,17 @@ export async function onRequestPut(context) {
   if (!book) return json({ error: "존재하지 않는 책이에요." }, { status: 404 });
 
   await ensureWants(env);
+  var name = String(body.name || "").trim().slice(0, 10);
   if (body.want) {
-    var name = String(body.name || "").trim().slice(0, 10) || null;
     await env.DB.prepare(
       "INSERT OR IGNORE INTO wants (book_id, device_id, nickname, created_at) VALUES (?1, ?2, ?3, ?4)"
-    ).bind(bookId, uid, name, Date.now()).run();
+    ).bind(bookId, uid, name || null, Date.now()).run();
   } else {
-    await env.DB.prepare("DELETE FROM wants WHERE book_id = ?1 AND device_id = ?2").bind(bookId, uid).run();
+    // 빼기는 같은 닉네임으로 다른 기기에서 담은 것까지 — 내 책장은 닉네임으로 합쳐 보이므로,
+    // 이 기기 것만 지우면 화면에서 안 빠진다.
+    await env.DB.prepare(
+      "DELETE FROM wants WHERE book_id = ?1 AND (device_id = ?2 OR (?3 != '' AND nickname = ?3))"
+    ).bind(bookId, uid, name).run();
   }
-  return json(await wantStatus(env, bookId, uid));
+  return json(await wantStatus(env, bookId, uid, name));
 }
