@@ -1047,11 +1047,17 @@ export function renderMyShelf() {
     cover.className = "my-tile-cover" + (b.cover ? "" : " is-typo");
     cover.style.setProperty("--cover", coverFor(b.title));
     if (b.cover) {
+      // 카카오 썸네일(120x174)을 그대로 쓰면 휴대폰 3열(한 칸 ~110px, 화면 배율 2~3배)에서 흐릿하다.
+      // 홈 카드처럼 원본 주소를 먼저 쓰고, 그게 죽어 있으면 썸네일, 그것도 안 되면 책등.
       var img = document.createElement("img");
-      img.src = b.cover;
+      img.src = upscaleCover(b.cover);
       img.alt = "";
       img.loading = "lazy";
-      img.addEventListener("error", function () { img.remove(); cover.classList.add("is-typo"); });
+      img.addEventListener("error", function () {
+        if (img.getAttribute("src") !== b.cover) { img.src = b.cover; return; }
+        img.remove();
+        cover.classList.add("is-typo");
+      });
       cover.appendChild(img);
     }
     var spine = document.createElement("span");
