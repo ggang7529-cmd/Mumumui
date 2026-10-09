@@ -1549,7 +1549,9 @@ export function renderRateCard() {
     $stars.appendChild(btn);
   }
 
+  // 이미 평가한 책(별점만 남긴 것 포함)은 읽은 책이라 "읽고 싶어요"를 숨긴다.
   var $want = document.getElementById("wantBtn");
+  $want.hidden = !!mine;
   $want.classList.toggle("is-on", !!state.wanted);
   $want.setAttribute("aria-pressed", state.wanted ? "true" : "false");
   document.getElementById("wantLabel").textContent = state.wanted ? "읽고 싶은 책에 담김" : "읽고 싶어요";

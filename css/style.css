@@ -2187,6 +2187,7 @@
     transition: background 0.15s ease, color 0.15s ease;
   }
 
+  .want-btn[hidden] { display: none; }
   .want-btn .want-icon { width: 20px; height: 20px; }
   .want-btn.is-on { background: var(--accent); color: var(--paper-raised); }
   .want-btn.is-on .want-icon { fill: currentColor; }
