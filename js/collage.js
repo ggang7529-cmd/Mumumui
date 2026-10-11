@@ -16,7 +16,9 @@ var ctx = canvas.getContext("2d");
 var imgCache = {};
 
 function proxied(url) {
-  return "/api/cover-image?u=" + encodeURIComponent(url);
+  // v=2: 원본 해상도로 바꾼 뒤(2026-10-11). 응답이 브라우저에 하루 캐시되므로, 주소를 바꿔야
+  // 예전 저해상도 응답을 다시 쓰지 않는다.
+  return "/api/cover-image?v=2&u=" + encodeURIComponent(url);
 }
 
 function loadCover(url) {
@@ -183,6 +185,9 @@ export function drawCollage() {
       ctx.fillStyle = "#fff";
       ctx.fillRect(-w / 2, -h / 2, w, h);
       ctx.shadowColor = "transparent";
+      // 원본이 칸보다 크면 줄여 그리는데, 기본 품질로 줄이면 글자가 지글거린다.
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, -w / 2, -h / 2, w, h);
     } else {
       // 표지가 없거나 못 받아온 책 — 서가 카드처럼 책등 색 바탕에 제목을 쓴다.

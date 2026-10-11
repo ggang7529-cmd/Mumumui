@@ -6,9 +6,15 @@
 // 안 되는, 제일 알아채기 어려운 실패다. 같은 출처에서 받아오면 그 일이 없다.
 //
 // 이런 경로는 자칫 "아무 주소나 대신 받아다 주는 서버"가 되기 쉽다. 그래서 카카오 CDN
-// 호스트만 통과시킨다. js/render.js의 upscaleCover()처럼 썸네일 주소 안의 fname(출판사
-// 원본 주소)을 따라가지 않는 것도 같은 이유다 — 그쪽은 호스트가 제각각이라 자물쇠를
-// 걸 수가 없고, 그걸 허용하는 순간 누구나 우리 서버로 임의의 주소를 받아갈 수 있다.
+// 호스트만 통과시킨다. 썸네일 주소 안의 fname(원본 주소)도 따라가되 **카카오 소유 호스트
+// (daumcdn.net·kakaocdn.net)일 때만** 따라간다 — 카카오 책 검색의 원본은 거의 다
+// t1.daumcdn.net/lbook/ 이고, 그 밖의 호스트를 허용하는 순간 누구나 우리 서버로 임의의
+// 주소를 받아갈 수 있다.
+
+function onKakaoHost(host, domain) {
+  // "evilkakaocdn.net" 같은 이름이 끼어들지 못하도록 점까지 포함해서 본다.
+  return host === domain || host.endsWith("." + domain);
+}
 
 function kakaoCdnUrl(raw) {
   var u;
@@ -18,17 +24,34 @@ function kakaoCdnUrl(raw) {
     return null;
   }
   if (u.protocol !== "https:") return null;
-  var host = u.hostname.toLowerCase();
-  // "evilkakaocdn.net" 같은 이름이 끼어들지 못하도록 점까지 포함해서 본다.
-  if (host !== "kakaocdn.net" && !host.endsWith(".kakaocdn.net")) return null;
+  if (!onKakaoHost(u.hostname.toLowerCase(), "kakaocdn.net")) return null;
   return u;
 }
 
-// 저장된 표지는 120x174짜리 썸네일이라 1080px 이미지에 넣으면 흐릿하다. 카카오 썸네일은
-// 크기가 주소 경로에 박혀 있어서(/thumb/R120x174.q85/) 그 숫자만 키운 주소를 먼저
-// 시도하고, 그게 안 되면 받은 주소를 그대로 쓴다. 두 후보 모두 카카오 CDN 안이다.
+// 썸네일 주소의 fname에 든 원본 주소. 카카오 소유 호스트일 때만, https로 바꿔서.
+function kakaoOriginal(u) {
+  var raw = u.searchParams.get("fname");
+  if (!raw) return null;
+  var o;
+  try {
+    o = new URL(raw);
+  } catch (e) {
+    return null;
+  }
+  if (o.protocol !== "http:" && o.protocol !== "https:") return null;
+  var host = o.hostname.toLowerCase();
+  if (!onKakaoHost(host, "daumcdn.net") && !onKakaoHost(host, "kakaocdn.net")) return null;
+  o.protocol = "https:";
+  return o.href;
+}
+
+// 저장된 표지는 120x174짜리 썸네일이라 1080px 이미지에 넣으면 깨진다. 원본(fname)을
+// 먼저, 그다음 경로의 크기(/thumb/R120x174.q85/)만 키운 주소, 마지막으로 받은 주소 그대로.
+// 셋 다 카카오 호스트 안이다.
 function candidates(u) {
   var list = [];
+  var original = kakaoOriginal(u);
+  if (original) list.push(original);
   var bigger = u.href.replace(/\/thumb\/R\d+x\d+(\.[a-z0-9]+)?\//i, "/thumb/R480x696$1/");
   if (bigger !== u.href) list.push(bigger);
   list.push(u.href);
