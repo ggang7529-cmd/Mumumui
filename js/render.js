@@ -1382,6 +1382,8 @@ var FEATURED_BASE_MS = 3500;
 var FEATURED_PER_CHAR_MS = 60;
 var FEATURED_MIN_MS = 4000;
 var FEATURED_MAX_MS = 6500;
+// 한 문장이 옆으로 밀려나는 데 걸리는 시간(사용자 요청: 0.5~1초).
+var FEATURED_SLIDE_MS = 800;
 
 export function renderFeatured() {
   clearTimeout(featuredTimer);
@@ -1473,9 +1475,34 @@ export function renderFeatured() {
       gtag("event", "swipe_featured", { position: index + 1 });
     }
   }
+  // 브라우저의 smooth 스크롤은 0.3초 남짓이라 문장이 "쉬리릭" 지나갔다. 0.8초 동안 천천히
+  // 밀려나도록 직접 움직인다. 움직이는 동안은 scroll-snap을 꺼 둔다 — 켜 두면 프레임마다
+  // 가까운 칸으로 다시 끌어당겨 덜컹거린다.
+  var slideAnim = 0;
+  function animateTo(left) {
+    var from = track.scrollLeft;
+    var dist = left - from;
+    var run = ++slideAnim;
+    if (!dist) return;
+    var t0 = null;
+    track.classList.add("is-sliding");
+    function step(ts) {
+      if (run !== slideAnim) return;
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / FEATURED_SLIDE_MS);
+      // 천천히 출발해서 천천히 멈춘다(easeInOutCubic).
+      var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      track.scrollLeft = from + dist * e;
+      if (p < 1) requestAnimationFrame(step);
+      else track.classList.remove("is-sliding");
+    }
+    requestAnimationFrame(step);
+  }
   function goTo(index, smooth, byUser) {
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    track.scrollTo({ left: index * track.clientWidth, behavior: smooth && !reduce ? "smooth" : "auto" });
+    var left = index * track.clientWidth;
+    if (smooth && !reduce) animateTo(left);
+    else { slideAnim++; track.classList.remove("is-sliding"); track.scrollLeft = left; }
     mark(index, byUser === undefined ? smooth : byUser);
   }
   var userScrolling = false;
@@ -1522,7 +1549,12 @@ export function renderFeatured() {
   }
   track.addEventListener("mouseenter", function () { hovering = true; });
   track.addEventListener("mouseleave", function () { hovering = false; schedule(); });
-  track.addEventListener("touchstart", function () { touching = true; }, { passive: true });
+  track.addEventListener("touchstart", function () {
+    touching = true;
+    // 넘어가는 도중에 손을 대면 그 자리에서 멈추고 사람에게 맡긴다.
+    slideAnim++;
+    track.classList.remove("is-sliding");
+  }, { passive: true });
   track.addEventListener("touchend", function () { touching = false; schedule(); }, { passive: true });
   track.addEventListener("touchcancel", function () { touching = false; schedule(); }, { passive: true });
   box.addEventListener("focusin", function () { focused = true; });

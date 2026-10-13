@@ -2876,6 +2876,8 @@
   }
 
   .today-track::-webkit-scrollbar { display: none; }
+  /* 자동·점 넘김을 js가 0.8초에 걸쳐 직접 움직이는 동안은 칸 맞춤을 끈다(켜 두면 덜컹거림). */
+  .today-track.is-sliding { scroll-snap-type: none; }
   .today-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 
   .today-slide {
