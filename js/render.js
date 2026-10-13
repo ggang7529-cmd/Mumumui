@@ -1373,7 +1373,19 @@ export function renderRecommendSteps(steps, active) {
 // 처음 보이는 문장은 접속할 때마다 무작위(state.featured.pickId) — 매번 같은 첫 문장만 읽히지
 // 않게. 저절로 넘어가게 하지는 않았다: 읽는 도중에 넘어가면 답답하다.
 // 문장을 누르면 그 책 상세로 간다. 관리자 모드에서 고정된 문장이면 "고정 해제"가 붙는다.
+// 오늘의 한 줄 자동 넘김(2026-10-13). 한 문장이 머무는 시간은 길이에 맞춘다 — 2~3초는 한 줄을
+// 다 읽기도 전에 넘어간다(한국어 한 줄 30자 + 책 제목 줄을 읽는 데 3초 남짓). 기본 3.5초에
+// 글자당 0.06초를 더하고 4~6.5초 안에 둔다. 다시 그릴 때마다 앞 타이머는 버린다.
+var featuredTimer = null;
+var featuredObserver = null;
+var FEATURED_BASE_MS = 3500;
+var FEATURED_PER_CHAR_MS = 60;
+var FEATURED_MIN_MS = 4000;
+var FEATURED_MAX_MS = 6500;
+
 export function renderFeatured() {
+  clearTimeout(featuredTimer);
+  if (featuredObserver) { featuredObserver.disconnect(); featuredObserver = null; }
   var section = dom.featuredSection;
   var box = dom.featuredTrack;
   if (!section) return;
@@ -1461,10 +1473,10 @@ export function renderFeatured() {
       gtag("event", "swipe_featured", { position: index + 1 });
     }
   }
-  function goTo(index, smooth) {
+  function goTo(index, smooth, byUser) {
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     track.scrollTo({ left: index * track.clientWidth, behavior: smooth && !reduce ? "smooth" : "auto" });
-    mark(index, smooth);
+    mark(index, byUser === undefined ? smooth : byUser);
   }
   var userScrolling = false;
   track.addEventListener("pointerdown", function () { userScrolling = true; });
@@ -1480,9 +1492,54 @@ export function renderFeatured() {
     if (e.key === "ArrowLeft") { e.preventDefault(); goTo(Math.max(0, current - 1), true); }
   });
 
+  // ── 자동 넘김 ──
+  // 멈추는 때: 마우스를 올렸거나(PC) 손가락이 닿아 있거나 키보드 초점이 안에 있을 때, 칸이
+  // 화면 밖이거나 탭이 가려졌을 때, 기기에서 "동작 줄이기"를 켰을 때(아예 돌지 않음). 사람이
+  // 넘기면 그 문장부터 시간을 다시 잰다. 마지막 다음은 첫 문장으로 돌아간다.
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hovering = false;
+  var touching = false;
+  var focused = false;
+  var visible = true;
+  function dwell(index) {
+    var r = reviews[index] || {};
+    var len = String(r.text || "").length + String(r.title || "").length;
+    return Math.max(FEATURED_MIN_MS, Math.min(FEATURED_MAX_MS, FEATURED_BASE_MS + len * FEATURED_PER_CHAR_MS));
+  }
+  function paused() {
+    return hovering || touching || focused || !visible || document.hidden;
+  }
+  function schedule() {
+    clearTimeout(featuredTimer);
+    if (reviews.length < 2 || reduceMotion) return;
+    featuredTimer = setTimeout(function () {
+      if (!track.isConnected) return;
+      if (paused()) { schedule(); return; }
+      userScrolling = false;
+      goTo((current + 1) % reviews.length, true, false);
+      schedule();
+    }, dwell(current));
+  }
+  track.addEventListener("mouseenter", function () { hovering = true; });
+  track.addEventListener("mouseleave", function () { hovering = false; schedule(); });
+  track.addEventListener("touchstart", function () { touching = true; }, { passive: true });
+  track.addEventListener("touchend", function () { touching = false; schedule(); }, { passive: true });
+  track.addEventListener("touchcancel", function () { touching = false; schedule(); }, { passive: true });
+  box.addEventListener("focusin", function () { focused = true; });
+  box.addEventListener("focusout", function () { focused = false; schedule(); });
+  dotEls.forEach(function (d) { d.addEventListener("click", schedule); });
+  if ("IntersectionObserver" in window) {
+    featuredObserver = new IntersectionObserver(function (entries) {
+      visible = entries[0].isIntersecting;
+      if (visible) schedule();
+    }, { threshold: 0.5 });
+    featuredObserver.observe(track);
+  }
+
   // 처음 위치: 무작위로 고른 문장. 칸이 그려진 다음에야 폭을 알 수 있다.
   mark(start, false);
   requestAnimationFrame(function () { track.scrollLeft = start * track.clientWidth; });
+  schedule();
 }
 
 // 관리자: 한줄평을 "오늘의 한 줄" 후보에 고정/해제(최대 5개, 서버가 막는다).
