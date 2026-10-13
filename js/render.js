@@ -642,6 +642,77 @@ export function renderLevelRanking() {
 
 // 팝업을 열 때마다 다시 그린다 — 점수는 책을 등록하거나 좋아요를 받을 때마다 바뀌는데,
 // 한 번 그려두고 재활용하면 오래 켜둔 탭에서 옛 점수가 남는다.
+// 진행 카드(등급·점수·막대 / 다음 등급까지 / N명 중 M위 + 전체 순위). 등급 안내 팝업과
+// 내 기록(프로필) 맨 위가 같은 모양을 쓴다.
+function fillLevelProgress(box, score, myRank, myTotal, onRanking) {
+  var p = levelProgress(score);
+
+  var now = document.createElement("p");
+  now.className = "level-progress-now";
+  now.appendChild(levelIconFor(p.current));
+  var nowText = document.createElement("span");
+  nowText.textContent = p.current.level + "등급 " + p.current.name;
+  now.appendChild(nowText);
+  var nowScore = document.createElement("span");
+  nowScore.className = "level-progress-score";
+  nowScore.textContent = score + "점";
+  now.appendChild(nowScore);
+  box.appendChild(now);
+
+  var bar = document.createElement("div");
+  bar.className = "level-bar";
+  var fill = document.createElement("span");
+  fill.className = "level-bar-fill";
+  fill.style.width = Math.round(p.ratio * 100) + "%";
+  bar.appendChild(fill);
+  box.appendChild(bar);
+
+  // "다음 등급까지 몇 점"과 "몇 명 중 몇 위" 두 줄이 이 팝업에서 제일 궁금한 값인데,
+  // 아래 배점표·등급표와 같은 크기·같은 색이라 설명문에 묻혀 있었다. 둘만 따로 묶어
+  // 구분선 아래에 세우고, 숫자는 한 단계 키워 브랜드 색으로 세운다.
+  var facts = document.createElement("div");
+  facts.className = "level-facts";
+
+  var goal = document.createElement("p");
+  goal.className = "level-fact";
+  if (p.next) {
+    goal.appendChild(document.createTextNode("다음 등급까지 "));
+    goal.appendChild(buildFactValue(p.remain + "점"));
+    var nextTag = document.createElement("span");
+    nextTag.className = "level-fact-note";
+    nextTag.appendChild(levelIconFor(p.next));
+    nextTag.appendChild(document.createTextNode(p.next.name));
+    goal.appendChild(nextTag);
+  } else {
+    goal.appendChild(buildFactValue("가장 높은 등급"));
+    goal.appendChild(document.createTextNode("이에요"));
+  }
+  facts.appendChild(goal);
+
+  // 순위는 분모까지 적는다. "3위"만 적으면 처음엔 커 보이지만 "몇 명 중인데?"가
+  // 곧바로 따라오고, 사람이 많지 않다는 걸 나중에 알면 오히려 깎여서 돌아온다.
+  // 아직 사람이 적은 지금은 분모가 "여기 아홉 명이 기록 중"이라는 신호이기도 하다.
+  //
+  // 혼자뿐이면(1명 중 1위) 순위라는 말이 성립하지 않으므로 줄째로 뺀다.
+  if (myRank && myTotal > 1) {
+    var rankLine = document.createElement("p");
+    rankLine.className = "level-fact";
+    rankLine.appendChild(document.createTextNode("기록을 남긴 " + myTotal + "명 중 "));
+    rankLine.appendChild(buildFactValue(myRank + "위"));
+
+    var allBtn = document.createElement("button");
+    allBtn.type = "button";
+    allBtn.className = "level-rank-btn";
+    allBtn.textContent = "전체 순위";
+    allBtn.addEventListener("click", onRanking);
+    rankLine.appendChild(allBtn);
+
+    facts.appendChild(rankLine);
+  }
+
+  box.appendChild(facts);
+}
+
 export function renderLevelGuide() {
   var nickname = getSavedNickname();
   var score = state.myScore || 0;
@@ -655,74 +726,7 @@ export function renderLevelGuide() {
     note.textContent = "첫 기록을 남기면 등급이 생겨요";
     dom.levelProgress.appendChild(note);
   } else {
-    var p = levelProgress(score);
-    var myRank = state.myRank;
-    var myTotal = state.myTotal;
-
-    var now = document.createElement("p");
-    now.className = "level-progress-now";
-    now.appendChild(levelIconFor(p.current));
-    var nowText = document.createElement("span");
-    nowText.textContent = p.current.level + "등급 " + p.current.name;
-    now.appendChild(nowText);
-    var nowScore = document.createElement("span");
-    nowScore.className = "level-progress-score";
-    nowScore.textContent = score + "점";
-    now.appendChild(nowScore);
-    dom.levelProgress.appendChild(now);
-
-    var bar = document.createElement("div");
-    bar.className = "level-bar";
-    var fill = document.createElement("span");
-    fill.className = "level-bar-fill";
-    fill.style.width = Math.round(p.ratio * 100) + "%";
-    bar.appendChild(fill);
-    dom.levelProgress.appendChild(bar);
-
-    // "다음 등급까지 몇 점"과 "몇 명 중 몇 위" 두 줄이 이 팝업에서 제일 궁금한 값인데,
-    // 아래 배점표·등급표와 같은 크기·같은 색이라 설명문에 묻혀 있었다. 둘만 따로 묶어
-    // 구분선 아래에 세우고, 숫자는 한 단계 키워 브랜드 색으로 세운다.
-    var facts = document.createElement("div");
-    facts.className = "level-facts";
-
-    var goal = document.createElement("p");
-    goal.className = "level-fact";
-    if (p.next) {
-      goal.appendChild(document.createTextNode("다음 등급까지 "));
-      goal.appendChild(buildFactValue(p.remain + "점"));
-      var nextTag = document.createElement("span");
-      nextTag.className = "level-fact-note";
-      nextTag.appendChild(levelIconFor(p.next));
-      nextTag.appendChild(document.createTextNode(p.next.name));
-      goal.appendChild(nextTag);
-    } else {
-      goal.appendChild(buildFactValue("가장 높은 등급"));
-      goal.appendChild(document.createTextNode("이에요"));
-    }
-    facts.appendChild(goal);
-
-    // 순위는 분모까지 적는다. "3위"만 적으면 처음엔 커 보이지만 "몇 명 중인데?"가
-    // 곧바로 따라오고, 사람이 많지 않다는 걸 나중에 알면 오히려 깎여서 돌아온다.
-    // 아직 사람이 적은 지금은 분모가 "여기 아홉 명이 기록 중"이라는 신호이기도 하다.
-    //
-    // 혼자뿐이면(1명 중 1위) 순위라는 말이 성립하지 않으므로 줄째로 뺀다.
-    if (myRank && myTotal > 1) {
-      var rankLine = document.createElement("p");
-      rankLine.className = "level-fact";
-      rankLine.appendChild(document.createTextNode("기록을 남긴 " + myTotal + "명 중 "));
-      rankLine.appendChild(buildFactValue(myRank + "위"));
-
-      var allBtn = document.createElement("button");
-      allBtn.type = "button";
-      allBtn.className = "level-rank-btn";
-      allBtn.textContent = "전체 순위";
-      allBtn.addEventListener("click", openLevelRanking);
-      rankLine.appendChild(allBtn);
-
-      facts.appendChild(rankLine);
-    }
-
-    dom.levelProgress.appendChild(facts);
+    fillLevelProgress(dom.levelProgress, score, state.myRank, state.myTotal, openLevelRanking);
   }
 
   // ② 배점. 표의 숫자는 js/levels.js의 SCORE_RULES에서 온다(계산은 서버가 한다).
@@ -1082,6 +1086,7 @@ export function renderProfile() {
 
   dom.profileName.textContent = data ? data.nickname : "";
   if (!data) {
+    document.getElementById("profileProgress").hidden = true;
     dom.profileSub.textContent = "불러오는 중...";
     dom.profileStats.innerHTML = "";
     dom.profileShelf.innerHTML = "";
@@ -1093,6 +1098,18 @@ export function renderProfile() {
 
   var lvl = getLevel(data.score);
   dom.profileSub.textContent = (isMe ? "내 기록 · " : "") + lvl.name + " · " + data.score + "점";
+
+  // 내 기록이면 등급 안내 팝업과 같은 진행 카드(다음 등급까지·순위·전체 순위)를 맨 위에 둔다.
+  // 점수는 이 응답의 것, 순위는 refreshMyScore가 받아둔 것(openProfile이 새로 받음).
+  var $progress = document.getElementById("profileProgress");
+  $progress.innerHTML = "";
+  $progress.hidden = !isMe;
+  if (isMe) {
+    fillLevelProgress($progress, data.score, state.myRank, state.myTotal, function () {
+      openLevelGuide("profile");
+      openLevelRanking();
+    });
+  }
 
   // 요약 숫자. 값이 없는 항목(아직 별점을 안 준 경우의 평균)은 아예 빼서 "-"가 줄줄이
   // 늘어서지 않게 한다.

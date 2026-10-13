@@ -3368,6 +3368,10 @@
     background: var(--paper-soft);
   }
 
+  /* 내 기록 맨 위에도 같은 카드(renderProfile). 위 제목줄과 아래 숫자 칸 사이. */
+  .profile-progress:not(:empty) { margin-top: 1.1rem; }
+  .profile-progress[hidden] { display: none; }
+
   .level-progress-now {
     display: flex;
     align-items: center;

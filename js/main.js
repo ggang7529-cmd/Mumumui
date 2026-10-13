@@ -447,6 +447,13 @@ export function openProfile(nickname) {
       if (state.profileName !== name) return;
       dom.profileSub.textContent = "불러오지 못했어요: " + e.message;
     });
+
+  // 내 기록이면 맨 위 진행 카드의 순위가 낡지 않게 한 번 새로 받는다.
+  if (name === getSavedNickname()) {
+    refreshMyScore().then(function () {
+      if (state.view === "profile" && state.profileName === name && state.profile) renderProfile();
+    });
+  }
 }
 
 // "나를 위한 추천" 화면. 이 브라우저에 저장된 닉네임(책·한줄평을 남길 때 쓴 그 이름)으로
