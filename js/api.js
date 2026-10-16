@@ -206,6 +206,7 @@ export function refreshComments() {
   return api("/api/books/" + bookId + "/comments" + (nickname ? "?name=" + encodeURIComponent(nickname) : "")).then(function (data) {
     if (state.currentId !== bookId) return;
     state.comments = (data.comments || []).map(normalizeComment);
+    state.ratingDist = data.ratingDist || null;
     if (seq === state.mySeq) {
       state.my = data.my || null;
       state.wanted = !!data.wanted;

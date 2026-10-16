@@ -4423,3 +4423,21 @@
     font-size: 0.9rem;
     text-align: center;
   }
+
+  /* 이 책의 기록 요약(남긴 태그 · 별점 분포) — 별점 카드와 "한 줄 N" 사이의 작은 두 줄. */
+  .detail-summary {
+    margin: 1.1rem 0 0;
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+
+  .detail-summary[hidden] { display: none; }
+  .ds-row { margin: 0; display: flex; gap: 0.6rem; }
+  .ds-label { flex: none; color: var(--ink-faint); min-width: 4.2em; }
+  .ds-value { color: var(--ink); }
+
+  @media (min-width: 641px) {
+    .detail-card .detail-summary { grid-column: 1 / -1; }
+  }

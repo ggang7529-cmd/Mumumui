@@ -2,6 +2,7 @@ import { fetchScoreMap } from "../_lib/scores.js";
 import { hasLineSql } from "../_lib/lines.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
+import { topTags, tagsText, distText } from "../../js/bookSummary.js";
 import { escapeHtml } from "../_lib/html.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
@@ -210,14 +211,38 @@ export async function onRequestGet(context) {
   // js/render.js의 renderDetail()이 /api/books/:id/comments로 정상적으로 채운다.
   var commentCountText = "";
   var commentListHtml = "";
+  var summaryHtml = "";
   try {
     var commentRows = await env.DB.prepare(
-      "SELECT text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
+      "SELECT id, text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
       "ORDER BY created_at DESC LIMIT 20"
     )
       .bind(id)
       .all();
     var topLevelComments = commentRows.results || [];
+
+    // 이 책의 기록 요약 — 남긴 태그(한 줄 전체 기준)와 별점 분포(별점만 남긴 것까지).
+    // 이 사이트에만 있는, 책마다 다른 글이라 검색엔진이 보는 첫 HTML에 같이 싣는다.
+    var aggRows = await env.DB.batch([
+      env.DB.prepare("SELECT mood, count(*) AS n FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND mood IS NOT NULL AND mood != '' GROUP BY mood").bind(id),
+      env.DB.prepare("SELECT rating, count(*) AS n FROM comments WHERE book_id = ?1 AND parent_id IS NULL GROUP BY rating").bind(id)
+    ]);
+    var moodCounts = {};
+    (aggRows[0].results || []).forEach(function (r) { moodCounts[r.mood] = r.n; });
+    var dist = [0, 0, 0, 0, 0];
+    (aggRows[1].results || []).forEach(function (r) { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1] = r.n; });
+    summaryHtml = buildSummaryHtml(tagsText(topTags(moodCounts)), distText(dist));
+
+    // 답글도 한줄평 밑에 같이 싣는다(대화가 붙은 책은 그만큼 고유한 글이 늘어난다).
+    var repliesByParent = {};
+    if (topLevelComments.length) {
+      var replyRows = await env.DB.prepare(
+        "SELECT text, author_name, parent_id FROM comments WHERE book_id = ?1 AND parent_id IS NOT NULL ORDER BY created_at ASC LIMIT 100"
+      ).bind(id).all();
+      (replyRows.results || []).forEach(function (r) {
+        (repliesByParent[r.parent_id] = repliesByParent[r.parent_id] || []).push(r);
+      });
+    }
     if (topLevelComments.length > 0) {
       commentCountText = String(book.comment_count || topLevelComments.length);
       var scoreMap = await fetchScoreMap(env);
@@ -233,10 +258,16 @@ export async function onRequestGet(context) {
         var moodHtml = moodTag
           ? '<span class="c-mood">' + escapeHtml(moodTag.emoji + " " + moodTag.label) + "</span> "
           : "";
+        var replies = repliesByParent[c.id] || [];
+        var repliesHtml = replies.length
+          ? '<ul class="c-replies">' + replies.map(function (r) {
+              return "<li><strong>" + escapeHtml(r.author_name || "책갈피 사용자") + "</strong> " + escapeHtml(r.text) + "</li>";
+            }).join("") + "</ul>"
+          : "";
         return (
           "<li><strong>" + iconSvg(lvl.icon, "lv-icon lv-icon--" + lvl.icon) +
           escapeHtml(formatNicknameShort(authorName, score)) + "</strong> " +
-          starsHtml + " " + moodHtml + escapeHtml(c.text) + "</li>"
+          starsHtml + " " + moodHtml + escapeHtml(c.text) + repliesHtml + "</li>"
         );
       }).join("");
     }
@@ -267,9 +298,27 @@ export async function onRequestGet(context) {
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
+    .replace(
+      '<div class="detail-summary" id="detailSummary" hidden></div>',
+      summaryHtml
+        ? '<div class="detail-summary" id="detailSummary">' + summaryHtml + "</div>"
+        : '<div class="detail-summary" id="detailSummary" hidden></div>'
+    )
+    // 홈 첫 화면(헤드라인·버튼·오늘의 한 줄)은 책 페이지에선 처음부터 감춘다. 예전엔 js가 뜬 뒤에야
+    // 숨겨서, 검색엔진이 보는 첫 HTML에는 모든 책 페이지 맨 위에 같은 문구가 들어 있었다 —
+    // 책마다 다른 글보다 똑같은 글이 많아 "크롤링됨 - 색인 미생성"으로 밀렸다(2026-10-13).
+    .replace('<div class="header-intro" id="headerIntro">', '<div class="header-intro" id="headerIntro" hidden>')
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<section id="detailView" hidden>', '<section id="detailView">');
 
   return new Response(html, { headers: { "Content-Type": "text/html; charset=UTF-8" } });
+}
+
+// 요약 두 줄의 HTML. js/render.js renderDetailSummary와 같은 모양이다.
+function buildSummaryHtml(tags, dist) {
+  var html = "";
+  if (tags) html += '<p class="ds-row"><span class="ds-label">남긴 태그</span><span class="ds-value">' + escapeHtml(tags) + "</span></p>";
+  if (dist) html += '<p class="ds-row"><span class="ds-label">별점 분포</span><span class="ds-value">' + escapeHtml(dist) + "</span></p>";
+  return html;
 }

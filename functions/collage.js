@@ -55,6 +55,9 @@ export async function onRequestGet(context) {
     // js가 뜨기 전 한순간 홈 목록이 번쩍이지 않도록, 처음부터 이 화면만 열어둔다.
     .replace('<h1 class="brand-name">책갈피</h1>', '<p class="brand-name">책갈피</p>')
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
+    // 홈 첫 화면 문구는 이 페이지에선 처음부터 감춘다(검색엔진이 보는 첫 HTML에서 페이지마다
+    // 같은 글을 줄이려는 것 — functions/book/[id].js와 같은 이유).
+    .replace('<div class="header-intro" id="headerIntro">', '<div class="header-intro" id="headerIntro" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
     .replace('<div class="header-intro" id="headerIntro">', '<div class="header-intro" id="headerIntro" hidden>')
     .replace('<section id="collageView" hidden>', '<section id="collageView">')

@@ -1,5 +1,6 @@
 import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
+import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
@@ -1625,6 +1626,33 @@ function renderDetailStats(r) {
   $want.textContent = state.wantCount >= 3 ? state.wantCount + "명이 읽고 싶어해요" : "";
 }
 
+// 이 책의 기록 요약 — 남긴 태그(많은 순 3개)와 별점 분포. 서버가 첫 HTML에 같은 문장을
+// 미리 채워 두고(functions/book/[id].js) 여기서 이어받는다. 한줄평 목록을 아직 못 받았으면
+// 서버가 채운 것을 그대로 둔다.
+function renderDetailSummary() {
+  var $box = document.getElementById("detailSummary");
+  if (!state.ratingDist) return;
+  var moods = {};
+  state.comments.forEach(function (c) { if (!c.parentId && c.mood) moods[c.mood] = (moods[c.mood] || 0) + 1; });
+  var rows = [["남긴 태그", tagsText(topTags(moods))], ["별점 분포", distText(state.ratingDist)]];
+  $box.innerHTML = "";
+  rows.forEach(function (row) {
+    if (!row[1]) return;
+    var p = document.createElement("p");
+    p.className = "ds-row";
+    var label = document.createElement("span");
+    label.className = "ds-label";
+    label.textContent = row[0];
+    var value = document.createElement("span");
+    value.className = "ds-value";
+    value.textContent = row[1];
+    p.appendChild(label);
+    p.appendChild(value);
+    $box.appendChild(p);
+  });
+  $box.hidden = !$box.children.length;
+}
+
 // 별점 카드. 이 기기로 평가한 책이면 "내 평가" + 채운 별, 아니면 안내 문구 + 빈 별.
 // 누르면 js/main.js rateBook이 바로 저장하고 시트를 연다.
 export function renderRateCard() {
@@ -1707,6 +1735,7 @@ export function renderDetail() {
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
   renderRateCard();
+  renderDetailSummary();
 
   var $list = document.getElementById("commentList");
   // $list.innerHTML을 비우면 그 안에 포커스가 있던 답글 입력창은 (removal로 인해) blur된다.

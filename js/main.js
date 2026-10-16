@@ -534,12 +534,22 @@ export function openRecommend() {
   });
 }
 
+var firstDetailOpen = true;
+
 export function openDetail(id) {
   state.currentId = id;
   state.comments = [];
   state.my = null;
   state.wanted = false;
   state.wantCount = 0;
+  state.ratingDist = null;
+  // 서버가 첫 HTML에 채워 둔 요약은 처음 연 책 것이다. 다른 책으로 옮기면 지운다(새 값이 오면 다시 그림).
+  if (!firstDetailOpen) {
+    var $summary = document.getElementById("detailSummary");
+    $summary.innerHTML = "";
+    $summary.hidden = true;
+  }
+  firstDetailOpen = false;
   state.mySeq++;
   state.openReplies = {};
   state.openReplyNames = {};

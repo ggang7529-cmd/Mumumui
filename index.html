@@ -272,6 +272,10 @@
           </button>
         </div>
 
+        <!-- 이 책의 기록 요약(남긴 태그·별점 분포). 서버가 첫 HTML에 미리 채우고(functions/book/[id].js)
+             js/render.js renderDetailSummary가 이어받는다. 여는 태그 문자열은 SSR 치환 대상. -->
+        <div class="detail-summary" id="detailSummary" hidden></div>
+
         <section class="comments">
           <h3>한 줄 <span class="count" id="commentCount"></span></h3>
           <ul id="commentList"></ul>

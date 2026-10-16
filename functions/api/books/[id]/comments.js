@@ -61,11 +61,19 @@ export async function onRequestGet(context) {
   var myName = String(new URL(context.request.url).searchParams.get("name") || "").trim().slice(0, 10);
   var want = await wantStatus(env, bookId, myUid, myName);
 
+  // 별점 분포(별점만 남긴 것까지) — 상세의 "이 책의 기록" 요약(js/bookSummary.js)에 쓴다.
+  var ratingDist = [0, 0, 0, 0, 0];
+  var distRows = await env.DB.prepare(
+    "SELECT rating, count(*) AS n FROM comments WHERE book_id = ?1 AND parent_id IS NULL GROUP BY rating"
+  ).bind(bookId).all();
+  (distRows.results || []).forEach(function (r) { if (r.rating >= 1 && r.rating <= 5) ratingDist[r.rating - 1] = r.n; });
+
   return json({
     comments: comments,
     my: mine ? { id: mine.id, rating: mine.rating, text: mine.text, mood: mine.mood, name: mine.author_name } : null,
     wanted: want.wanted,
-    wantCount: want.count
+    wantCount: want.count,
+    ratingDist: ratingDist
   });
 }
 
