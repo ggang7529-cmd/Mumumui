@@ -1658,7 +1658,7 @@ function renderDetailSummary() {
 export function renderRateCard() {
   var mine = state.my && state.my.rating ? state.my.rating : 0;
   var $label = document.getElementById("rateLabel");
-  $label.textContent = mine ? "내 평가" : "읽으셨나요? 별을 눌러주세요";
+  $label.textContent = mine ? "내 평가" : "읽어보니 어떠셨나요? 별점을 남겨주세요";
   $label.classList.toggle("is-mine", !!mine);
 
   var $stars = document.getElementById("rateStars");
