@@ -1,3 +1,4 @@
 backup-*.sql
 .wrangler/
 .internal/backups/
+.dev.vars

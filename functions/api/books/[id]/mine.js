@@ -2,6 +2,7 @@ import { getAnonUid } from "../../../_lib/identity.js";
 import { json } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { upsertMyReview, countMyRatedBooks } from "../../../_lib/myReview.js";
+import { resolveNickname } from "../../../_lib/nickname.js";
 import { normalizeMoodId } from "../../../../js/moodTags.js";
 
 // 책 상세의 별점 카드와 "한 줄도 남겨볼래요?" 시트가 쓰는 저장 경로. 이 기기의 평가 하나를
@@ -31,7 +32,18 @@ export async function onRequestPut(context) {
   var input = { rating: body.rating };
   if (body.text !== undefined) input.text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
   if (body.mood !== undefined) input.mood = normalizeMoodId(body.mood);
-  if (body.name !== undefined) input.name = String(body.name || "").trim().slice(0, 10) || undefined;
+  if (body.name !== undefined) {
+    var nick = await resolveNickname(env, context.request, body.name);
+    if (nick.error) {
+      // 별만 누른 거면 닉네임 없이 저장한다(별점은 기기 단위). 태그·한 줄은 남들에게 보이는
+      // 기록이라 PIN부터.
+      if (input.text !== undefined || input.mood !== undefined) {
+        return json({ error: nick.error, code: nick.code, name: nick.name }, { status: nick.status });
+      }
+    } else {
+      input.name = nick.name || undefined;
+    }
+  }
 
   var result = await upsertMyReview(env, bookId, uid, input);
   if (result.error) return json({ error: result.error }, { status: result.status });

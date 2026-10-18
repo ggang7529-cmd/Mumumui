@@ -80,3 +80,28 @@ CREATE TABLE IF NOT EXISTS wants (
 );
 CREATE INDEX IF NOT EXISTS idx_wants_device ON wants (device_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wants_nickname ON wants (nickname);
+
+-- 닉네임 소유(0009, functions/_lib/nickname.js). nickname_key = lower(trim(닉네임)).
+-- PIN 원문은 저장하지 않는다 — PIN_PEPPER로 HMAC → 랜덤 salt로 PBKDF2.
+CREATE TABLE IF NOT EXISTS nicknames (
+  nickname_key TEXT PRIMARY KEY,
+  nickname TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('reserved', 'owned')),
+  pin_hash TEXT,
+  pin_salt TEXT,
+  pin_iter INTEGER,
+  failed_count INTEGER NOT NULL DEFAULT 0,
+  lock_level INTEGER NOT NULL DEFAULT 0,
+  locked_until INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+-- PIN을 맞춘 기기의 토큰(SHA-256만 저장).
+CREATE TABLE IF NOT EXISTS nickname_sessions (
+  token_hash TEXT PRIMARY KEY,
+  nickname_key TEXT NOT NULL,
+  device_id TEXT,
+  created_at INTEGER NOT NULL,
+  last_used_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_nickname_sessions_key ON nickname_sessions (nickname_key);

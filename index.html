@@ -363,6 +363,12 @@
       <div class="panel my-shelf">
         <h2 class="my-shelf-title">내 책장</h2>
         <p class="my-shelf-sub" id="myShelfSub"></p>
+        <!-- 닉네임 없이 별점·읽고 싶어요가 3개 이상 쌓이면 한 번(닫거나 누르면 다시 안 뜸). -->
+        <div class="my-nick-prompt" id="myNickPrompt" hidden>
+          <p>닉네임을 정하면 다른 기기에서도 내 책장을 볼 수 있어요</p>
+          <button type="button" class="btn-primary my-nick-prompt-btn" id="myNickPromptBtn">닉네임 정하기</button>
+          <button type="button" class="my-nick-prompt-close" id="myNickPromptClose" aria-label="안내 닫기">×</button>
+        </div>
         <div class="my-tabs" role="tablist" aria-label="내 책장">
           <button type="button" class="my-tab" role="tab" id="myTabRated" data-tab="rated">평가한 책 <span class="my-tab-count" id="myRatedCount"></span></button>
           <button type="button" class="my-tab" role="tab" id="myTabWants" data-tab="wants">읽고 싶은 책 <span class="my-tab-count" id="myWantsCount"></span></button>
@@ -653,6 +659,28 @@
     </div>
     <button type="submit" class="btn-primary line-submit" id="lineSubmit" value="save">남기기</button>
     <button type="button" class="link-btn line-skip" id="lineSkip">별점만 남길게요</button>
+  </form>
+</dialog>
+
+<!-- 닉네임 비밀번호(4자리 PIN) 시트(js/nickAuth.js). 글을 남길 때 닉네임이 처음 보는 것이면
+     PIN을 정하고, 이미 PIN이 걸린 닉네임이면 PIN을 묻는다. 한 번 맞추면 이 기기에는 다시 묻지
+     않는다. "닉네임 정하기"(내 책장 안내)에서는 닉네임 칸부터 보인다. 한 줄 시트·한 줄 남기기
+     시트 위에 겹쳐 뜰 수 있어서 같은 시트 틀(.line-sheet)을 쓰는 별도 <dialog>다. -->
+<dialog class="line-sheet pin-sheet" id="pinSheet" aria-labelledby="pinSheetTitle">
+  <form class="line-sheet-panel" id="pinForm" method="dialog" novalidate>
+    <span class="line-sheet-grip" aria-hidden="true"></span>
+    <h2 class="line-sheet-title" id="pinSheetTitle">이 닉네임을 지킬 4자리 비밀번호</h2>
+    <p class="line-sheet-sub" id="pinSheetSub">다른 곳에서 쓰는 비밀번호는 쓰지 마세요</p>
+    <label class="line-nick-input" id="pinNickWrap" hidden>
+      <span>닉네임</span>
+      <input type="text" id="pinNickInput" maxlength="10" placeholder="예: 책벌레" autocomplete="off">
+    </label>
+    <p class="pin-for" id="pinFor"><strong id="pinForName"></strong> 님</p>
+    <input type="password" class="line-input pin-input" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="숫자 4자리" aria-label="4자리 비밀번호">
+    <p class="pin-msg" id="pinMsg" role="alert"></p>
+    <button type="submit" class="btn-primary line-submit" id="pinSubmit">정하기</button>
+    <p class="pin-help">비밀번호를 잊었다면 <button type="button" class="link-btn" id="pinHelp">의견 보내기</button>로 알려주세요</p>
+    <button type="button" class="link-btn line-skip" id="pinCancel">취소</button>
   </form>
 </dialog>
 

@@ -1,3 +1,4 @@
+import { resolveNickname } from "../../_lib/nickname.js";
 import { getAnonUid } from "../../_lib/identity.js";
 import { json, newId } from "../../_lib/db.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
@@ -58,6 +59,11 @@ export async function onRequestPost(context) {
   // 셈이라 막는다. 별점은 예전과 똑같이 무조건 필수다.
   if (!text && !mood) return json({ error: "한 줄 리뷰를 쓰거나 감정 태그를 골라주세요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
+
+  // PIN이 걸린 닉네임은 그 PIN을 맞춘 기기만, 처음 보는 닉네임은 PIN을 정한 뒤에(functions/_lib/nickname.js).
+  var nick = await resolveNickname(env, context.request, name);
+  if (nick.error) return json({ error: nick.error, code: nick.code, name: nick.name }, { status: nick.status });
+  name = nick.name;
 
   if (isbn) {
     var dupIsbn = await env.DB.prepare("SELECT id FROM books WHERE isbn = ?1").bind(isbn).first();

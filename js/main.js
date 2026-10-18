@@ -10,6 +10,7 @@ import {
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
+import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -416,6 +417,23 @@ export function openMyShelf(tab) {
       if (state.view !== "myShelf") return;
       document.getElementById("myShelfSub").textContent = "불러오지 못했어요: " + e.message;
     });
+}
+
+// 내 책장의 "닉네임 정하기" 안내(닉네임 없이 3개 이상일 때 한 번). 누르거나 닫으면 다시 안 뜬다.
+document.getElementById("myNickPromptBtn").addEventListener("click", function () {
+  markNickPromptDone();
+  openPinSheet({ mode: "choose" })
+    .then(function () { refreshMyScore(); openMyShelf(); })
+    .catch(function () { renderMyShelf(); });
+});
+document.getElementById("myNickPromptClose").addEventListener("click", function () {
+  markNickPromptDone();
+  renderMyShelf();
+});
+
+export var NICK_PROMPT_KEY = "chaekgalpi_nick_prompt_done";
+function markNickPromptDone() {
+  try { localStorage.setItem(NICK_PROMPT_KEY, "1"); } catch (e) {}
 }
 
 ["myTabRated", "myTabWants"].forEach(function (id) {
@@ -978,13 +996,15 @@ dom.lineForm.addEventListener("submit", function (e) {
     dom.lineNickInput.focus();
     return;
   }
-  saveNickname(nickname);
 
   var submitBtn = document.getElementById("lineSubmit");
   submitBtn.disabled = true;
-  api("/api/books/" + encodeURIComponent(bookId) + "/mine", {
-    method: "PUT",
-    body: { rating: my.rating, text: text, mood: mood, name: nickname }
+  withNickname(nickname, function (name) {
+    saveNickname(name);
+    return api("/api/books/" + encodeURIComponent(bookId) + "/mine", {
+      method: "PUT",
+      body: { rating: my.rating, text: text, mood: mood, name: name }
+    });
   })
     .then(function (res) {
       submitBtn.disabled = false;
@@ -1002,7 +1022,7 @@ dom.lineForm.addEventListener("submit", function (e) {
     })
     .catch(function (err) {
       submitBtn.disabled = false;
-      alert(err.message);
+      if (!err.cancelled) alert(err.message);
     });
 });
 
@@ -1177,13 +1197,21 @@ dom.writeSheet.addEventListener("click", function (e) {
   if (e.target === dom.writeSheet) closeWriteSheet();
 });
 document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !dom.writeSheet.hidden) closeWriteSheet();
+  // PIN 시트가 위에 떠 있으면 Esc는 그것만 닫는다.
+  if (e.key === "Escape" && !dom.writeSheet.hidden && !document.getElementById("pinSheet").open) closeWriteSheet();
 });
-document.getElementById("feedbackBtn").addEventListener("click", function () {
+document.getElementById("feedbackBtn").addEventListener("click", function () { openFeedback(); });
+
+// 의견 보내기. PIN 시트의 "비밀번호를 잊었다면"에서도 연다 — 그때 떠 있던 시트들은 닫는다
+// (쓰던 한 줄이 있으면 closeWriteSheet가 한 번 묻는다).
+export function openFeedback() {
+  closeLineSheet();
+  closeWriteSheet();
+  if (!dom.writeSheet.hidden && dom.writeSheet.classList.contains("show")) return;
   gtag("event", "click_feedback");
   document.getElementById("feedbackForm").reset();
   showView("feedback");
-});
+}
 document.getElementById("cancelFeedback").addEventListener("click", function () { showView("library"); });
 // 로고 = 홈. 링크라 새 탭 열기(가운데 클릭 등)는 그대로 두고, 그냥 누르면 페이지를 다시
 // 받지 않고 화면만 바꾼다.
@@ -1288,7 +1316,14 @@ dom.recommendClaim.addEventListener("submit", function (e) {
         dom.recommendClaimMsg.textContent = "\"" + name + "\" 닉네임으로 남긴 별점이 없어요. 오타가 없는지 확인해주세요.";
         return;
       }
-      saveNickname(name);
+      // PIN이 걸린 닉네임이면 PIN부터(맞추면 nickAuth가 저장한다).
+      return ensureNickname(name).then(function (canon) {
+        saveNickname(canon);
+        return data;
+      });
+    })
+    .then(function (data) {
+      if (!data) return;
       renderAuthBox();      // 헤더의 닉네임 칩도 곧바로 그 이름으로 바뀐다
       refreshMyScore();
       gtag("event", "recommend_claim_nickname");
@@ -1299,7 +1334,7 @@ dom.recommendClaim.addEventListener("submit", function (e) {
       renderRecommend();
     })
     .catch(function (err) {
-      dom.recommendClaimMsg.textContent = "불러오지 못했어요: " + err.message;
+      dom.recommendClaimMsg.textContent = err.cancelled ? "" : "불러오지 못했어요: " + err.message;
     });
 });
 
@@ -1404,24 +1439,31 @@ dom.reviewForm.addEventListener("submit", function (e) {
     return;
   }
 
-  if (AUTH_MODE === "nickname") saveNickname(nickname);
-
   var review = { text: text, rating: state.formRating, mood: state.formMood, name: nickname };
+  var picked = state.selectedBook;
   dom.writeSubmit.disabled = true;
   var done = function () { dom.writeSubmit.disabled = false; };
 
-  // 이미 책장에 있는 책: 새 책을 만들지 않고 그 책에 한줄평만 붙인다.
-  if (state.selectedBook.existingId) {
-    addReviewToExisting(state.selectedBook.existingId, review).then(done, function (err) { done(); alert(err.message); });
-    return;
-  }
+  // 닉네임이 처음 보는 것이면 PIN을 정하고, PIN이 걸린 것이면 PIN을 맞춘 뒤에 보낸다(js/nickAuth.js).
+  withNickname(nickname, function (name) {
+    review.name = name;
+    if (AUTH_MODE === "nickname") saveNickname(name);
+    // 이미 책장에 있는 책: 새 책을 만들지 않고 그 책에 한줄평만 붙인다.
+    if (picked.existingId) return addReviewToExisting(picked.existingId, review);
+    return createBook(picked, review);
+  }).then(done, function (err) {
+    done();
+    if (!err.cancelled) alert(err.message);
+  });
+});
 
-  api("/api/books", {
+function createBook(picked, review) {
+  return api("/api/books", {
     method: "POST",
     body: {
-      title: state.selectedBook.title, author: state.selectedBook.author, cover: state.selectedBook.cover,
-      isbn: state.selectedBook.isbn, contents: state.selectedBook.contents, text: text, rating: state.formRating,
-      mood: state.formMood, name: nickname
+      title: picked.title, author: picked.author, cover: picked.cover,
+      isbn: picked.isbn, contents: picked.contents, text: review.text, rating: review.rating,
+      mood: review.mood, name: review.name
     }
   })
     .then(function (data) {
@@ -1431,7 +1473,6 @@ dom.reviewForm.addEventListener("submit", function (e) {
       // 거치지 않기 때문이다. 어느 쪽인지 알 수 있게 경로별 이벤트를 따로 하나 더 보낸다.
       gtag("event", "complete_review", { book_id: data.book.id });
       gtag("event", "complete_book_add", { book_id: data.book.id });
-      done();
       closeWriteSheet(true);
       renderAuthBox();
       refreshMyScore(10);
@@ -1449,15 +1490,11 @@ dom.reviewForm.addEventListener("submit", function (e) {
       // 목록을 받기 전에 골랐거나). 예전엔 여기서 알림만 띄우고 쓴 한 줄을 버렸다 —
       // 이제는 서버가 알려준 그 책에 그대로 붙인다. 새 책은 절대 만들지 않는다.
       if (err.status === 409 && err.data && err.data.bookId) {
-        return addReviewToExisting(err.data.bookId, review).then(done);
+        return addReviewToExisting(err.data.bookId, review);
       }
       throw err;
-    })
-    .catch(function (err) {
-      done();
-      alert(err.message);
     });
-});
+}
 
 // 이미 있는 책에 한줄평을 붙인다(시트에서). 책 상세의 한줄평 칸과 같은 API·같은 GA
 // 이벤트를 쓰고, from으로 시트에서 왔는지만 구분한다. 화면은 옮기지 않는다 — 시트만

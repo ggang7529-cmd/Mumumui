@@ -1,6 +1,7 @@
 import { getAnonUid } from "../_lib/identity.js";
 import { json } from "../_lib/db.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
+import { resolveNickname, nicknameForRead, linkDeviceRecords } from "../_lib/nickname.js";
 
 // 내 책장 — 이 기기(X-Anon-Id)가 평가한 책과 읽고 싶은 책. 닉네임이 없어도 보인다.
 // ?name=닉네임을 주면 그 닉네임으로 남긴 것(다른 폰·PC에서 남긴 것)까지 합친다 — 책마다
@@ -12,7 +13,8 @@ import { checkRateLimit } from "../_lib/rateLimit.js";
 export async function onRequestGet(context) {
   var env = context.env;
   var uid = getAnonUid(context.request) || "";
-  var name = String(new URL(context.request.url).searchParams.get("name") || "").trim().slice(0, 10);
+  // 닉네임으로 합쳐 보는 건 그 닉네임의 PIN을 맞춘 기기만(아니면 이 기기 것만).
+  var name = await nicknameForRead(env, context.request, new URL(context.request.url).searchParams.get("name"));
   if (!uid && !name) return json({ rated: [], wants: [] });
 
   var rated = (await env.DB.prepare(
@@ -56,20 +58,9 @@ export async function onRequestPost(context) {
   } catch (e) {
     return json({ error: "잘못된 요청이에요." }, { status: 400 });
   }
-  var name = String(body.name || "").trim().slice(0, 10);
-  if (!name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
+  var nick = await resolveNickname(env, context.request, body.name);
+  if (nick.error) return json({ error: nick.error, code: nick.code, name: nick.name }, { status: nick.status });
+  if (!nick.name) return json({ error: "닉네임을 입력해주세요." }, { status: 400 });
 
-  var res = await env.DB.prepare(
-    "UPDATE comments SET author_name = ?1 WHERE author_uid = ?2 AND parent_id IS NULL AND (author_name IS NULL OR author_name = '')"
-  ).bind(name, uid).run();
-  var linked = (res && res.meta && res.meta.changes) || 0;
-
-  try {
-    var w = await env.DB.prepare(
-      "UPDATE wants SET nickname = ?1 WHERE device_id = ?2 AND (nickname IS NULL OR nickname = '')"
-    ).bind(name, uid).run();
-    linked += (w && w.meta && w.meta.changes) || 0;
-  } catch (e) {}
-
-  return json({ linked: linked });
+  return json({ linked: await linkDeviceRecords(env, uid, nick.name) });
 }

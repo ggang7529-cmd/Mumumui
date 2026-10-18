@@ -2,6 +2,7 @@ import { getAnonUid } from "../../../_lib/identity.js";
 import { json } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { ensureWants, wantStatus } from "../../../_lib/wants.js";
+import { nicknameForRead } from "../../../_lib/nickname.js";
 
 // 읽고 싶어요 담기/빼기. { want: true|false } — 토글이 아니라 원하는 상태를 보낸다(두 번
 // 빨리 눌러 요청 순서가 엇갈려도 마지막으로 누른 상태가 남게).
@@ -25,7 +26,8 @@ export async function onRequestPut(context) {
   if (!book) return json({ error: "존재하지 않는 책이에요." }, { status: 404 });
 
   await ensureWants(env);
-  var name = String(body.name || "").trim().slice(0, 10);
+  // 닉네임은 그 PIN을 맞춘 기기일 때만 붙인다. 아니면 이 기기 것으로만 담고 뺀다.
+  var name = await nicknameForRead(env, context.request, body.name);
   if (body.want) {
     await env.DB.prepare(
       "INSERT OR IGNORE INTO wants (book_id, device_id, nickname, created_at) VALUES (?1, ?2, ?3, ?4)"

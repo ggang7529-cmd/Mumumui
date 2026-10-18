@@ -2,6 +2,7 @@ import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.
 import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderFeatured } from "./render.js";
 import { renderCollage } from "./collage.js";
 import { getLevel, levelParticle } from "./levels.js";
+import { nicknameKey } from "./pinRules.js";
 
 export function googleConfigured() {
   return AUTH_MODE === "google" && GOOGLE_CLIENT_ID.indexOf("YOUR_GOOGLE_CLIENT_ID") !== 0;
@@ -12,6 +13,9 @@ var NICKNAME_KEY = "chaekgalpi_nickname";
 var ADMIN_KEY_STORAGE = "chaekgalpi_admin_key";
 var NOTIF_SEEN_KEY = "chaekgalpi_notif_seen";
 var LAST_LEVEL_KEY = "chaekgalpi_last_level";
+// 닉네임 PIN을 맞춘 기기의 토큰 { key, name, token }(js/nickAuth.js, functions/api/nickname/pin.js).
+// 모든 요청에 X-Nick-Token으로 실어, 서버가 이 기기가 그 닉네임으로 써도 되는지 안다.
+var NICK_TOKEN_KEY = "chaekgalpi_nick_token";
 
 export function getAnonId() {
   try {
@@ -33,7 +37,34 @@ export function getSavedNickname() {
 export function saveNickname(name) {
   var before = getSavedNickname();
   try { localStorage.setItem(NICKNAME_KEY, name); } catch (e) {}
+  // 다른 닉네임으로 바꾸면 예전 닉네임의 이 기기 세션은 끝낸다("변경").
+  var tok = getNickToken();
+  if (tok && tok.key !== nicknameKey(name)) endNickSession();
   if (name && name !== before) linkMyRecords(name);
+}
+
+export function getNickToken() {
+  try {
+    var v = JSON.parse(localStorage.getItem(NICK_TOKEN_KEY) || "null");
+    return v && v.token && v.key ? v : null;
+  } catch (e) { return null; }
+}
+
+export function setNickToken(name, token) {
+  try { localStorage.setItem(NICK_TOKEN_KEY, JSON.stringify({ key: nicknameKey(name), name: name, token: token })); } catch (e) {}
+}
+
+export function clearNickToken() {
+  try { localStorage.removeItem(NICK_TOKEN_KEY); } catch (e) {}
+}
+
+// 서버의 세션 행을 지우고 이 기기의 토큰도 버린다. 토큰은 먼저 버린다 — 응답을 기다리는 사이
+// 나가는 다른 요청이 옛 토큰을 싣지 않게.
+export function endNickSession() {
+  var tok = getNickToken();
+  clearNickToken();
+  if (!tok) return Promise.resolve();
+  return api("/api/nickname/logout", { method: "POST", headers: { "X-Nick-Token": tok.token } }).catch(function () {});
 }
 
 // 이 기기가 닉네임 없이 남긴 별점·읽고 싶어요를 그 닉네임으로 잇는다(functions/api/my-shelf.js).
@@ -123,7 +154,11 @@ export function api(path, opts) {
   opts = opts || {};
   var headers = Object.assign({}, opts.headers);
   if (opts.body) headers["Content-Type"] = "application/json";
-  if (AUTH_MODE === "nickname") headers["X-Anon-Id"] = getAnonId();
+  if (AUTH_MODE === "nickname") {
+    headers["X-Anon-Id"] = getAnonId();
+    var tok = getNickToken();
+    if (tok && !headers["X-Nick-Token"]) headers["X-Nick-Token"] = tok.token;
+  }
   return fetch(path, {
     method: opts.method || "GET",
     headers: headers,

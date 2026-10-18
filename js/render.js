@@ -1,4 +1,5 @@
-import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY } from "./main.js";
+import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
@@ -1015,6 +1016,12 @@ export function renderMyShelf() {
   }
 
   var counts = { rated: data ? data.rated.length : null, wants: data ? data.wants.length : null };
+
+  // 닉네임 없이 별점·읽고 싶어요가 3개 이상 — 다른 기기에서도 보려면 닉네임이 필요하다는 안내.
+  var promptDone = false;
+  try { promptDone = !!localStorage.getItem(NICK_PROMPT_KEY); } catch (e) {}
+  document.getElementById("myNickPrompt").hidden =
+    AUTH_MODE !== "nickname" || !!nickname || promptDone || !data || (counts.rated + counts.wants) < 3;
   [["rated", "myTabRated", "myRatedCount"], ["wants", "myTabWants", "myWantsCount"]].forEach(function (t) {
     var $tab = document.getElementById(t[1]);
     var on = t[0] === tab;
@@ -2160,9 +2167,11 @@ export function renderDetail() {
         var text = replyTextInput.value.trim().slice(0, 60);
         if (!text) return;
 
-        if (AUTH_MODE === "nickname") saveNickname(name);
-
-        api("/api/books/" + state.currentId + "/comments", { method: "POST", body: { text: text, parentId: c.id, name: name } })
+        var bookId = state.currentId;
+        withNickname(name, function (canon) {
+          if (AUTH_MODE === "nickname") saveNickname(canon);
+          return api("/api/books/" + bookId + "/comments", { method: "POST", body: { text: text, parentId: c.id, name: canon } });
+        })
           .then(function () {
             gtag("event", "post_reply");
             replyTextInput.value = "";
@@ -2172,7 +2181,7 @@ export function renderDetail() {
             refreshComments();
             refreshMyScore();
           })
-          .catch(function (e) { alert(e.message); });
+          .catch(function (e) { if (!e.cancelled) alert(e.message); });
       });
 
       if (editForm) item.appendChild(editForm);

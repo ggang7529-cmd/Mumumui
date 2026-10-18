@@ -6,6 +6,7 @@ import { normalizeMoodId } from "../../../../js/moodTags.js";
 import { hasLineSql } from "../../../_lib/lines.js";
 import { findMyReview, upsertMyReview } from "../../../_lib/myReview.js";
 import { wantStatus } from "../../../_lib/wants.js";
+import { resolveNickname, nicknameForRead } from "../../../_lib/nickname.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -58,7 +59,8 @@ export async function onRequestGet(context) {
 
   // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태.
   var mine = await findMyReview(env, bookId, myUid);
-  var myName = String(new URL(context.request.url).searchParams.get("name") || "").trim().slice(0, 10);
+  // 같은 닉네임이 다른 기기에서 담은 것까지 "담김"으로 — 그 닉네임의 PIN을 맞춘 기기일 때만.
+  var myName = await nicknameForRead(env, context.request, new URL(context.request.url).searchParams.get("name"));
   var want = await wantStatus(env, bookId, myUid, myName);
 
   // 별점 분포(별점만 남긴 것까지) — 상세의 "이 책의 기록" 요약(js/bookSummary.js)에 쓴다.
@@ -107,6 +109,10 @@ export async function onRequestPost(context) {
 
   var book = await env.DB.prepare("SELECT id FROM books WHERE id = ?1").bind(bookId).first();
   if (!book) return json({ error: "존재하지 않는 책이에요." }, { status: 404 });
+
+  var nick = await resolveNickname(env, context.request, name);
+  if (nick.error) return json({ error: nick.error, code: nick.code, name: nick.name }, { status: nick.status });
+  name = nick.name;
 
   // 답글(parentId 있음)은 별점이 없고 books.rating_sum/comment_count에도 반영하지 않는다 —
   // "리뷰순" 정렬은 한줄평(리뷰) 개수 기준이지 전체 댓글 활동량이 아니라서 그대로 둔다.
