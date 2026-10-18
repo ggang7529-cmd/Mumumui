@@ -105,3 +105,14 @@ CREATE TABLE IF NOT EXISTS nickname_sessions (
   last_used_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_nickname_sessions_key ON nickname_sessions (nickname_key);
+
+-- 이달의 책(0010, functions/_lib/bookOfMonth.js). 기간은 [starts_at, ends_at) 밀리초.
+CREATE TABLE IF NOT EXISTS book_of_month (
+  id TEXT PRIMARY KEY,
+  book_id TEXT NOT NULL,
+  question TEXT NOT NULL,
+  starts_at INTEGER NOT NULL,
+  ends_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_book_of_month_period ON book_of_month (starts_at, ends_at);

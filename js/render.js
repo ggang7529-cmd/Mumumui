@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth } from "./main.js";
 import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
@@ -1713,6 +1713,7 @@ export function renderDetail() {
   var genre = genreOfBook(r);
   document.getElementById("detailAuthor").textContent = r.author + (genre && genre !== "기타" ? " · " + genre : "");
   renderDetailStats(r);
+  renderDetailBom();
 
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";
@@ -1741,6 +1742,7 @@ export function renderDetail() {
 
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
+  document.getElementById("bomSetBtn").hidden = !isAdminMode();
   renderRateCard();
   renderDetailSummary();
 
@@ -2318,4 +2320,143 @@ export function formatAdminNickRow(r, onAction) {
   });
   row.appendChild(actions);
   return row;
+}
+
+// ── 이달의 책 ──────────────────────────────────────────────────────────────────
+
+function bomCoverInto(el, item) {
+  el.innerHTML = "";
+  el.style.setProperty("--cover", coverFor(item.title));
+  if (item.cover) {
+    var img = document.createElement("img");
+    img.src = upscaleCover(item.cover);
+    img.alt = item.title + " 표지";
+    img.loading = "lazy";
+    el.appendChild(img);
+  } else {
+    var t = document.createElement("span");
+    t.className = "bom-cover-typo";
+    t.textContent = item.title;
+    el.appendChild(t);
+  }
+}
+
+function talkersText(n) {
+  return "지금까지 " + n + "명이 이야기했어요";
+}
+
+// 홈 카드. 이야기한 사람이 3명 미만이면 숫자를 숨긴다(1·2명은 오히려 썰렁해 보인다).
+var bomViewSent = null;
+export function renderBookOfMonth() {
+  var card = document.getElementById("bomCard");
+  var b = state.bom;
+  var live = !!(b && Date.now() < b.endsAt);
+  card.hidden = !live;
+  // 이달의 책이 없을 때도 지난 것이 있으면 홈 아래 작은 링크로.
+  document.getElementById("bomPastFooter").hidden = live || !state.bomHasPast;
+  document.getElementById("bomPastSep").hidden = live || !state.bomHasPast;
+  if (!live) return;
+
+  document.getElementById("bomLabel").textContent = b.label;
+  bomCoverInto(document.getElementById("bomCover"), b);
+  document.getElementById("bomTitle").textContent = b.title;
+  document.getElementById("bomAuthor").textContent = b.author;
+  document.getElementById("bomQuestion").textContent = b.question;
+  var $talkers = document.getElementById("bomTalkers");
+  $talkers.hidden = b.talkers < 3;
+  $talkers.textContent = talkersText(b.talkers);
+
+  var $lines = document.getElementById("bomLines");
+  $lines.innerHTML = "";
+  (b.lines || []).forEach(function (l) {
+    var li = document.createElement("li");
+    var text = document.createElement("span");
+    text.className = "bom-line-text";
+    var tag = findMoodTag(l.mood);
+    text.textContent = l.text ? "“" + l.text + "”" : (tag ? tag.label : "");
+    li.appendChild(text);
+    var who = document.createElement("span");
+    who.className = "bom-line-who";
+    who.textContent = (l.name || "익명") + " · ★" + l.rating;
+    li.appendChild(who);
+    $lines.appendChild(li);
+  });
+  document.getElementById("bomPastLink").hidden = !state.bomHasPast;
+
+  if (bomViewSent !== b.id && state.view === "library") {
+    bomViewSent = b.id;
+    gtag("event", "view_book_of_month", { book_id: b.bookId });
+  }
+}
+
+// 책 상세 맨 위 질문.
+export function renderDetailBom() {
+  var box = document.getElementById("detailBom");
+  var on = isBomBook(state.currentId);
+  box.hidden = !on;
+  if (!on) return;
+  document.getElementById("detailBomLabel").textContent = state.bom.label + " · 이번 달 질문";
+  document.getElementById("detailBomQuestion").textContent = state.bom.question;
+}
+
+// 지난 이달의 책 목록. 관리자 모드면 지금·앞으로의 것도 같이 오고 "지우기"가 붙는다.
+export function renderBomPast() {
+  var $sub = document.getElementById("bomPastSub");
+  var $list = document.getElementById("bomPastList");
+  $list.innerHTML = "";
+  var items = state.bomPast;
+  if (!items) { $sub.textContent = "불러오는 중..."; return; }
+  var admin = isAdminMode();
+  $sub.textContent = items.length
+    ? (admin ? "관리자 보기 · 지금·앞으로의 것까지 " : "") + items.length + "권"
+    : "아직 지난 이달의 책이 없어요.";
+  var now = Date.now();
+  items.forEach(function (item) {
+    var row = document.createElement("div");
+    row.className = "bom-past-item";
+    var cover = document.createElement("span");
+    cover.className = "bom-cover";
+    bomCoverInto(cover, item);
+    row.appendChild(cover);
+
+    var body = document.createElement("div");
+    body.className = "bom-past-body";
+    var label = document.createElement("p");
+    label.className = "bom-label";
+    var when = item.startsAt > now ? " · 예정" : item.endsAt > now ? " · 진행 중" : "";
+    label.textContent = item.label + (admin ? when : "");
+    body.appendChild(label);
+    var title = document.createElement("p");
+    title.className = "bom-title";
+    title.textContent = item.title;
+    body.appendChild(title);
+    var author = document.createElement("p");
+    author.className = "bom-author";
+    author.textContent = item.author;
+    body.appendChild(author);
+    var q = document.createElement("p");
+    q.className = "bom-question";
+    q.textContent = item.question;
+    body.appendChild(q);
+    if (item.talkers >= 3) {
+      var t = document.createElement("p");
+      t.className = "bom-talkers";
+      t.textContent = item.talkers + "명이 이야기했어요";
+      body.appendChild(t);
+    }
+    if (admin) {
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "btn-ghost-danger bom-past-admin";
+      del.textContent = "지우기";
+      del.addEventListener("click", function (e) { e.stopPropagation(); deleteBookOfMonth(item); });
+      body.appendChild(del);
+    }
+    row.appendChild(body);
+    row.addEventListener("click", function () {
+      gtag("event", "click_book_of_month", { book_id: item.bookId, target: "past" });
+      openDetail(item.bookId);
+    });
+    $list.appendChild(row);
+  });
 }

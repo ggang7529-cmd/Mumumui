@@ -229,9 +229,28 @@
       <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
       <span aria-hidden="true">·</span>
       <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
+      <span aria-hidden="true" id="bomPastSep" hidden>·</span>
+      <button class="text-link" id="bomPastFooter" type="button" hidden>지난 이달의 책</button>
       <span aria-hidden="true" id="adminNickSep" hidden>·</span>
       <button class="text-link" id="adminNickLink" type="button" hidden>닉네임 관리</button>
     </nav>
+    <!-- 이달의 책(js/render.js renderBookOfMonth, functions/api/book-of-month). 관리자가 정한
+         기간 안에만 보이고 끝나면 저절로 사라진다. "내 생각 남기기"는 책 상세의 별점 카드로 간다. -->
+    <section class="bom-card" id="bomCard" hidden aria-labelledby="bomLabel">
+      <p class="bom-label" id="bomLabel"></p>
+      <div class="bom-book">
+        <button type="button" class="bom-cover" id="bomCover" aria-label="책 보기"></button>
+        <div class="bom-info">
+          <p class="bom-title" id="bomTitle"></p>
+          <p class="bom-author" id="bomAuthor"></p>
+        </div>
+      </div>
+      <p class="bom-question" id="bomQuestion"></p>
+      <p class="bom-talkers" id="bomTalkers" hidden></p>
+      <ul class="bom-lines" id="bomLines"></ul>
+      <button type="button" class="btn-primary bom-cta" id="bomCta">내 생각 남기기</button>
+      <button type="button" class="text-link bom-past-link" id="bomPastLink" hidden>지난 이달의 책 ›</button>
+    </section>
     <!-- 오늘의 한 줄 — 얇은 구분선 아래 가운데 정렬로 한 문장만. 후보 5개(관리자 고정 +
          최근 7일 좋아요 순, functions/api/featured.js) 중 접속할 때마다 하나를 고른다
          (js/render.js renderFeatured). 고를 게 없으면 칸째 숨긴다. -->
@@ -260,6 +279,11 @@
 
     <section id="detailView" hidden>
       <div class="panel detail-card">
+        <!-- 이 책이 지금 이달의 책이면 그 질문을 맨 위에 크게(js/render.js renderDetailBom). -->
+        <div class="detail-bom" id="detailBom" hidden>
+          <p class="detail-bom-label" id="detailBomLabel"></p>
+          <p class="detail-bom-question" id="detailBomQuestion"></p>
+        </div>
         <div class="detail-top">
           <div class="detail-cover" id="detailCover"></div>
           <header id="detailHeaderInfo">
@@ -291,6 +315,7 @@
           <ul id="commentList"></ul>
         </section>
 
+        <button class="btn-ghost-danger" id="bomSetBtn" type="button" hidden>이달의 책으로 지정</button>
         <button class="btn-ghost-danger" id="deleteBtn" type="button" hidden>이 책 리뷰 삭제하기</button>
       </div>
     </section>
@@ -385,6 +410,16 @@
         </div>
         <div class="my-grid" id="myShelfGrid" role="tabpanel"></div>
         <p class="my-empty" id="myShelfEmpty" hidden></p>
+      </div>
+    </section>
+
+    <!-- 지난 이달의 책(/book-of-month, js/render.js renderBomPast). 관리자 모드에서는 지금·앞으로의
+         것까지 모두 보이고 지울 수 있다. -->
+    <section id="bomPastView" hidden>
+      <div class="panel bom-past">
+        <h2>지난 이달의 책</h2>
+        <p class="bom-past-sub" id="bomPastSub"></p>
+        <div class="bom-past-list" id="bomPastList"></div>
       </div>
     </section>
 

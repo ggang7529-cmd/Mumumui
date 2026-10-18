@@ -4285,6 +4285,115 @@
     .nick-notice { max-width: 560px; margin-left: auto; margin-right: auto; }
   }
 
+  /* ── 이달의 책: 홈 카드 (#bomCard) ──────────────────────────────────────────────
+     인트로의 바로가기 아래, 오늘의 한 줄 위. 흰 카드 하나에 표지·제목 → 질문(크게) → 이야기한
+     사람 수 → 최근 한 줄 둘 → "내 생각 남기기". PC는 인트로 버튼 줄과 같은 560px 폭. */
+  .bom-card {
+    margin: 1.6rem 0 0;
+    padding: 1.1rem 1.1rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--paper-raised);
+    text-align: left;
+  }
+
+  .bom-card[hidden] { display: none; }
+
+  .bom-label {
+    margin: 0 0 0.7rem;
+    font-size: var(--t-micro);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+
+  .bom-book { display: flex; align-items: center; gap: 0.85rem; }
+
+  .bom-cover {
+    flex: none;
+    position: relative;
+    width: 56px;
+    height: 82px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--cover, var(--paper-soft));
+    box-shadow: 0 2px 8px var(--shadow);
+    cursor: pointer;
+  }
+
+  .bom-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .bom-cover-typo { position: absolute; inset: 6px; color: #fff; font-family: var(--font-display); font-size: 0.62rem; line-height: 1.2; overflow: hidden; text-align: left; }
+
+  .bom-info { min-width: 0; }
+  .bom-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+  .bom-author { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+
+  .bom-question {
+    margin: 1rem 0 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.45;
+    color: var(--ink);
+    word-break: keep-all;
+  }
+
+  .bom-talkers { margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+  .bom-talkers[hidden] { display: none; }
+
+  .bom-lines { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .bom-lines:empty { display: none; }
+
+  .bom-lines li {
+    padding: 0.55rem 0.75rem;
+    border-radius: 10px;
+    background: var(--paper);
+    font-size: 0.88rem;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .bom-line-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .bom-line-who { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--ink-faint); }
+
+  .btn-primary.bom-cta { width: 100%; margin-top: 0.9rem; padding: 0.8rem 1rem; border-radius: 12px; font-size: 1rem; font-weight: 700; }
+  .bom-past-link { display: block; margin: 0.6rem auto 0; font-size: 0.82rem; }
+  .bom-past-link[hidden] { display: none; }
+
+  @media (min-width: 641px) {
+    .bom-card { max-width: 560px; margin-left: auto; margin-right: auto; }
+  }
+
+  /* 책 상세 맨 위의 이달의 책 질문. */
+  .detail-bom {
+    margin: 0 0 1.1rem;
+    padding: 0.9rem 1rem;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    background: var(--paper-raised);
+  }
+
+  .detail-bom[hidden] { display: none; }
+  .detail-bom-label { margin: 0 0 0.3rem; font-size: var(--t-micro); font-weight: 700; letter-spacing: 0.06em; color: var(--accent); }
+  .detail-bom-question { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; line-height: 1.45; color: var(--ink); word-break: keep-all; }
+
+  @media (min-width: 641px) {
+    /* PC 상세는 grid(.detail-top이 풀림)라 질문이 맨 윗줄 전체를 차지하게 한다. */
+    .detail-bom { grid-column: 1 / -1; grid-row: 1; }
+  }
+
+  /* 지난 이달의 책 (/book-of-month) */
+  .bom-past-sub { color: var(--ink-soft); font-size: 0.9rem; }
+  .bom-past-list { display: flex; flex-direction: column; gap: 0.8rem; }
+  .bom-past-item { display: flex; gap: 0.85rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper-raised); cursor: pointer; }
+  .bom-past-item .bom-label { margin-bottom: 0.3rem; }
+  .bom-past-item .bom-question { margin-top: 0.45rem; font-size: 1rem; }
+  .bom-past-item .bom-talkers { margin-top: 0.3rem; }
+  .bom-past-body { min-width: 0; flex: 1; }
+  .bom-past-admin { margin-top: 0.5rem; }
+
   /* ── 관리자: 닉네임 관리 ── */
   .admin-nick-sub { color: var(--ink-soft); font-size: 0.9rem; }
   .admin-nick-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -4380,12 +4489,13 @@
     }
 
     .detail-top { display: contents; }
-    .detail-cover { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
-    .detail-card header { grid-column: 2; grid-row: 1; align-self: end; }
+    /* 1행은 이달의 책 질문(.detail-bom) 자리 — 없으면 숨겨져 높이 0인 행이 된다. */
+    .detail-cover { grid-column: 1; grid-row: 2 / span 2; align-self: start; }
+    .detail-card header { grid-column: 2; grid-row: 2; align-self: end; }
 
     .rate-card {
       grid-column: 2;
-      grid-row: 2;
+      grid-row: 3;
       align-self: start;
       width: 100%;
       max-width: 460px;
@@ -4393,7 +4503,9 @@
     }
 
     .detail-card .comments,
+    .detail-card #bomSetBtn,
     .detail-card #deleteBtn { grid-column: 1 / -1; }
+    .detail-card #bomSetBtn,
     .detail-card #deleteBtn { justify-self: start; }
   }
 

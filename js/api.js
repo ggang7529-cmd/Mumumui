@@ -1,5 +1,5 @@
 import { AUTH_MODE, GOOGLE_CLIENT_ID, state, dom, showScoreToast } from "./main.js";
-import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderFeatured } from "./render.js";
+import { renderBookResults, renderAuthBox, renderLibrary, renderDetail, renderNotifBadge, renderFeatured, renderBookOfMonth, renderDetailBom } from "./render.js";
 import { renderCollage } from "./collage.js";
 import { getLevel, levelParticle } from "./levels.js";
 import { nicknameKey } from "./pinRules.js";
@@ -199,6 +199,16 @@ export function searchBooks(q) {
 // 동안은 바꾸지 않는다 — 관리자가 고정을 바꿔 다시 받아와도 그 문장이 후보에 남아 있으면
 // 그대로 둔다(보던 문장이 갑자기 바뀌면 이상하다). 실패해도 홈은 멀쩡해야 하므로 조용히
 // 칸만 숨긴다.
+// 이달의 책(functions/api/book-of-month). 홈 카드와 책 상세 맨 위 질문이 같이 쓴다.
+export function refreshBookOfMonth() {
+  return api("/api/book-of-month").then(function (data) {
+    state.bom = data.current || null;
+    state.bomHasPast = !!data.hasPast;
+    renderBookOfMonth();
+    if (state.view === "detail") renderDetailBom();
+  }).catch(function () {});
+}
+
 export function refreshFeatured() {
   return api("/api/featured").then(function (data) {
     var reviews = data.reviews || [];

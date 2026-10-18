@@ -1,5 +1,5 @@
 import {
-  getNickToken, googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
+  refreshBookOfMonth, getNickToken, googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
   getSavedNickname, saveNickname, linkMyRecords, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
@@ -11,7 +11,7 @@ import {
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
-import { formatAdminNickRow } from "./render.js";
+import { formatAdminNickRow, renderBookOfMonth, renderBomPast } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -84,6 +84,10 @@ export var state = {
   // 내 책장(/my): 서버에서 받은 { rated, wants }(아직 안 왔으면 null)와 보고 있는 탭.
   myShelf: null,
   myShelfTab: "rated",
+  // 이달의 책(js/api.js refreshBookOfMonth): 지금 걸린 것 하나와 지난 것이 있는지.
+  bom: null,
+  bomHasPast: false,
+  bomPast: null,
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
   formMood: null,
@@ -226,7 +230,8 @@ export var dom = {
   actionToastText: document.getElementById("actionToastText"),
   actionToastBtn: document.getElementById("actionToastBtn"),
   myShelfView: document.getElementById("myShelfView"),
-  adminNickView: document.getElementById("adminNickView")
+  adminNickView: document.getElementById("adminNickView"),
+  bomPastView: document.getElementById("bomPastView")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -313,11 +318,13 @@ export function showView(name) {
   dom.collageView.hidden = name !== "collage";
   dom.myShelfView.hidden = name !== "myShelf";
   dom.adminNickView.hidden = name !== "adminNick";
+  dom.bomPastView.hidden = name !== "bomPast";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
   if (name === "library") {
     stopDetailPolling(); startLibraryPolling();
+    renderBookOfMonth();
     // /book/:id로 바로 들어왔다가 돌아오는 경우처럼, 책 목록이 로딩된 뒤로 한 번도
     // 목록 화면 자체가 렌더링된 적이 없을 수 있으니 여기서도 다시 그려준다.
     if (state.booksLoaded) renderLibrary();
@@ -334,6 +341,7 @@ export function showView(name) {
   else if (name === "recommend") path = "/recommend";
   else if (name === "collage") path = "/collage";
   else if (name === "myShelf") path = "/my";
+  else if (name === "bomPast") path = "/book-of-month";
   if (window.location.pathname !== path) history.pushState(null, "", path);
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -947,6 +955,8 @@ function openLineSheet() {
   lineMoodTouched = false;
   renderMoodPicker(dom.lineMoods, state.lineMood, selectLineMood);
   dom.lineText.value = my.text || "";
+  // 이달의 책이면 그 질문을 한 줄 칸의 안내 문구로.
+  dom.lineText.placeholder = isBomBook(state.currentId) ? state.bom.question : "한 줄로 남겨보세요";
   renderLineNickname(false);
   if (typeof dom.lineSheet.showModal === "function") dom.lineSheet.showModal();
   else dom.lineSheet.setAttribute("open", "");
@@ -1017,7 +1027,9 @@ dom.lineForm.addEventListener("submit", function (e) {
       submitBtn.disabled = false;
       // 기존 GA(리뷰 완료 총합·상세 경로)는 그대로 보낸다 — 이 시트가 상세의 한 줄 칸을 대신한다.
       lineSheetDone = true;
-      gtag("event", "complete_line", { book_id: bookId, type: text ? "with_text" : "tag_only", mood: mood || "" });
+      gtag("event", "complete_line", {
+        book_id: bookId, type: text ? "with_text" : "tag_only", mood: mood || "", book_of_month: isBomBook(bookId)
+      });
       gtag("event", "complete_review", { book_id: bookId, from: "line_sheet" });
       gtag("event", "complete_comment", { book_id: bookId, from: "line_sheet" });
       state.mySeq++;
@@ -1658,6 +1670,86 @@ function adminNickAction(action, name) {
 
 document.getElementById("adminNickLink").addEventListener("click", function () { openAdminNicknames(); });
 
+// ── 이달의 책 ──────────────────────────────────────────────────────────────────
+//
+// 지금 걸린 이달의 책이 이 책인지(기간이 지났으면 아님 — 응답을 받은 뒤 날이 바뀌었을 수 있다).
+export function isBomBook(bookId) {
+  var b = state.bom;
+  return !!(b && bookId && b.bookId === bookId && Date.now() < b.endsAt);
+}
+
+// "내 생각 남기기": 책 상세로 가서 별점 카드를 화면 가운데로.
+export function goBomBook(target) {
+  var b = state.bom;
+  if (!b) return;
+  gtag("event", "click_book_of_month", { book_id: b.bookId, target: target });
+  openDetail(b.bookId);
+  if (target !== "cta") return;
+  requestAnimationFrame(function () {
+    document.getElementById("rateCard").scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+}
+
+document.getElementById("bomCta").addEventListener("click", function () { goBomBook("cta"); });
+document.getElementById("bomCover").addEventListener("click", function () { goBomBook("cover"); });
+document.getElementById("bomLines").addEventListener("click", function () { goBomBook("line"); });
+document.getElementById("bomPastLink").addEventListener("click", function () { openBomPast(); });
+document.getElementById("bomPastFooter").addEventListener("click", function () { openBomPast(); });
+
+// 지난 이달의 책(/book-of-month). 관리자 모드면 지금·앞으로의 것까지 모두 받아 지울 수 있게.
+export function openBomPast() {
+  gtag("event", "view_book_of_month_past");
+  state.bomPast = null;
+  renderBomPast();
+  showView("bomPast");
+  var admin = isAdminMode();
+  var req = admin
+    ? api("/api/admin/book-of-month", { headers: { "X-Admin-Key": getAdminKey() } }).then(function (d) { return d.items || []; })
+    : api("/api/book-of-month/past").then(function (d) { return d.past || []; });
+  req.then(function (items) {
+    state.bomPast = items;
+    if (state.view === "bomPast") renderBomPast();
+  }).catch(function (e) {
+    document.getElementById("bomPastSub").textContent = "불러오지 못했어요: " + e.message;
+  });
+}
+
+export function deleteBookOfMonth(item) {
+  if (!confirm("‘" + item.label + " · " + item.title + "’을(를) 지울까요?")) return;
+  api("/api/admin/book-of-month?id=" + encodeURIComponent(item.id), { method: "DELETE", headers: { "X-Admin-Key": getAdminKey() } })
+    .then(function () { refreshBookOfMonth(); openBomPast(); })
+    .catch(function (e) { alert(e.message); });
+}
+
+function kstYmd(ms) {
+  var d = new Date(ms + 9 * 60 * 60 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+// 관리자: 책 상세의 "이달의 책으로 지정". 질문 → 시작일 → 끝일(기본은 오늘 ~ 이번 달 말일).
+document.getElementById("bomSetBtn").addEventListener("click", function () {
+  var bookId = state.currentId;
+  var r = findBook(bookId);
+  if (!r) return;
+  var question = prompt("‘" + r.title + "’ — 이달의 책 질문을 입력하세요 (80자까지)");
+  if (!question || !question.trim()) return;
+  var today = kstYmd(Date.now());
+  var start = prompt("시작일 (한국 시간, YYYY-MM-DD)", today);
+  if (!start) return;
+  var y = Number(start.slice(0, 4)), m = Number(start.slice(5, 7));
+  var lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  var end = prompt("끝나는 날 (이 날까지 포함, YYYY-MM-DD)", start.slice(0, 8) + String(lastDay).padStart(2, "0"));
+  if (!end) return;
+  api("/api/admin/book-of-month", {
+    method: "POST",
+    headers: { "X-Admin-Key": getAdminKey() },
+    body: { bookId: bookId, question: question.trim(), start: start.trim(), end: end.trim() }
+  }).then(function () {
+    alert("이달의 책으로 지정했어요.");
+    refreshBookOfMonth();
+  }).catch(function (e) { alert(e.message); });
+});
+
 initCollage();
 renderAdminToggle();
 loadPinNoticeStatus();
@@ -1696,6 +1788,10 @@ function isRecommendPath(pathname) {
   return /^\/recommend\/?$/.test(pathname);
 }
 
+function isBomPastPath(pathname) {
+  return /^\/book-of-month\/?$/.test(pathname);
+}
+
 function isMyShelfPath(pathname) {
   return /^\/my\/?$/.test(pathname);
 }
@@ -1712,6 +1808,7 @@ window.addEventListener("popstate", function () {
   if (isRecommendPath(window.location.pathname)) { openRecommend(); return; }
   if (isCollagePath(window.location.pathname)) { openCollage(); return; }
   if (isMyShelfPath(window.location.pathname)) { openMyShelf(); return; }
+  if (isBomPastPath(window.location.pathname)) { openBomPast(); return; }
   showView("library");
 });
 
@@ -1722,10 +1819,12 @@ else if (initialNickname) openProfile(initialNickname);
 else if (isRecommendPath(window.location.pathname)) openRecommend();
 else if (isCollagePath(window.location.pathname)) openCollage();
 else if (isMyShelfPath(window.location.pathname)) openMyShelf();
+else if (isBomPastPath(window.location.pathname)) openBomPast();
 else showView("library");
 
 refreshBooks();
 refreshFeatured();
+refreshBookOfMonth();
 
 // PWA 서비스워커 등록. 새 워커가 설치되고 나서(즉 배포로 파일이 바뀌어서
 // 대기 상태가 되었을 때) 안내 배너를 띄워 새로고침을 유도한다.
