@@ -126,8 +126,8 @@ export async function onRequestGet(context) {
   // 어느 쪽을 쓸지 보장할 수 없다. 그래서 아래 staticOgBlock을 통째로 책 전용 태그로
   // 치환한다 (og:image는 책 표지가 있을 때만 정적 기본 이미지를 대체).
   var staticOgBlock =
-    '<meta property="og:title" content="책갈피 - 읽은 책이 쌓이면, 나만의 책장이 돼요">\n' +
-    '<meta property="og:description" content="별점 하나, 한 줄 하나면 충분해요. 예전에 읽은 책도 좋아요. 가입 없이 닉네임만으로 쌓는 나만의 책장.">\n' +
+    '<meta property="og:title" content="책갈피 - 책을 덮고 나면, 이야기하고 싶어지잖아요">\n' +
+    '<meta property="og:description" content="같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">\n' +
     '<meta property="og:image" content="https://book-galpi.com/og-image.png">\n' +
     '<meta property="og:image:width" content="1200">\n' +
     '<meta property="og:image:height" content="630">\n' +
@@ -278,7 +278,7 @@ export async function onRequestGet(context) {
   html = html
     .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
     .replace(
-      '<meta name="description" content="읽은 책에 별점 하나, 한 줄 하나면 나만의 책장이 쌓여요. 예전에 읽은 책도 좋아요. 가입 없이 닉네임만으로 남기고, 다른 사람들의 한줄평을 구경하며 다음에 읽을 책도 골라보세요.">',
+      '<meta name="description" content="책을 덮고 나면, 이야기하고 싶어지잖아요. 같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">',
       '<meta name="description" content="' + desc + '">'
     )
     .replace(
