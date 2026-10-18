@@ -1,11 +1,13 @@
 import { nicknameKey } from "../../js/pinRules.js";
+import { getAnonUid } from "./identity.js";
 
 // 닉네임 소유(4자리 PIN). 표 설명은 .internal/migrations/0009.
 //
 // 상태는 셋이다.
 //   owned    PIN이 걸린 닉네임. 그 PIN을 맞춘 기기(토큰)만 이 이름으로 쓸 수 있다.
-//   reserved 예전부터 쓰던 닉네임(기록이 있음). 아직 PIN이 없다 — A-2에서 주인이 PIN을 정한다.
-//            지금(A-1)은 예전처럼 누구나 쓸 수 있게 둔다(RESERVED_OPEN).
+//   reserved 예전부터 쓰던 닉네임(기록이 있음). 아직 PIN이 없다. 그 이름으로 글을 남긴 적 있는
+//            기기(X-Anon-Id)만 PIN을 정해 owned로 만들 수 있고(claimable), 다른 기기에서는 못 쓴다
+//            — 주인이 맞다면 의견 보내기로 알리고 관리자가 PIN을 걸어 준다.
 //   free     처음 보는 닉네임. 쓰기 전에 PIN을 정해야 한다.
 //
 // PIN 원문은 저장하지도, 로그에 남기지도 않는다. PIN_PEPPER(Pages 비밀 환경변수, 코드·git에
@@ -18,7 +20,8 @@ export var PIN_ITERATIONS = 20000;
 export var MAX_FAILS = 5;
 // 잠길 때마다 길어진다: 15분 → 1시간 → 24시간(그 뒤로도 24시간).
 var LOCK_STEPS_MS = [15 * 60 * 1000, 60 * 60 * 1000, 24 * 60 * 60 * 1000];
-export var RESERVED_OPEN = true;
+// A-1 동안만 true였다(예전 닉네임을 주인 확인 없이 열어 둠).
+export var RESERVED_OPEN = false;
 
 var CREATE = [
   "CREATE TABLE IF NOT EXISTS nicknames (nickname_key TEXT PRIMARY KEY, nickname TEXT NOT NULL, " +
@@ -27,7 +30,9 @@ var CREATE = [
     "created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
   "CREATE TABLE IF NOT EXISTS nickname_sessions (token_hash TEXT PRIMARY KEY, nickname_key TEXT NOT NULL, " +
     "device_id TEXT, created_at INTEGER NOT NULL, last_used_at INTEGER NOT NULL)",
-  "CREATE INDEX IF NOT EXISTS idx_nickname_sessions_key ON nickname_sessions (nickname_key)"
+  "CREATE INDEX IF NOT EXISTS idx_nickname_sessions_key ON nickname_sessions (nickname_key)",
+  // 관리자가 "보호 해제"한 예전 닉네임. 기록이 남아 있어도 reserved로 보지 않는다.
+  "CREATE TABLE IF NOT EXISTS nickname_released (nickname_key TEXT PRIMARY KEY, released_at INTEGER NOT NULL)"
 ];
 
 export async function ensureNicknameTables(env) {
@@ -98,6 +103,10 @@ export async function getNicknameRow(env, key) {
 // 표에 없어도 예전 기록(한줄평·책 등록·읽고 싶어요)에 쓰인 이름이면 reserved다. 그 기록에 적힌
 // 표기를 같이 돌려줘서 "yosang"으로 쳐도 "Yosang"으로 저장되게 한다.
 export async function findHistoryName(env, key) {
+  try {
+    var released = await env.DB.prepare("SELECT 1 AS x FROM nickname_released WHERE nickname_key = ?1").bind(key).first();
+    if (released) return "";
+  } catch (e) {}
   var row = await env.DB.prepare(
     "SELECT author_name AS n FROM comments WHERE lower(trim(author_name)) = ?1 " +
     "UNION ALL SELECT owner_name FROM books WHERE lower(trim(owner_name)) = ?1 LIMIT 1"
@@ -108,6 +117,24 @@ export async function findHistoryName(env, key) {
     if (w && w.n) return String(w.n).trim();
   } catch (e) {}
   return "";
+}
+
+// 이 기기가 이 닉네임으로 글(한줄평·답글·별점)이나 책 등록, 읽고 싶어요를 남긴 적 있는지 —
+// 예전 닉네임의 주인으로 보고 PIN을 정하게 해 주는 기준. localStorage의 닉네임은 누구나 고쳐
+// 넣을 수 있어서 서버가 기록으로 확인한다.
+export async function deviceUsedName(env, key, uid) {
+  if (!uid || !key) return false;
+  var row = await env.DB.prepare(
+    "SELECT 1 AS x FROM comments WHERE author_uid = ?1 AND lower(trim(author_name)) = ?2 " +
+    "UNION ALL SELECT 1 FROM books WHERE owner_uid = ?1 AND lower(trim(owner_name)) = ?2 LIMIT 1"
+  ).bind(uid, key).first();
+  if (row) return true;
+  try {
+    var w = await env.DB.prepare("SELECT 1 AS x FROM wants WHERE device_id = ?1 AND lower(trim(nickname)) = ?2 LIMIT 1").bind(uid, key).first();
+    return !!w;
+  } catch (e) {
+    return false;
+  }
 }
 
 // 요청의 X-Nick-Token이 가리키는 닉네임 열쇠(없거나 틀리면 "").
@@ -158,6 +185,9 @@ export async function resolveNickname(env, request, raw) {
   }
   if (info.status === "reserved") {
     if (RESERVED_OPEN) return { name: info.name, key: info.key };
+    if (await deviceUsedName(env, info.key, getAnonUid(request))) {
+      return { error: "닉네임을 지키려면 4자리 비밀번호를 정해주세요", code: "pin_claim", status: 401, name: info.name };
+    }
     return { error: "보호된 닉네임이에요. 내 닉네임이 맞다면 의견 보내기로 알려주세요", code: "reserved", status: 403, name: info.name };
   }
   return { error: "이 닉네임을 지킬 4자리 비밀번호를 정해주세요", code: "pin_setup", status: 401, name: info.name };
@@ -186,4 +216,30 @@ export async function linkDeviceRecords(env, uid, name) {
 export async function nicknameForRead(env, request, raw) {
   var nick = await resolveNickname(env, request, raw);
   return nick.error ? "" : nick.name;
+}
+
+// 예전 기록에 쓰인 닉네임을 모두 nicknames 표에 reserved로 넣는다(이미 있거나 보호 해제한 건
+// 그대로). 관리자 목록을 열 때 부른다 — 표에 없어도 기록으로 reserved를 판단하므로(findHistoryName)
+// 보호 자체는 이걸 부르기 전에도 걸려 있고, 이건 관리자가 한눈에 보게 하려는 것이다.
+export async function syncReservedNicknames(env) {
+  await ensureNicknameTables(env);
+  await ensureWantsSafe(env);
+  var now = Date.now();
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO nicknames (nickname_key, nickname, status, failed_count, lock_level, created_at, updated_at) " +
+    "SELECT k, n, 'reserved', 0, 0, ?1, ?1 FROM (" +
+    "SELECT lower(trim(author_name)) AS k, trim(author_name) AS n FROM comments WHERE trim(coalesce(author_name, '')) != '' " +
+    "UNION ALL SELECT lower(trim(owner_name)), trim(owner_name) FROM books WHERE trim(coalesce(owner_name, '')) != '' " +
+    "UNION ALL SELECT lower(trim(nickname)), trim(nickname) FROM wants WHERE trim(coalesce(nickname, '')) != ''" +
+    ") WHERE k NOT IN (SELECT nickname_key FROM nickname_released) GROUP BY k"
+  ).bind(now).run();
+}
+
+async function ensureWantsSafe(env) {
+  try {
+    await env.DB.prepare(
+      "CREATE TABLE IF NOT EXISTS wants (book_id TEXT NOT NULL, device_id TEXT NOT NULL, nickname TEXT, " +
+      "created_at INTEGER NOT NULL, PRIMARY KEY (book_id, device_id))"
+    ).run();
+  } catch (e) {}
 }

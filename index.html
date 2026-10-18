@@ -201,6 +201,14 @@
   </div>
 
   <div class="header-intro" id="headerIntro">
+    <!-- 닉네임 보호 안내(js/main.js renderPinNotice). 예전 닉네임의 주인 기기에는 "비밀번호를
+         정해주세요"를 기간 없이, 그 밖에는 배포 뒤 2주만 "닉네임 보호 기능이 생겼어요"를 띄운다.
+         닫으면 다시 안 뜬다. -->
+    <div class="nick-notice" id="pinNotice" hidden>
+      <p id="pinNoticeText">닉네임 보호 기능이 생겼어요. 내 닉네임에 4자리 비밀번호를 걸어두세요.</p>
+      <button type="button" class="btn-primary nick-notice-btn" id="pinNoticeBtn">비밀번호 걸기</button>
+      <button type="button" class="nick-notice-close" id="pinNoticeClose" aria-label="안내 닫기">×</button>
+    </div>
     <!-- 제목은 모든 폭에서 두 줄. 설명의 .br-m은 휴대폰에서만 줄을 바꾼다 — 폭에 맡기면
          말 마디 가운데서 끊긴다. -->
     <h2 class="intro-headline">읽은 책이 쌓이면,<br> 나만의 책장이 돼요</h2>
@@ -221,6 +229,8 @@
       <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
       <span aria-hidden="true">·</span>
       <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
+      <span aria-hidden="true" id="adminNickSep" hidden>·</span>
+      <button class="text-link" id="adminNickLink" type="button" hidden>닉네임 관리</button>
     </nav>
     <!-- 오늘의 한 줄 — 얇은 구분선 아래 가운데 정렬로 한 문장만. 후보 5개(관리자 고정 +
          최근 7일 좋아요 순, functions/api/featured.js) 중 접속할 때마다 하나를 고른다
@@ -375,6 +385,15 @@
         </div>
         <div class="my-grid" id="myShelfGrid" role="tabpanel"></div>
         <p class="my-empty" id="myShelfEmpty" hidden></p>
+      </div>
+    </section>
+
+    <!-- 관리자: 닉네임 관리(관리자 모드에서 홈 아래 "닉네임 관리"). functions/api/admin/nicknames.js -->
+    <section id="adminNickView" hidden>
+      <div class="panel admin-nick">
+        <h2>닉네임 관리</h2>
+        <p class="admin-nick-sub" id="adminNickSub"></p>
+        <div class="admin-nick-list" id="adminNickList"></div>
       </div>
     </section>
 

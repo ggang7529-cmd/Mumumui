@@ -1,5 +1,5 @@
 import {
-  googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
+  getNickToken, googleConfigured, api, refreshBooks, refreshFeatured, refreshComments, refreshNotifications, refreshMyScore,
   getSavedNickname, saveNickname, linkMyRecords, normalizeBook, initGoogleSignIn, searchBooks, renderGoogleButtons,
   isAdminMode, getAdminKey, clearAdminKey, verifyAdminKey
 } from "./api.js";
@@ -11,6 +11,7 @@ import {
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
+import { formatAdminNickRow } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -224,7 +225,8 @@ export var dom = {
   actionToast: document.getElementById("actionToast"),
   actionToastText: document.getElementById("actionToastText"),
   actionToastBtn: document.getElementById("actionToastBtn"),
-  myShelfView: document.getElementById("myShelfView")
+  myShelfView: document.getElementById("myShelfView"),
+  adminNickView: document.getElementById("adminNickView")
 };
 
 // 연속 뽑기 이스터에그 설정: 이 시간(ms) 안에 이 횟수 이상 "책 뽑기"를 누르면 문구가 뜬다.
@@ -242,6 +244,10 @@ var MILESTONE_STEP = 50;
 
 function renderAdminToggle() {
   if (state.view === "detail") renderDetail();
+  var on = isAdminMode();
+  document.getElementById("adminNickLink").hidden = !on;
+  document.getElementById("adminNickSep").hidden = !on;
+  if (!on && state.view === "adminNick") showView("library");
 }
 
 // 별점이 유일한 필수 항목이라, 별점을 누르는 순간 나머지(태그·한 줄·닉네임)를 펼친다.
@@ -306,6 +312,7 @@ export function showView(name) {
   dom.recommendView.hidden = name !== "recommend";
   dom.collageView.hidden = name !== "collage";
   dom.myShelfView.hidden = name !== "myShelf";
+  dom.adminNickView.hidden = name !== "adminNick";
   // 인트로(헤드라인 + "방금 등록됐어요" 하이라이트)는 목록 화면의 것이다. 예전엔 책 상세나
   // 등록 폼에서도 그대로 위에 남아, 정작 보러 온 내용이 스크롤 한참 아래로 밀렸다.
   if (dom.headerIntro) dom.headerIntro.hidden = name !== "library";
@@ -1550,7 +1557,110 @@ if (AUTH_MODE === "google") {
   if (getSavedNickname()) linkMyRecords(getSavedNickname());
 }
 
+// ── 닉네임 보호 안내(홈 맨 위) ─────────────────────────────────────────────────
+//
+// 예전 닉네임(reserved)의 주인 기기 — 그 이름으로 기록을 남긴 이 기기 — 에는 "비밀번호를
+// 정해주세요"를 기간 없이 띄운다. 그 밖의 사람에게는 배포 뒤 2주만 기능 소개를 띄운다. 이미
+// 이 기기에서 PIN을 맞췄거나 한 번 닫았으면 안 띄운다.
+var PIN_NOTICE_UNTIL = Date.parse("2026-11-01T00:00:00+09:00");
+var PIN_NOTICE_KEY = "chaekgalpi_pin_notice_done";
+var pinNoticeStatus = null; // 저장된 닉네임의 /api/nickname/status 응답(한 번만 받음)
+
+export function renderPinNotice() {
+  var box = document.getElementById("pinNotice");
+  var done = false;
+  try { done = !!localStorage.getItem(PIN_NOTICE_KEY); } catch (e) {}
+  if (AUTH_MODE !== "nickname" || done || getNickToken()) { box.hidden = true; return; }
+  if (pinNoticeStatus && pinNoticeStatus.enabled === false) { box.hidden = true; return; }
+
+  var claim = pinNoticeStatus && pinNoticeStatus.status === "reserved" && pinNoticeStatus.claimable;
+  if (claim) {
+    document.getElementById("pinNoticeText").textContent =
+      "‘" + pinNoticeStatus.name + "’ 닉네임을 지키려면 4자리 비밀번호를 정해주세요";
+    document.getElementById("pinNoticeBtn").textContent = "비밀번호 정하기";
+    box.hidden = false;
+    return;
+  }
+  document.getElementById("pinNoticeText").textContent = "닉네임 보호 기능이 생겼어요. 내 닉네임에 4자리 비밀번호를 걸어두세요.";
+  document.getElementById("pinNoticeBtn").textContent = "비밀번호 걸기";
+  box.hidden = Date.now() >= PIN_NOTICE_UNTIL;
+}
+
+function loadPinNoticeStatus() {
+  var saved = AUTH_MODE === "nickname" ? getSavedNickname() : "";
+  if (!saved || getNickToken()) { renderPinNotice(); return; }
+  api("/api/nickname/status?name=" + encodeURIComponent(saved))
+    .then(function (s) { pinNoticeStatus = s; renderPinNotice(); })
+    .catch(function () { renderPinNotice(); });
+}
+
+document.getElementById("pinNoticeBtn").addEventListener("click", function () {
+  gtag("event", "click_pin_notice");
+  var saved = getSavedNickname();
+  var job = saved ? ensureNickname(saved) : openPinSheet({ mode: "choose" });
+  job.then(function () {
+    renderPinNotice();
+    if (getNickToken()) showActionToast("닉네임에 비밀번호를 걸었어요");
+  }).catch(function (e) {
+    if (e && !e.cancelled) alert(e.message);
+  });
+});
+document.getElementById("pinNoticeClose").addEventListener("click", function () {
+  try { localStorage.setItem(PIN_NOTICE_KEY, "1"); } catch (e) {}
+  renderPinNotice();
+});
+
+// ── 관리자: 닉네임 관리 ─────────────────────────────────────────────────────────
+//
+// 관리자 모드(Ctrl/Cmd+Shift+A)에서만 홈 아래 "닉네임 관리"가 보인다. 목록을 열 때마다 예전
+// 기록의 닉네임을 reserved로 채워 넣는다(functions/api/admin/nicknames.js).
+function adminNickApi(method, body) {
+  return api("/api/admin/nicknames", { method: method, body: body, headers: { "X-Admin-Key": getAdminKey() } });
+}
+
+function openAdminNicknames() {
+  showView("adminNick");
+  var sub = document.getElementById("adminNickSub");
+  var list = document.getElementById("adminNickList");
+  sub.textContent = "불러오는 중...";
+  adminNickApi("GET").then(function (data) {
+    if (state.view !== "adminNick") return;
+    var rows = data.nicknames || [];
+    var owned = rows.filter(function (r) { return r.status === "owned"; }).length;
+    sub.textContent = "닉네임 " + rows.length + "개 · PIN 있음 " + owned + " · 보호됨 " + (rows.length - owned) +
+      (data.pinEnabled ? "" : " · PIN_PEPPER 없음(기능 꺼짐)");
+    list.innerHTML = "";
+    rows.forEach(function (r) { list.appendChild(formatAdminNickRow(r, adminNickAction)); });
+  }).catch(function (e) {
+    sub.textContent = "불러오지 못했어요: " + e.message;
+    if (e.status === 403) { clearAdminKey(); renderAdminToggle(); }
+  });
+}
+
+function adminNickAction(action, name) {
+  var body = { action: action, name: name };
+  if (action === "set_pin") {
+    var pin = prompt("‘" + name + "’에 걸 4자리 비밀번호를 입력하세요.\n(이 닉네임으로 들어와 있던 기기는 모두 다시 입력해야 해요)");
+    if (pin === null) return;
+    body.pin = pin.trim();
+  } else {
+    var ask = {
+      reset_pin: "‘" + name + "’의 비밀번호를 지우고 보호됨으로 되돌릴까요? 들어와 있던 기기도 모두 나가요.",
+      unlock: "‘" + name + "’의 잠금을 풀까요?",
+      release: "‘" + name + "’의 보호를 해제할까요? 누구나 이 닉네임을 새로 쓸 수 있게 돼요."
+    }[action];
+    if (!confirm(ask)) return;
+  }
+  adminNickApi("POST", body)
+    .then(function () { openAdminNicknames(); })
+    .catch(function (e) { alert(e.message); });
+}
+
+document.getElementById("adminNickLink").addEventListener("click", function () { openAdminNicknames(); });
+
 initCollage();
+renderAdminToggle();
+loadPinNoticeStatus();
 
 function bookIdFromPath(pathname) {
   var m = pathname.match(/^\/book\/([^/]+)\/?$/);

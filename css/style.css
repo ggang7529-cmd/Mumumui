@@ -4243,7 +4243,8 @@
   .pin-help { margin: 0; color: var(--ink-faint); font-size: 0.82rem; text-align: center; }
   .pin-help[hidden] { display: none; }
 
-  /* ── 내 책장: 닉네임 정하기 안내 ── */
+  /* ── 내 책장: 닉네임 정하기 안내 / 홈: 닉네임 보호 안내 ── */
+  .nick-notice,
   .my-nick-prompt {
     position: relative;
     display: flex;
@@ -4257,10 +4258,14 @@
     background: var(--paper-raised);
   }
 
+  .nick-notice[hidden],
   .my-nick-prompt[hidden] { display: none; }
-  .my-nick-prompt p { flex: 1 1 14rem; margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .nick-notice p,
+  .my-nick-prompt p { flex: 1 1 14rem; margin: 0; font-size: 0.92rem; color: var(--ink); text-align: left; }
+  .btn-primary.nick-notice-btn,
   .btn-primary.my-nick-prompt-btn { flex: none; padding: 0.55rem 1rem; border-radius: 10px; font-size: 0.9rem; }
 
+  .nick-notice-close,
   .my-nick-prompt-close {
     position: absolute;
     top: 0.35rem;
@@ -4271,6 +4276,45 @@
     background: none;
     color: var(--ink-faint);
     font-size: 1.2rem;
+    cursor: pointer;
+  }
+
+  /* 홈 맨 위. PC는 인트로 버튼 줄과 같은 폭으로 가운데. */
+  .nick-notice { margin: 0 0 1.1rem; }
+  @media (min-width: 641px) {
+    .nick-notice { max-width: 560px; margin-left: auto; margin-right: auto; }
+  }
+
+  /* ── 관리자: 닉네임 관리 ── */
+  .admin-nick-sub { color: var(--ink-soft); font-size: 0.9rem; }
+  .admin-nick-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .admin-nick-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper-raised);
+  }
+
+  .admin-nick-name { font-weight: 700; color: var(--ink); }
+  .admin-nick-badge { padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.78rem; border: 1px solid var(--line); color: var(--ink-soft); }
+  .admin-nick-badge.is-owned { border-color: var(--accent); color: var(--accent); }
+  .admin-nick-badge.is-locked { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .admin-nick-meta { flex: 1 1 100%; margin: 0; color: var(--ink-faint); font-size: 0.82rem; }
+  .admin-nick-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .admin-nick-actions button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.82rem;
     cursor: pointer;
   }
 

@@ -4,11 +4,12 @@ import { checkRateLimit } from "../../_lib/rateLimit.js";
 import { isPinFormat, isWeakPin } from "../../../js/pinRules.js";
 import {
   ensureNicknameTables, pinEnabled, nicknameStatus, hashPin, sameHex, randomHex, createSession,
-  linkDeviceRecords, lockMsFor, PIN_ITERATIONS, MAX_FAILS
+  linkDeviceRecords, lockMsFor, deviceUsedName, PIN_ITERATIONS, MAX_FAILS
 } from "../../_lib/nickname.js";
 
-// 닉네임 PIN 정하기/확인. { name, pin, intent: 'setup'|'enter' }
+// 닉네임 PIN 정하기/확인. { name, pin, intent: 'setup'|'claim'|'enter' }
 //   setup: 처음 보는 닉네임에 PIN을 걸고 내 것으로 만든다.
+//   claim: 예전 닉네임(reserved)에 PIN을 건다 — 이 기기가 그 이름으로 남긴 기록이 있을 때만.
 //   enter: PIN이 걸린 닉네임에 이 기기를 들인다.
 // 성공하면 { token, name } — token은 이 기기의 localStorage에만 두고 다음부터 X-Nick-Token으로
 // 보낸다. 들어오는 순간 이 기기가 닉네임 없이 남긴 별점·읽고 싶어요를 그 닉네임에 붙인다.
@@ -37,7 +38,7 @@ export async function onRequestPost(context) {
     return json({ error: "잘못된 요청이에요." }, { status: 400 });
   }
   var pin = String(body.pin || "");
-  var intent = body.intent === "setup" ? "setup" : "enter";
+  var intent = body.intent === "setup" || body.intent === "claim" ? body.intent : "enter";
   if (!isPinFormat(pin)) return json({ error: "숫자 4자리를 입력해 주세요", code: "format" }, { status: 400 });
 
   await ensureNicknameTables(env);
@@ -46,20 +47,26 @@ export async function onRequestPost(context) {
   var now = Date.now();
 
   if (info.status === "reserved") {
-    // 예전부터 쓰던 닉네임 — 주인 확인(A-2) 전에는 PIN을 걸 수 없다.
-    return json({ error: "예전부터 쓰던 닉네임이에요.", code: "reserved", name: info.name }, { status: 409 });
+    // 예전 닉네임은 그 이름으로 기록을 남긴 기기만 PIN을 정한다. 다른 기기는 의견 보내기로.
+    if (!(await deviceUsedName(env, info.key, uid))) {
+      return json({ error: "보호된 닉네임이에요. 내 닉네임이 맞다면 의견 보내기로 알려주세요", code: "reserved", name: info.name }, { status: 403 });
+    }
+    if (intent === "enter") return json({ error: "닉네임을 지키려면 4자리 비밀번호를 정해주세요", code: "claim", name: info.name }, { status: 409 });
+  } else if (info.status === "free" && intent !== "setup") {
+    return json({ error: "처음 쓰는 닉네임이에요. 비밀번호를 정해주세요", code: "free", name: info.name }, { status: 409 });
   }
 
-  if (info.status === "free") {
-    if (intent !== "setup") return json({ error: "처음 쓰는 닉네임이에요. 비밀번호를 정해주세요", code: "free", name: info.name }, { status: 409 });
+  if (info.status === "free" || info.status === "reserved") {
     if (isWeakPin(pin)) return json({ error: "조금 더 어려운 번호로 정해주세요", code: "weak" }, { status: 400 });
     var salt = randomHex(16);
     var hash = await hashPin(env, info.key, pin, salt, PIN_ITERATIONS);
+    // reserved 행이 있으면 그 행을 owned로 바꾼다(다른 기기가 먼저 owned로 만들었으면 안 바뀜).
     var ins = await env.DB.prepare(
       "INSERT INTO nicknames (nickname_key, nickname, status, pin_hash, pin_salt, pin_iter, failed_count, lock_level, " +
       "locked_until, created_at, updated_at) VALUES (?1, ?2, 'owned', ?3, ?4, ?5, 0, 0, NULL, ?6, ?6) " +
-      "ON CONFLICT(nickname_key) DO NOTHING"
-    ).bind(info.key, info.name, hash, salt, PIN_ITERATIONS, now).run();
+      "ON CONFLICT(nickname_key) DO UPDATE SET status = 'owned', pin_hash = ?3, pin_salt = ?4, pin_iter = ?5, " +
+      "failed_count = 0, lock_level = 0, locked_until = NULL, updated_at = ?6 WHERE nicknames.status = 'reserved' AND ?7 = 1"
+    ).bind(info.key, info.name, hash, salt, PIN_ITERATIONS, now, info.status === "reserved" ? 1 : 0).run();
     if (!(ins && ins.meta && ins.meta.changes)) {
       // 그 사이 누가 먼저 가져갔다.
       return json({ error: "이미 있는 닉네임이에요. 비밀번호를 입력해 주세요", code: "taken", name: info.name }, { status: 409 });
@@ -69,7 +76,7 @@ export async function onRequestPost(context) {
 
   // owned
   var row = info.row;
-  if (intent === "setup") {
+  if (intent === "setup" || intent === "claim") {
     return json({ error: "이미 있는 닉네임이에요. 비밀번호를 입력해 주세요", code: "taken", name: info.name }, { status: 409 });
   }
   if (row.locked_until && row.locked_until > now) {

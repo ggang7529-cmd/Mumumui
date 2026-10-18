@@ -2276,3 +2276,46 @@ export function toggleNotifDropdown() {
   if (!$dd) return;
   if ($dd.hidden) openNotifDropdown(); else closeNotifDropdown();
 }
+
+// 관리자 닉네임 관리 화면의 한 줄(js/main.js openAdminNicknames). onAction(action, name).
+export function formatAdminNickRow(r, onAction) {
+  var row = document.createElement("div");
+  row.className = "admin-nick-row";
+
+  var name = document.createElement("span");
+  name.className = "admin-nick-name";
+  name.textContent = r.name;
+  row.appendChild(name);
+
+  var badge = document.createElement("span");
+  badge.className = "admin-nick-badge" + (r.locked ? " is-locked" : r.status === "owned" ? " is-owned" : "");
+  badge.textContent = r.locked ? "잠김" : r.status === "owned" ? "PIN 있음" : "보호됨";
+  row.appendChild(badge);
+
+  var meta = document.createElement("p");
+  meta.className = "admin-nick-meta";
+  var parts = ["글 " + r.posts, "마지막 " + (r.lastAt ? formatDate(r.lastAt) : "-")];
+  if (r.status === "owned") parts.push("들어온 기기 " + r.devices);
+  if (r.failed) parts.push("틀림 " + r.failed);
+  if (r.locked) parts.push("잠금 해제 " + new Date(r.lockedUntil).toLocaleString("ko-KR"));
+  meta.textContent = parts.join(" · ");
+  row.appendChild(meta);
+
+  var actions = document.createElement("div");
+  actions.className = "admin-nick-actions";
+  [
+    ["set_pin", r.status === "owned" ? "PIN 다시 설정" : "PIN 설정", true],
+    ["reset_pin", "PIN 초기화", r.status === "owned"],
+    ["unlock", "잠금 풀기", r.locked || r.failed > 0],
+    ["release", "보호 해제", true]
+  ].forEach(function (a) {
+    if (!a[2]) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = a[1];
+    btn.addEventListener("click", function () { onAction(a[0], r.name); });
+    actions.appendChild(btn);
+  });
+  row.appendChild(actions);
+  return row;
+}
