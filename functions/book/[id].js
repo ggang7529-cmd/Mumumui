@@ -286,7 +286,7 @@ export async function onRequestGet(context) {
       '<link rel="canonical" href="' + pageUrl + '">'
     )
     .replace(staticOgBlock, metaTags)
-    .replace('<h1 class="brand-name">책갈피</h1>', '<p class="brand-name">책갈피</p>')
+    .replace('<h1 class="brand-name">책갈피<span class="brand-dot" aria-hidden="true">.</span></h1>', '<p class="brand-name">책갈피<span class="brand-dot" aria-hidden="true">.</span></p>')
     .replace('<h2 id="detailTitle"></h2>', '<h1 id="detailTitle">' + escapeHtml(book.title) + "</h1>")
     .replace(
       '<p class="detail-author" id="detailAuthor"></p>',

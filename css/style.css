@@ -354,6 +354,9 @@
     letter-spacing: 0.02em;
   }
 
+  /* 시안 로고: "책갈피" 뒤 토마토색 마침표. */
+  .brand-dot { color: var(--tomato); }
+
   /* PC(넓은 화면)에서만 로고 텍스트/심볼을 키운다. 모바일은 위 기본값을 그대로 유지. */
   @media (min-width: 641px) {
     .brand {
