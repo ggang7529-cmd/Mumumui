@@ -1,6 +1,7 @@
 import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth } from "./main.js";
 import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
+import { bookmarkColorOf, BOOKMARK_COLORS } from "./bookmarkColor.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -15,7 +16,9 @@ import { LEVELS, SCORE_RULES, getLevel, levelProgress, formatNicknameShort, form
 // 무관한 무지개가 됐다 — 버건디에서 클레이/탠으로 이어지는 같은 계열 5색으로 좁혀,
 // 서로 구분은 되면서 서가 전체가 한 톤으로 읽히게 한다. 전부 크림색 활자를 얹어도
 // 대비가 충분한 중간~어두운 명도로 골랐다.
-var COVERS = ["#6E2733", "#8C3A38", "#A85C46", "#7A4A52", "#6B5240"];
+// 표지 이미지가 없는 책의 책등 색. 리디자인 B안의 표지 예시처럼 깊고 차분한 색 — 위에 얹는
+// 원색 책갈피 탭과 흰 제목 글자가 잘 보이게 어둡게 잡았다.
+var COVERS = ["#1F3D33", "#7A2E2E", "#23264A", "#3D3A35", "#5A4632"];
 
 // index.html 상단 스프라이트에 정의된 선형 아이콘을 <svg><use></svg> 한 벌로 만들어 준다.
 // 크기·색은 CSS(.icon)가 정하고, stroke는 currentColor라 놓이는 자리의 글자색을 따라간다.
@@ -45,7 +48,9 @@ export function coverFor(title) {
 // 댓글/답글 작성자 닉네임 span을 공통으로 만든다. 별점·좋아요·날짜까지 같이 붙는 줄이라
 // "등급아이콘 레벨 닉네임" 축약형으로 표시한다 (예: 책아이콘 + "6 이과생").
 // 닉네임은 사용자 입력이므로 textContent로만 넣는다 — innerHTML로 조립하지 않는다.
-function buildAuthorChip(name, score, className) {
+// color를 주면(책갈피 카드 안) 등급 아이콘 대신 그 책갈피 색의 작은 책갈피에 등급 숫자를
+// 넣고 옆에 닉네임만 적는다(리디자인 B안).
+function buildAuthorChip(name, score, className, color) {
   var clean = (name || "").trim();
   // 닉네임을 누르면 그 사람의 기록으로 간다. 처음 온 사람이 "여기 사람이 있구나"를 느끼는
   // 거의 유일한 통로라서, 목록의 모든 닉네임을 통째로 눌리게 해뒀다.
@@ -61,6 +66,15 @@ function buildAuthorChip(name, score, className) {
       e.stopPropagation();
       openProfile(clean);
     });
+  }
+  if (color) {
+    var badge = document.createElement("span");
+    badge.className = "bm-badge bm-" + color;
+    badge.setAttribute("aria-hidden", "true");
+    badge.textContent = String(getLevel(score).level);
+    span.appendChild(badge);
+    span.appendChild(document.createTextNode(clean || "익명"));
+    return span;
   }
   span.appendChild(buildIcon(getLevel(score).icon, "lv-icon lv-icon--" + getLevel(score).icon));
   span.appendChild(document.createTextNode(formatNicknameShort(clean, score)));
@@ -849,6 +863,15 @@ function buildBookCard(r) {
       coverBox.appendChild(badge);
     }
 
+    // 표지 위로 튀어나온 책갈피 탭(리디자인 B안) — 한 줄 수만큼, 최대 4장을 서로 다른 색으로.
+    var tabCount = Math.min(r.commentCount || 0, 4);
+    for (var t = 0; t < tabCount; t++) {
+      var tab = document.createElement("span");
+      tab.className = "bm-tab bm-tab--" + (t + 1) + " bm-" + BOOKMARK_COLORS[t];
+      tab.setAttribute("aria-hidden", "true");
+      coverBox.appendChild(tab);
+    }
+
     card.appendChild(coverBox);
 
     // 표지 아래 정보: 제목 → 별점(평균 · 한 줄 수) → 대표 한 줄(최대 2줄). 예전엔 이걸 표지
@@ -1170,6 +1193,7 @@ export function renderProfile() {
   } else {
     data.reviews.forEach(function (r) {
       var li = document.createElement("li");
+      li.className = "bookmark-card bm-" + bookmarkColorOf(r.id, r.color);
 
       function goToBook(e) {
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -1437,7 +1461,7 @@ export function renderFeatured() {
     slide.setAttribute("aria-label", (index + 1) + " / " + reviews.length);
 
     var link = document.createElement("a");
-    link.className = "today-quote";
+    link.className = "today-quote bookmark-card bm-" + bookmarkColorOf(r.id, r.color);
     link.href = "/book/" + encodeURIComponent(r.book_id);
     var line = document.createElement("span");
     line.className = "today-text";
@@ -1786,13 +1810,15 @@ export function renderDetail() {
 
     sortedComments.forEach(function (c) {
       var item = document.createElement("li");
+      var bm = bookmarkColorOf(c.id, c.color);
+      item.className = "bookmark-card bm-" + bm;
       var moodBadge = buildMoodBadge(c.mood);
       var textSpan = document.createElement("span");
       textSpan.className = "c-text";
       textSpan.textContent = c.text;
       textSpan.title = c.text;
 
-      var authorSpan = buildAuthorChip(c.authorName, c.authorScore, "c-author");
+      var authorSpan = buildAuthorChip(c.authorName, c.authorScore, "c-author", bm);
 
       var ratingSpan = document.createElement("span");
       ratingSpan.className = "c-rating";
@@ -1967,7 +1993,7 @@ export function renderDetail() {
       (repliesByParent[c.id] || []).forEach(function (r) {
         var rItem = document.createElement("li");
 
-        var rAuthor = buildAuthorChip(r.authorName, r.authorScore, "c-reply-author");
+        var rAuthor = buildAuthorChip(r.authorName, r.authorScore, "c-reply-author", bookmarkColorOf(r.id, r.color));
 
         var rText = document.createElement("span");
         rText.className = "c-reply-text";

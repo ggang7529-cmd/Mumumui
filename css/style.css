@@ -949,10 +949,11 @@
     position: relative;
     height: 0;
     padding-bottom: 150%;
-    border-radius: 4px;
-    overflow: hidden;
+    border-radius: 2px;
+    /* 책갈피 탭(.bm-tab)이 위로 튀어나와야 해서 잘라내지 않는다. 표지 그림은 자기 모서리로. */
+    overflow: visible;
     background: var(--cover, var(--accent));
-    box-shadow: 0 1px 3px var(--shadow);
+    box-shadow: 0 4px 10px rgba(21, 21, 21, 0.15);
     transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
 
@@ -976,12 +977,13 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 2px;
   }
 
   .b-new-badge {
     position: absolute;
     top: 0.5rem;
-    right: 0.5rem;
+    left: 0.5rem;
     z-index: 3;
     background: var(--btn-fill);
     color: var(--btn-fill-ink);
@@ -1274,6 +1276,13 @@
   }
 
   .profile-reviews li:last-child { border-bottom: none; }
+
+  /* 공개 기록의 남긴 한 줄도 책갈피 카드(리디자인 B안). */
+  .profile-reviews li.bookmark-card {
+    margin-bottom: 10px;
+    padding: 18px 16px 12px 50px;
+    border-bottom: 0;
+  }
 
   .pr-book {
     flex: none;
@@ -2325,22 +2334,15 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    padding: 0.85rem 0 0.85rem 0.95rem;
-    border-bottom: 1px solid var(--line);
+    gap: 0.25rem 0.75rem;
     font-size: var(--t-body);
   }
 
-  #commentList > li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.95rem;
-    width: 4px;
-    height: 1.4em;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
-  }
+  /* 한 줄 하나 = 책갈피 카드 하나(.bookmark-card, 리디자인 B안). 본문을 맨 위 전체 폭에 굵게
+     두고, 그 아래 한 줄에 글쓴이·별점·좋아요·답글·날짜. 순서는 order로만 잡는다. */
+  #commentList > li { margin-bottom: 10px; }
+  #commentList > li.bookmark-card .c-mood { order: 0; }
+  #commentList > li.bookmark-card .c-text { order: 0; flex: 1 1 100%; }
 
   /* 데스크톱 기본값: 닉네임+별점(왼쪽) · 리뷰 텍스트(가운데, 넓게) · 좋아요+답글+날짜(오른쪽)를
      한 줄에 배치한다. order로만 시각 순서를 잡아서, 모바일 미디어쿼리에서 순서만 다시
@@ -2988,13 +2990,18 @@
     .today-dot::after { transition: none; }
   }
 
+  /* 가로형 책갈피 카드(.bookmark-card) 한 장. 글은 왼쪽 정렬. */
   .today-quote {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.55rem;
-    max-width: 32rem;
+    align-items: flex-start;
+    gap: 0.4rem;
+    width: 100%;
+    max-width: 36rem;
+    margin: 0 auto;
+    padding-bottom: 14px;
     color: inherit;
+    text-align: left;
     text-decoration: none;
   }
 
@@ -3009,7 +3016,7 @@
     overflow-wrap: anywhere;
   }
 
-  .today-quote:hover .today-text { color: var(--accent); }
+  .today-quote:hover .today-text { text-decoration: underline; text-underline-offset: 4px; }
 
   .today-meta {
     font-size: var(--t-meta);
@@ -4454,6 +4461,96 @@
   .bom-past-item .bom-talkers { margin-top: 0.3rem; }
   .bom-past-body { min-width: 0; flex: 1; }
   .bom-past-admin { margin-top: 0.5rem; }
+
+  /* ── 책갈피 카드(리디자인 B안) ─────────────────────────────────────────────────
+     한 줄 = 실물 책갈피. 흰 카드 왼쪽에 30px 색 띠, 그 위 12px 펀칭 구멍(바탕색이 비쳐 보이게
+     --paper). 오늘의 한 줄·책 상세의 한 줄 목록·공개 기록 목록이 같이 쓴다. 색은 .bm-*가
+     --bm(띠)과 --bm-ink(그 위 글자 — 코발트만 흰색, 나머지는 먹색)로 정한다. */
+  .bm-tomato { --bm: var(--tomato); --bm-ink: #151515; }
+  .bm-cobalt { --bm: var(--cobalt); --bm-ink: #FFFFFF; }
+  .bm-mint { --bm: var(--mint); --bm-ink: #151515; }
+  .bm-butter { --bm: var(--butter); --bm-ink: #151515; }
+
+  .bookmark-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px 16px 8px 50px;
+  }
+
+  .bookmark-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: var(--bm, var(--tomato));
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+
+  .bookmark-card::after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--paper);
+  }
+
+  .bookmark-card .c-text,
+  .bookmark-card .today-text,
+  .bookmark-card .pr-text {
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  /* 글쓴이 자리의 작은 책갈피(등급 숫자). 카드의 색을 따라간다. */
+  .bm-badge {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 22px;
+    margin-right: 6px;
+    padding-bottom: 4px;
+    background: var(--bm, var(--tomato));
+    color: var(--bm-ink, #151515);
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .c-author .bm-badge,
+  .c-reply-author .bm-badge { vertical-align: middle; }
+  #commentList .c-author,
+  #commentList .c-reply-author { display: inline-flex; align-items: center; color: var(--ink); font-size: 13px; font-weight: 700; }
+
+  /* 표지 위로 튀어나온 책갈피 탭 — 한 줄 수만큼 최대 4장, 오른쪽부터 조금씩 짧아지며 겹친다. */
+  .bm-tab {
+    position: absolute;
+    top: -12px;
+    z-index: 2;
+    width: 24px;
+    height: 48px;
+    background: var(--bm);
+    box-shadow: 0 2px 4px rgba(21, 21, 21, 0.18);
+  }
+
+  /* 순서는 클래스로 — :nth-of-type이면 앞의 NEW 표시(span)까지 세서 하나씩 밀린다. */
+  .bm-tab--1 { right: 12px; height: 54px; }
+  .bm-tab--2 { right: 26px; height: 44px; }
+  .bm-tab--3 { right: 40px; height: 36px; }
+  .bm-tab--4 { right: 54px; height: 28px; }
 
   /* ── 관리자: 닉네임 관리 ── */
   .admin-nick-sub { color: var(--ink-soft); font-size: 0.9rem; }

@@ -6,6 +6,8 @@ import { normalizeMoodId } from "../../../../js/moodTags.js";
 import { hasLineSql } from "../../../_lib/lines.js";
 import { findMyReview, upsertMyReview } from "../../../_lib/myReview.js";
 import { wantStatus } from "../../../_lib/wants.js";
+import { colorSql } from "../../../_lib/commentColor.js";
+import { normalizeBookmarkColor } from "../../../../js/bookmarkColor.js";
 import { resolveNickname, nicknameForRead } from "../../../_lib/nickname.js";
 
 export async function onRequestGet(context) {
@@ -15,6 +17,7 @@ export async function onRequestGet(context) {
 
   var rows = await env.DB.prepare(
     "SELECT c.id, c.text, c.rating, c.mood, c.author_uid, c.author_name, c.author_photo, c.created_at, c.parent_id, " +
+    (await colorSql(env, "c")) + " AS color, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes, " +
     "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id AND user_id = ?2) AS liked_by_me " +
     // 별점만 남긴 행(본문·태그 없음)은 한줄평 목록에 넣지 않는다 — 별점은 평균과 "평가 N"에만
@@ -50,6 +53,7 @@ export async function onRequestGet(context) {
       author_photo: c.author_photo,
       created_at: c.created_at,
       parent_id: c.parent_id,
+      color: c.color || null,
       likes: c.likes,
       liked_by_me: c.liked_by_me,
       mine: !!myUid && c.author_uid === myUid,
@@ -72,7 +76,7 @@ export async function onRequestGet(context) {
 
   return json({
     comments: comments,
-    my: mine ? { id: mine.id, rating: mine.rating, text: mine.text, mood: mine.mood, name: mine.author_name } : null,
+    my: mine ? { id: mine.id, rating: mine.rating, text: mine.text, mood: mine.mood, name: mine.author_name, color: mine.color || null } : null,
     wanted: want.wanted,
     wantCount: want.count,
     ratingDist: ratingDist
@@ -129,7 +133,9 @@ export async function onRequestPost(context) {
   // 한줄평은 이 기기의 평가 하나에 합쳐진다 — 별점만 남겨둔 행이 있으면 거기에 채우고, 이미
   // 한 줄을 남긴 책이면 새로 붙이지 않고 그 한 줄을 고친다(같은 기기는 책당 하나).
   if (!parentId) {
-    var result = await upsertMyReview(env, bookId, uid, { rating: rating, text: text, mood: mood, name: name });
+    var result = await upsertMyReview(env, bookId, uid, {
+      rating: rating, text: text, mood: mood, name: name, color: normalizeBookmarkColor(body.color) || undefined
+    });
     if (result.error) return json({ error: result.error }, { status: result.status });
     return json({ id: result.id, updated: !result.created, points: result.points }, { status: result.created ? 201 : 200 });
   }

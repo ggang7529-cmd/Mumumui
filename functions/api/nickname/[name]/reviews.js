@@ -1,6 +1,7 @@
 import { json } from "../../../_lib/db.js";
 import { hasLineSql } from "../../../_lib/lines.js";
 import { fetchScoreMap } from "../../../_lib/scores.js";
+import { colorSql } from "../../../_lib/commentColor.js";
 
 // 닉네임 한 명분의 기록을 한 번에 돌려준다 — 그 사람이 등록한 책, 남긴 한줄평, 요약 숫자.
 //
@@ -39,7 +40,8 @@ export async function onRequestGet(context) {
     ).bind(name),
     // 이 사람이 남긴 한줄평(최상위 댓글). 어느 책에 남긴 건지 같이 보여줘야 의미가 있다.
     env.DB.prepare(
-      "SELECT c.id, c.book_id, c.text, c.rating, c.mood, c.created_at, b.title AS book_title, b.author AS book_author, b.cover AS book_cover, " +
+      "SELECT c.id, c.book_id, c.text, c.rating, c.mood, c.created_at, " + (await colorSql(env, "c")) + " AS color, " +
+      "b.title AS book_title, b.author AS book_author, b.cover AS book_cover, " +
       "(SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes " +
       "FROM comments c JOIN books b ON b.id = c.book_id " +
       "WHERE c.author_name = ?1 AND c.parent_id IS NULL AND " + hasLineSql("c") + " ORDER BY c.created_at DESC"

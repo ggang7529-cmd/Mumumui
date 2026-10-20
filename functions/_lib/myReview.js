@@ -1,5 +1,6 @@
 import { newId } from "./db.js";
 import { rowHasLine, rowPoints } from "./lines.js";
+import { colorSql, saveCommentColor } from "./commentColor.js";
 
 // 이 기기(X-Anon-Id)가 이 책에 남긴 평가 하나. 같은 기기는 책당 하나만 갖는다 — 다시 누르면
 // 고치고, 한 줄을 더 남겨도 새 행 대신 이 행을 채운다. 2026-10-09 이전에는 같은 책에 둘을
@@ -7,7 +8,7 @@ import { rowHasLine, rowPoints } from "./lines.js";
 export async function findMyReview(env, bookId, uid) {
   if (!uid) return null;
   return await env.DB.prepare(
-    "SELECT id, text, rating, mood, author_name, created_at FROM comments " +
+    "SELECT id, text, rating, mood, author_name, created_at, " + (await colorSql(env)) + " AS color FROM comments " +
     "WHERE book_id = ?1 AND author_uid = ?2 AND parent_id IS NULL ORDER BY created_at DESC LIMIT 1"
   ).bind(bookId, uid).first();
 }
@@ -22,7 +23,8 @@ export async function countMyRatedBooks(env, uid) {
 
 // 평가를 만들거나 고친다. input의 각 값은 undefined면 "그대로 둠"이다 — 별을 다시 누르는
 // 것만으로 예전에 쓴 한 줄이 지워지면 안 된다.
-//   rating: 1~5, text: 문자열(60자로 다듬어 옴), mood: 태그 id 또는 null, name: 닉네임
+//   rating: 1~5, text: 문자열(60자로 다듬어 옴), mood: 태그 id 또는 null, name: 닉네임,
+//   color: 책갈피 색(js/bookmarkColor.js — 틀린 값·undefined는 그대로 둠)
 // 실패하면 { error, status }를 돌려준다.
 export async function upsertMyReview(env, bookId, uid, input) {
   var existing = await findMyReview(env, bookId, uid);
@@ -82,6 +84,8 @@ export async function upsertMyReview(env, bookId, uid, input) {
     );
   }
   await env.DB.batch(statements);
+  await saveCommentColor(env, id, input.color);
+  var color = input.color && (await colorSql(env)) !== "NULL" ? input.color : (existing ? existing.color || null : null);
 
   // 평가했으면 읽은 책이다 — 읽고 싶은 책에서 뺀다(이 기기 것과 같은 닉네임 것 모두).
   // wants 표가 아직 없을 수 있어 별점 저장과 따로, 실패해도 그냥 넘어간다.
@@ -94,7 +98,7 @@ export async function upsertMyReview(env, bookId, uid, input) {
   return {
     id: id,
     created: !existing,
-    review: { id: id, rating: rating, text: next.text, mood: next.mood, name: next.author_name },
+    review: { id: id, rating: rating, text: next.text, mood: next.mood, name: next.author_name, color: color },
     points: rowPoints(next) - rowPoints(existing)
   };
 }

@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS comments (
   author_photo TEXT,
   created_at INTEGER NOT NULL,
   parent_id TEXT,
-  mood TEXT
+  mood TEXT,
+  color TEXT -- 책갈피 색(0011): tomato/cobalt/mint/butter, NULL이면 id로 정함(js/bookmarkColor.js)
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_book_id ON comments (book_id);

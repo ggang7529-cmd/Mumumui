@@ -1,5 +1,6 @@
 import { json } from "../_lib/db.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
+import { colorSql } from "../_lib/commentColor.js";
 
 // 홈 "오늘의 한 줄" — 화면에는 한 문장만 보이지만, 여기서는 후보 5개를 준다. 화면이 접속할
 // 때마다 그중 하나를 골라 보여준다(js/render.js renderFeatured).
@@ -19,15 +20,21 @@ var CREATE_TABLE =
   "CREATE TABLE IF NOT EXISTS featured_comments (comment_id TEXT PRIMARY KEY, pinned_at INTEGER NOT NULL)";
 
 var SELECT =
-  "SELECT c.id, c.text, c.rating, c.mood, c.author_name, c.created_at, " +
+  "SELECT c.id, c.text, c.rating, c.mood, c.author_name, c.created_at, __COLOR__ AS color, " +
   "b.id AS book_id, b.title, b.author, b.cover, " +
   "(SELECT count(*) FROM comment_likes l WHERE l.comment_id = c.id) AS likes " +
   "FROM comments c JOIN books b ON b.id = c.book_id ";
 
+// 책갈피 색 칸(comments.color)이 아직 없는 DB에서는 NULL로 읽는다(functions/_lib/commentColor.js).
+async function selectSql(env) {
+  return SELECT.replace("__COLOR__", await colorSql(env, "c"));
+}
+
 async function readPinned(env) {
+  var select = await selectSql(env);
   try {
     var rows = await env.DB.prepare(
-      SELECT + "JOIN featured_comments f ON f.comment_id = c.id WHERE c.parent_id IS NULL ORDER BY f.pinned_at DESC LIMIT ?1"
+      select + "JOIN featured_comments f ON f.comment_id = c.id WHERE c.parent_id IS NULL ORDER BY f.pinned_at DESC LIMIT ?1"
     ).bind(MAX).all();
     var ids = await env.DB.prepare("SELECT comment_id FROM featured_comments").all();
     return {
@@ -47,7 +54,7 @@ export async function onRequestGet(context) {
   var seen = {};
   reviews.forEach(function (r) { seen[r.id] = true; });
 
-  var auto = SELECT +
+  var auto = (await selectSql(env)) +
     "WHERE c.parent_id IS NULL AND trim(coalesce(c.text, '')) != '' AND c.created_at >= ?1 " +
     "ORDER BY likes DESC, c.created_at DESC LIMIT ?2";
   // 7일 안 → 기간 없이, 순서대로 빈자리를 채운다. 이미 고른 것(고정 포함)은 건너뛴다.

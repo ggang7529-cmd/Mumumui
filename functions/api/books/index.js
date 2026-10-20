@@ -1,4 +1,5 @@
 import { resolveNickname } from "../../_lib/nickname.js";
+import { saveCommentColor } from "../../_lib/commentColor.js";
 import { getAnonUid } from "../../_lib/identity.js";
 import { json, newId } from "../../_lib/db.js";
 import { checkRateLimit } from "../../_lib/rateLimit.js";
@@ -104,6 +105,7 @@ export async function onRequestPost(context) {
       "VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8)"
     ).bind(commentId, id, text, rating, uid, name, now, mood)
   ]);
+  await saveCommentColor(env, commentId, body.color);
 
   return json({
     book: {

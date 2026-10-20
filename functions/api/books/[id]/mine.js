@@ -4,6 +4,7 @@ import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { upsertMyReview, countMyRatedBooks } from "../../../_lib/myReview.js";
 import { resolveNickname } from "../../../_lib/nickname.js";
 import { normalizeMoodId } from "../../../../js/moodTags.js";
+import { normalizeBookmarkColor } from "../../../../js/bookmarkColor.js";
 
 // 책 상세의 별점 카드와 "한 줄도 남겨볼래요?" 시트가 쓰는 저장 경로. 이 기기의 평가 하나를
 // 만들거나 고친다(functions/_lib/myReview.js). 보낸 값만 바뀐다 — 별만 다시 누르면 별점만,
@@ -32,6 +33,7 @@ export async function onRequestPut(context) {
   var input = { rating: body.rating };
   if (body.text !== undefined) input.text = String(body.text || "").replace(/[\r\n]+/g, " ").trim().slice(0, 60);
   if (body.mood !== undefined) input.mood = normalizeMoodId(body.mood);
+  if (body.color !== undefined) input.color = normalizeBookmarkColor(body.color) || undefined;
   if (body.name !== undefined) {
     var nick = await resolveNickname(env, context.request, body.name);
     if (nick.error) {

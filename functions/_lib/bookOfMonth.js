@@ -1,4 +1,5 @@
 import { hasLineSql } from "./lines.js";
+import { colorSql } from "./commentColor.js";
 
 // 이달의 책(.internal/migrations/0010). 관리자가 책·기간·질문을 정한다(functions/api/admin/
 // book-of-month.js). 기간은 [starts_at, ends_at) 밀리초이고, 지금이 그 안이면 홈 카드에 뜬다 —
@@ -72,10 +73,10 @@ export async function allBooksOfMonth(env) {
 // 이번 달에 아직 아무도 안 남겼어도 이 책이 어떤 책인지는 보여야 한다.
 export async function latestLines(env, bookId, limit) {
   var rows = (await env.DB.prepare(
-    "SELECT c.id, c.text, c.mood, c.rating, c.author_name FROM comments c " +
+    "SELECT c.id, c.text, c.mood, c.rating, c.author_name, " + (await colorSql(env, "c")) + " AS color FROM comments c " +
     "WHERE c.book_id = ?1 AND c.parent_id IS NULL AND " + hasLineSql("c") + " ORDER BY c.created_at DESC LIMIT ?2"
   ).bind(bookId, limit).all()).results || [];
   return rows.map(function (c) {
-    return { id: c.id, text: c.text || "", mood: c.mood || null, rating: c.rating, name: c.author_name || "" };
+    return { id: c.id, text: c.text || "", mood: c.mood || null, rating: c.rating, name: c.author_name || "", color: c.color || null };
   });
 }
