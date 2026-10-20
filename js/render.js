@@ -2615,6 +2615,7 @@ export function renderAlsoBooks() {
       img.loading = "lazy";
       cover.appendChild(img);
     } else {
+      cover.classList.add("also-cover--typo");
       var t = document.createElement("span");
       t.className = "also-cover-typo";
       t.textContent = b.title;

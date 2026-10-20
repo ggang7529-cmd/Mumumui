@@ -5725,3 +5725,10 @@
     #commentList > li.bookmark-card .c-edit,
     #commentList > li.bookmark-card .c-del { font-size: 14px; }
   }
+
+  /* 함께 꽂은 책: 표지를 자르지 않고 원래 비율 그대로(높이 130px 고정 + cover로는 칸이 넓은 PC에서
+     위아래가 잘렸다). 표지 이미지가 없는 책만 책 비율(1:1.45) 칸에 제목을 조판한다. */
+  .also-grid { align-items: start; }
+  .also-cover { height: auto; }
+  .also-cover img { position: static; display: block; width: 100%; height: auto; }
+  .also-cover.also-cover--typo { height: 0; padding-bottom: 145%; }
