@@ -11,7 +11,24 @@ import {
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
-import { formatAdminNickRow, renderBookOfMonth, renderBomPast, renderAlsoBooks } from "./render.js";
+import { formatAdminNickRow, renderBookOfMonth, renderBomPast, renderAlsoBooks, renderColorPicker } from "./render.js";
+import { BOOKMARK_COLORS, normalizeBookmarkColor } from "./bookmarkColor.js";
+
+// 시트를 열 때 미리 골라 둘 책갈피 색 — 모두 같은 색으로 쏠리지 않게 넷 중 아무거나.
+function randomBookmarkColor() {
+  return BOOKMARK_COLORS[Math.floor(Math.random() * BOOKMARK_COLORS.length)];
+}
+
+function selectFormColor(c) {
+  state.formColor = c;
+  renderColorPicker(document.getElementById("fColors"), c, selectFormColor);
+}
+
+function selectLineColor(c) {
+  state.lineColor = c;
+  renderColorPicker(document.getElementById("lineColors"), c, selectLineColor);
+  document.getElementById("lineBookmark").className = "line-bookmark bm-" + c;
+}
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -90,9 +107,14 @@ export var state = {
   bomPast: null,
   // 이 책을 꽂은 사람이 함께 꽂은 책 { bookId, books } (openDetail이 받음)
   also: null,
+  // 등급 안내의 20단계 표를 펼쳤는지(접으면 내 등급 근처만)
+  levelTableOpen: false,
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
   formMood: null,
+  // 책갈피 색(한 줄 남기기 시트 / 한 줄 시트)
+  formColor: null,
+  lineColor: null,
   selectedBook: null,
   // 프로필 화면에서 보고 있는 닉네임과, 서버에서 받아온 그 사람의 기록. 아직 안 왔으면 null.
   profileName: null,
@@ -369,6 +391,7 @@ function openForm(prefillQuery) {
   syncWriteSubmit();
   state.formMood = null;
   renderMoodPicker(dom.fMoods, null, selectFormMood);
+  selectFormColor(randomBookmarkColor());
   // 폼을 열 때마다 예시 문구를 하나 새로 뽑는다(같은 문구만 계속 보면 예시로 안 읽힌다).
   document.getElementById("fText").placeholder = pickReviewPlaceholder();
   if (AUTH_MODE === "nickname") document.getElementById("fNickname").value = getSavedNickname();
@@ -604,6 +627,11 @@ export function openDetail(id) {
 
 // "+ 내 책갈피도 꽂기": 아직 별점이 없으면 별점 카드로 데려가고(별을 누르면 시트가 뜬다), 있으면
 // 한 줄 시트를 바로 연다.
+document.getElementById("levelTableMore").addEventListener("click", function () {
+  state.levelTableOpen = !state.levelTableOpen;
+  renderLevelGuide();
+});
+
 document.getElementById("addBookmarkBtn").addEventListener("click", function () {
   gtag("event", "click_add_bookmark", { book_id: state.currentId, rated: !!(state.my && state.my.rating) });
   if (state.my && state.my.rating) { openLineSheet(); return; }
@@ -975,6 +1003,12 @@ function openLineSheet() {
   lineMoodTouched = false;
   renderMoodPicker(dom.lineMoods, state.lineMood, selectLineMood);
   dom.lineText.value = my.text || "";
+  selectLineColor(normalizeBookmarkColor(my.color) || randomBookmarkColor());
+  // "책 제목 · ★★★★☆" — 방금 남긴 별점을 시트에서도 보여준다.
+  var lineBook = findBook(state.currentId);
+  var stars = "";
+  for (var si = 1; si <= 5; si++) stars += si <= (my.rating || 0) ? "★" : "☆";
+  document.getElementById("lineSheetSub").textContent = (lineBook ? lineBook.title + " · " : "") + stars + " · 태그만 골라도 OK";
   // 이달의 책이면 그 질문을 한 줄 칸의 안내 문구로.
   dom.lineText.placeholder = isBomBook(state.currentId) ? state.bom.question : "한 줄로 남겨보세요";
   renderLineNickname(false);
@@ -1040,7 +1074,7 @@ dom.lineForm.addEventListener("submit", function (e) {
     saveNickname(name);
     return api("/api/books/" + encodeURIComponent(bookId) + "/mine", {
       method: "PUT",
-      body: { rating: my.rating, text: text, mood: mood, name: name }
+      body: { rating: my.rating, text: text, mood: mood, name: name, color: state.lineColor }
     });
   })
     .then(function (res) {
@@ -1478,7 +1512,7 @@ dom.reviewForm.addEventListener("submit", function (e) {
     return;
   }
 
-  var review = { text: text, rating: state.formRating, mood: state.formMood, name: nickname };
+  var review = { text: text, rating: state.formRating, mood: state.formMood, name: nickname, color: state.formColor };
   var picked = state.selectedBook;
   dom.writeSubmit.disabled = true;
   var done = function () { dom.writeSubmit.disabled = false; };
@@ -1502,7 +1536,7 @@ function createBook(picked, review) {
     body: {
       title: picked.title, author: picked.author, cover: picked.cover,
       isbn: picked.isbn, contents: picked.contents, text: review.text, rating: review.rating,
-      mood: review.mood, name: review.name
+      mood: review.mood, name: review.name, color: review.color
     }
   })
     .then(function (data) {
@@ -1541,7 +1575,7 @@ function createBook(picked, review) {
 function addReviewToExisting(bookId, review) {
   return api("/api/books/" + encodeURIComponent(bookId) + "/comments", {
     method: "POST",
-    body: { text: review.text, rating: review.rating, mood: review.mood, name: review.name }
+    body: { text: review.text, rating: review.rating, mood: review.mood, name: review.name, color: review.color }
   }).then(function (res) {
     gtag("event", "complete_review", { book_id: bookId, from: "write_sheet" });
     gtag("event", "complete_comment", { book_id: bookId, from: "write_sheet" });

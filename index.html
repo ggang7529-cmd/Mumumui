@@ -561,15 +561,15 @@
 
     <section id="feedbackView" hidden>
       <div class="panel">
-        <h2>의견 보내기</h2>
-        <p class="char-hint">사이트에 대한 개선 요청이나 의견을 남겨주세요. 운영자에게 이메일로 전달돼요.</p>
+        <h2 class="feedback-title">의견 보내기</h2>
+        <p class="feedback-lead">책갈피는 한 사람이 만들고 있어요.<br>불편한 점, 바라는 점 무엇이든 좋아요.</p>
         <form id="feedbackForm">
           <div class="field">
             <label for="feedbackText">내용</label>
             <textarea id="feedbackText" required maxlength="1000" placeholder="예: 이런 기능이 있으면 좋겠어요"></textarea>
           </div>
           <div class="field">
-            <label for="feedbackEmail">답장받을 이메일 (선택)</label>
+            <label for="feedbackEmail">답장받을 이메일 <span class="label-note">(선택)</span></label>
             <input type="email" id="feedbackEmail" maxlength="100" placeholder="비워두면 답장을 못 받을 수 있어요" autocomplete="off">
           </div>
           <div class="form-actions">
@@ -602,7 +602,7 @@
   <div class="level-guide-panel search-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="searchSheetTitle">
     <div class="level-guide-head">
       <h2 class="level-guide-title" id="searchSheetTitle">책 찾기</h2>
-      <button type="button" class="level-guide-close" id="searchSheetClose" aria-label="닫기">✕</button>
+      <button type="button" class="level-guide-close" id="searchSheetClose" aria-label="닫기">×</button>
     </div>
     <div class="level-guide-body search-sheet-body">
       <input type="search" class="site-search-input" id="siteSearchInput" placeholder="제목이나 저자로 찾아보세요" autocomplete="off" aria-label="책 제목이나 저자">
@@ -622,7 +622,7 @@
   <div class="level-guide-panel write-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="writeSheetTitle">
     <div class="level-guide-head">
       <h2 class="level-guide-title" id="writeSheetTitle">한 줄 남기기</h2>
-      <button type="button" class="level-guide-close" id="writeSheetClose" aria-label="닫기">✕</button>
+      <button type="button" class="level-guide-close" id="writeSheetClose" aria-label="닫기">×</button>
     </div>
     <div class="level-guide-body write-sheet-body">
             <form id="reviewForm">
@@ -672,6 +672,11 @@
                     <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off" aria-label="한 줄 리뷰">
                     <p class="char-hint" id="fTextHint">최대 80자, 한 줄로 남겨주세요</p>
                   </fieldset>
+                  <!-- 책갈피 색(리디자인 B안). 열 때마다 넷 중 하나가 미리 골라져 있다(js/main.js). -->
+                  <div class="field bm-color-row">
+                    <span class="bm-color-label" id="fColorsLabel">책갈피 색</span>
+                    <div class="bm-color-picker" id="fColors" role="radiogroup" aria-labelledby="fColorsLabel"></div>
+                  </div>
                   <!-- 닉네임은 이 브라우저에 한 번 저장되면 입력칸 대신 한 줄로만 보여준다.
                        매번 같은 이름을 다시 확인하게 할 이유가 없다. -->
                   <div class="field write-nickname">
@@ -686,7 +691,7 @@
                      전에는 꺼둔다 — 별점이 유일한 필수 항목이다. PC는 켜둔다(js syncWriteSubmit). -->
                 <div class="form-actions write-actions">
                   <button type="button" class="btn-ghost" id="cancelForm">취소</button>
-                  <button type="submit" class="btn-primary" id="writeSubmit">남기기</button>
+                  <button type="submit" class="btn-primary" id="writeSubmit">책갈피 꽂기</button>
                 </div>
               </div>
             </form>
@@ -701,7 +706,7 @@
            시트 안에서 화면만 바꾸므로, 돌아올 길을 여기 하나 둔다. -->
       <button type="button" class="level-guide-back" id="levelGuideBack" hidden aria-label="등급 안내로 돌아가기">‹</button>
       <h2 class="level-guide-title" id="levelGuideTitle">등급 안내</h2>
-      <button type="button" class="level-guide-close" id="levelGuideClose" aria-label="등급 안내 닫기">✕</button>
+      <button type="button" class="level-guide-close" id="levelGuideClose" aria-label="등급 안내 닫기">×</button>
     </div>
     <div class="level-guide-body" id="levelGuideBody">
       <div class="level-progress" id="levelProgress"></div>
@@ -709,6 +714,7 @@
       <ul class="level-rules" id="levelRuleList"></ul>
       <h3 class="level-guide-sub">등급표</h3>
       <ol class="level-table" id="levelTable"></ol>
+      <button type="button" class="text-link level-table-more" id="levelTableMore" aria-controls="levelTable">20등급 모두 보기</button>
     </div>
     <div class="level-guide-body" id="levelRankingBody" hidden></div>
   </div>
@@ -726,10 +732,17 @@
 <dialog class="line-sheet" id="lineSheet" aria-labelledby="lineSheetTitle">
   <form class="line-sheet-panel" id="lineForm" method="dialog">
     <span class="line-sheet-grip" aria-hidden="true"></span>
-    <h2 class="line-sheet-title" id="lineSheetTitle">한 줄도 남겨볼래요?</h2>
-    <p class="line-sheet-sub">태그만 골라도 OK</p>
+    <h2 class="line-sheet-title" id="lineSheetTitle">한 줄도 꽂아볼래요?</h2>
+    <p class="line-sheet-sub" id="lineSheetSub">태그만 골라도 OK</p>
     <div class="mood-picker line-moods" id="lineMoods" role="radiogroup" aria-label="감정 태그"></div>
-    <input type="text" class="line-input" id="lineText" maxlength="60" placeholder="한 줄로 남겨보세요" autocomplete="off" aria-label="한 줄">
+    <!-- 입력칸 자체가 책갈피 한 장(고른 색, 왼쪽 펀칭 구멍). -->
+    <div class="line-bookmark bm-tomato" id="lineBookmark">
+      <input type="text" class="line-input" id="lineText" maxlength="60" placeholder="한 줄로 남겨보세요" autocomplete="off" aria-label="한 줄">
+    </div>
+    <div class="bm-color-row">
+      <span class="bm-color-label" id="lineColorsLabel">책갈피 색</span>
+      <div class="bm-color-picker" id="lineColors" role="radiogroup" aria-labelledby="lineColorsLabel"></div>
+    </div>
     <div class="line-nickname">
       <p class="nickname-line" id="lineNickLine" hidden><strong id="lineNickName"></strong> 님으로 남겨요 · <button type="button" class="link-btn" id="lineNickChange">변경</button></p>
       <label class="line-nick-input" id="lineNickInputWrap">
@@ -737,7 +750,7 @@
         <input type="text" id="lineNickInput" maxlength="10" placeholder="예: 책벌레" autocomplete="off">
       </label>
     </div>
-    <button type="submit" class="btn-primary line-submit" id="lineSubmit" value="save">남기기</button>
+    <button type="submit" class="btn-primary line-submit" id="lineSubmit" value="save">책갈피 꽂기</button>
     <button type="button" class="link-btn line-skip" id="lineSkip">별점만 남길게요</button>
   </form>
 </dialog>
@@ -749,6 +762,7 @@
 <dialog class="line-sheet pin-sheet" id="pinSheet" aria-labelledby="pinSheetTitle">
   <form class="line-sheet-panel" id="pinForm" method="dialog" novalidate>
     <span class="line-sheet-grip" aria-hidden="true"></span>
+    <span class="pin-mark" aria-hidden="true"></span>
     <h2 class="line-sheet-title" id="pinSheetTitle">이 닉네임을 지킬 4자리 비밀번호</h2>
     <p class="line-sheet-sub" id="pinSheetSub">다른 곳에서 쓰는 비밀번호는 쓰지 마세요</p>
     <label class="line-nick-input" id="pinNickWrap" hidden>
@@ -756,7 +770,11 @@
       <input type="text" id="pinNickInput" maxlength="10" placeholder="예: 책벌레" autocomplete="off">
     </label>
     <p class="pin-for" id="pinFor"><strong id="pinForName"></strong> 님</p>
-    <input type="password" class="line-input pin-input" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="숫자 4자리" aria-label="4자리 비밀번호">
+    <!-- 네 칸(리디자인 B안). 실제 입력은 그 위에 투명하게 겹친 칸 하나가 받고, 칸 넷은 그림이다. -->
+    <div class="pin-boxes" id="pinBoxes">
+      <div class="pin-box-row" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <input type="password" class="pin-input" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="숫자 4자리 비밀번호">
+    </div>
     <p class="pin-msg" id="pinMsg" role="alert"></p>
     <button type="submit" class="btn-primary line-submit" id="pinSubmit">정하기</button>
     <p class="pin-help">비밀번호를 잊었다면 <button type="button" class="link-btn" id="pinHelp">의견 보내기</button>로 알려주세요</p>

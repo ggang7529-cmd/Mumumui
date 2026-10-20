@@ -1728,39 +1728,37 @@
      장식이 아니다. */
   .field label {
     display: block;
-    font-size: var(--t-meta);
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 700;
     color: var(--ink);
     letter-spacing: 0.01em;
     margin-bottom: 0.35rem;
   }
 
-  /* 입력창은 카드(--paper-raised, 거의 흰 종이) 위에 놓이므로 배경을 한 단계 눌러
-     "여기에 쓴다"는 자리로 읽히게 하고, 테두리를 또렷하게 해 비활성처럼 보이지 않게 한다. */
+  /* 입력창(리디자인 B안): 흰 바탕 + 1.5px 먹색 테두리, 모서리 4, 높이 44. 긴 글은 2px. */
   .field input[type="text"],
   .field input[type="email"],
   .field textarea {
     width: 100%;
+    min-height: 44px;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 15px;
     color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-bottom-color: var(--ink-faint);
-    border-radius: 2px;
-    padding: 0.6rem 0.7rem;
+    background: var(--surface);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 0 12px;
     resize: vertical;
-    transition: border-color 0.15s ease, background 0.15s ease;
   }
 
   .field input[type="text"]:focus,
   .field input[type="email"]:focus,
   .field textarea:focus {
-    border-color: var(--accent);
-    background: var(--paper-raised);
+    outline: 2px solid var(--tomato);
+    outline-offset: 1px;
   }
 
-  .field textarea { min-height: 110px; line-height: 1.6; }
+  .field textarea { min-height: 110px; line-height: 1.6; border-width: 2px; padding: 12px; }
 
   .book-search-row {
     display: flex;
@@ -1771,12 +1769,13 @@
     flex: 1;
     min-width: 0;
     font-family: inherit;
-    font-size: 1rem;
+    min-height: 44px;
+    font-size: 14px;
     color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 0.6rem 0.7rem;
+    background: var(--surface);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 0 12px;
   }
 
   .book-results {
@@ -5156,3 +5155,313 @@
   .admin-zone-label { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
   .admin-zone-btns { display: flex; flex-wrap: wrap; gap: 8px; }
   .admin-zone .btn-ghost-danger { margin-top: 0; }
+
+  /* ── 시트·오버레이·토스트(리디자인 B안 6단계) ───────────────────────────────────────
+     예전 규칙을 덮어쓰는 블록이라 파일 맨 끝에 둔다. */
+
+  /* 입력칸 공통: 1.5px 먹색 테두리, 모서리 4, 높이 44(긴 글은 2px). 다른 모양이 필요한 칸
+     (책 찾기 밑줄 칸, 책갈피 모양 칸, PIN 네 칸)은 아래에서 따로 되돌린다. */
+  :where(input[type="text"], input[type="search"], input[type="email"], textarea) {
+    min-height: 44px;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 0 12px;
+  }
+
+  :where(textarea) { border-width: 2px; padding: 12px; font-size: 15px; line-height: 1.6; }
+
+  .field > label,
+  .field legend,
+  .field .bm-color-label { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+  /* 시트 틀: 흰 바탕, 위 모서리 16, 손잡이 40×5, 제목 Black Han Sans 24. */
+  .level-guide { background: rgba(21, 21, 21, 0.45); }
+
+  .level-guide-panel {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: none;
+    background: var(--surface);
+  }
+
+  .level-guide-head {
+    padding: 10px 8px 6px 20px;
+    border-bottom: 0;
+  }
+
+  .level-guide-title { font-weight: 400; font-size: 24px; }
+
+  .level-guide-close {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    color: var(--ink);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  @media (max-width: 640px) {
+    .level-guide-panel { border-radius: 16px 16px 0 0; }
+    .level-guide-panel::before {
+      content: "";
+      flex: none;
+      align-self: center;
+      width: 40px;
+      height: 5px;
+      margin-top: 10px;
+      border-radius: 3px;
+      background: var(--line);
+    }
+  }
+
+  .line-sheet-panel { border-radius: 16px 16px 0 0; gap: 16px; padding: 10px 20px calc(24px + env(safe-area-inset-bottom)); box-shadow: none; }
+  .line-sheet-grip { width: 40px; height: 5px; border-radius: 3px; }
+  .line-sheet-title { font-weight: 400; font-size: 24px; text-align: left; line-height: 1.25; }
+  .line-sheet-sub { margin: -8px 0 0; text-align: left; font-size: 13px; color: var(--muted); }
+  .line-sheet::backdrop { background: rgba(21, 21, 21, 0.45); }
+
+  @media (min-width: 641px) {
+    .line-sheet-panel { border-radius: 16px; }
+  }
+
+  /* 한 줄 남기기 시트 */
+  .book-search-row { gap: 8px; }
+  .selected-book { background: var(--paper); border-radius: var(--radius); padding: 10px; }
+  .write-actions .btn-ghost,
+  .write-actions .btn-primary { min-height: 52px; font-size: 15px; }
+  .write-actions .btn-primary { flex: 1; }
+
+  /* 책갈피 색 고르기: 동그라미 넷, 고른 것은 먹색 굵은 테두리. */
+  .bm-color-row { display: flex; align-items: center; gap: 8px; }
+  .bm-color-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .bm-color-picker { display: flex; gap: 6px; }
+
+  .bm-color {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 3px solid var(--surface);
+    border-radius: 50%;
+    background: var(--bm);
+    box-shadow: 0 0 0 1px var(--line);
+    cursor: pointer;
+  }
+
+  .bm-color.is-on { border-color: var(--ink); box-shadow: none; }
+
+  /* 한 줄 시트: 입력칸 자체가 고른 색의 책갈피(왼쪽 펀칭 구멍). */
+  .line-bookmark {
+    position: relative;
+    padding: 6px 12px 6px 44px;
+    border-radius: var(--radius);
+    background: var(--bm);
+  }
+
+  .line-bookmark::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: var(--surface);
+  }
+
+  .line-bookmark .line-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--bm-ink);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .line-bookmark .line-input::placeholder { color: var(--bm-ink); opacity: 0.6; }
+  .line-bookmark .line-input:focus { outline: none; }
+  .line-bookmark:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .line-nick-input { flex-direction: column; align-items: stretch; gap: 8px; }
+  .line-nick-input span { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .line-nick-input input { min-height: 44px; padding: 0 12px; border: 1.5px solid var(--ink); border-radius: var(--radius); }
+  .line-skip { color: var(--muted); text-decoration: underline; text-underline-offset: 4px; min-height: 44px; font-size: 13px; }
+
+  /* PIN 시트: 토마토 책갈피 표시 + 네 칸. */
+  .pin-mark {
+    width: 40px;
+    height: 56px;
+    background: var(--tomato);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  }
+
+  .pin-for { text-align: left; margin: -6px 0 0; }
+  .pin-boxes { position: relative; width: fit-content; }
+  .pin-boxes[hidden] { display: none; }
+  .pin-box-row { display: flex; gap: 10px; }
+
+  .pin-box-row span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 64px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .pin-box-row span.is-filled { border-color: var(--ink); }
+  .pin-box-row span.is-next { border: 3px solid var(--tomato); }
+
+  .pin-boxes .pin-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    font-size: 16px;
+    caret-color: transparent;
+    cursor: pointer;
+  }
+
+  .pin-msg { text-align: left; color: var(--danger); }
+  .pin-help { text-align: left; }
+
+  /* 토스트: 흰 바탕 + 2px 먹색 테두리 + 왼쪽 토마토 띠, 굵은 13px. */
+  .score-toast,
+  .action-toast {
+    gap: 10px;
+    padding: 10px 14px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 8px 22px rgba(21, 21, 21, 0.14);
+  }
+
+  .score-toast::before,
+  .action-toast::before {
+    content: "";
+    flex: none;
+    width: 10px;
+    height: 22px;
+    background: var(--tomato);
+  }
+
+  :root[data-theme="dark"] .action-toast { background: var(--surface); color: var(--ink); }
+  .score-toast:hover { background: var(--surface); }
+  .action-toast-btn { opacity: 1; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* 책 찾기: 큰 밑줄 칸 + 결과(작은 표지) + 점선 "새로 꽂기". */
+  .site-search-input {
+    min-height: 48px;
+    padding: 0 2px;
+    border: 0;
+    border-bottom: 3px solid var(--ink);
+    border-radius: 0;
+    background: transparent;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .site-search-input:focus { outline: none; border-color: var(--ink); }
+  .site-search-head { padding: 18px 0 6px; font-size: 12px; color: var(--muted); list-style: none; }
+  #siteSearchResults .book-result-item { gap: 12px; min-height: 64px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  #siteSearchResults .book-result-item img,
+  #siteSearchResults .book-result-noimg { width: 36px; border-radius: 0; box-shadow: none; }
+  #siteSearchResults .book-result-title { font-size: 14px; font-weight: 700; }
+  #siteSearchResults .site-search-empty { padding: 12px 0 0; }
+  #siteSearchResults .site-search-empty .add-bookmark-btn { min-height: 48px; font-size: 14px; }
+
+  /* 알림: 2px 먹색 테두리 카드, 항목 왼쪽 색 띠(토마토·코발트 번갈아). */
+  .notif-dropdown { border: 2px solid var(--ink); border-radius: var(--radius-lg); box-shadow: none; padding: 16px; width: 300px; }
+  .notif-title { padding: 0 0 8px; border-bottom: 0; font-family: var(--font-body); font-size: 14px; }
+  .notif-item { display: flex; gap: 10px; min-height: 56px; padding: 10px 0; border-top: 1px solid var(--paper); font-size: 13px; line-height: 1.5; }
+  .notif-item::before { content: ""; flex: none; width: 10px; height: 26px; background: var(--tomato); }
+  .notif-list li:nth-child(even) .notif-item::before { background: var(--cobalt); }
+  .notif-item:hover { background: none; text-decoration: underline; }
+
+  /* 등급 안내: 먹색 점수 카드 + 배점 2×2 + 접히는 등급표. 카드 안 색은 테마와 상관없이 고정. */
+  .level-progress:not(:empty) {
+    padding: 16px;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: #151515;
+    color: #ECECE6;
+  }
+
+  :root[data-theme="dark"] .level-progress:not(:empty) { background: #2A2A27; }
+  .level-progress-now { gap: 12px; color: #ECECE6; font-size: 16px; }
+  .level-progress-score { color: #B9B9B2; font-size: 12px; font-weight: 400; }
+
+  .lv-num--lg {
+    width: 34px;
+    height: 48px;
+    padding-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  .level-bar { height: 8px; margin: 10px 0 0; border-radius: 4px; background: #3A3A38; }
+  .level-bar-fill { border-radius: 4px; background: var(--tomato); }
+  .level-facts { border-top-color: rgba(236, 236, 230, 0.16); }
+  .level-fact { color: #ECECE6; font-size: 12px; }
+  .level-fact-value { color: #ECECE6; font-size: 1.15em; }
+  .level-fact-note { color: #B9B9B2; }
+  .level-fact .btn-ghost,
+  .level-fact button { color: #ECECE6; border-color: #ECECE6; }
+  .level-progress-empty { color: #ECECE6; }
+
+  .level-guide-sub { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .level-rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+
+  .level-rules li {
+    padding: 10px;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+  }
+
+  .level-rules strong { color: var(--ink); }
+
+  .level-row { min-height: 36px; gap: 10px; color: var(--muted); font-size: 13px; }
+  .level-row-name { color: inherit; }
+  .level-row.is-current { margin: 0 -8px; padding: 0 8px; min-height: 40px; background: var(--paper); color: var(--ink); }
+  .level-row.is-current .level-row-name { color: var(--ink); }
+  .level-row-badge { background: var(--ink); color: var(--on-ink); border-radius: var(--radius); }
+  .level-row-mark { flex: none; width: 14px; height: 20px; background: var(--line); }
+  .level-row-mark.is-current { background: var(--tomato); }
+  .level-row-mark.is-future { background: none; border: 1.5px dashed var(--ink); }
+  .level-row:not(.is-current) .level-row-mark.is-future ~ .level-row-name { color: var(--ink); }
+  .level-table.is-collapsed .level-row:not(.is-near) { display: none; }
+  .level-table-more { align-self: center; margin: 0 auto; font-weight: 700; color: var(--ink); }
+
+  /* 의견 보내기 */
+  .panel h2.feedback-title { font-family: var(--font-display); font-weight: 400; font-size: 32px; }
+  .feedback-lead { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
+  .label-note { font-weight: 400; color: var(--muted); }
+  #feedbackView textarea { width: 100%; min-height: 9rem; }
+  #feedbackView .form-actions .btn-ghost,
+  #feedbackView .form-actions .btn-primary { min-height: 52px; font-size: 15px; }
+  #feedbackView .form-actions .btn-primary { flex: 1; }
+  .level-guide-sub::before { content: none; }
+
+  #siteSearchResults { border: 0; border-radius: 0; }
+  #feedbackView textarea { border-width: 2px; }

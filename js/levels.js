@@ -63,7 +63,7 @@ export function formatNicknameFull(nickname, score) {
 // 보여주기 위한 사본이다 — 배점을 바꾸면 scores.js와 이 표를 함께 고쳐야 한다.
 export var SCORE_RULES = [
   { label: "책 등록하기", points: 10 },
-  { label: "한줄평 남기기", points: 3 },
+  { label: "한 줄 꽂기", points: 3 },
   { label: "좋아요 받기", points: 1 },
   { label: "답글 남기기", points: 1 }
 ];

@@ -22,6 +22,7 @@ var dom = {
   forLine: document.getElementById("pinFor"),
   forName: document.getElementById("pinForName"),
   input: document.getElementById("pinInput"),
+  boxes: document.getElementById("pinBoxes"),
   msg: document.getElementById("pinMsg"),
   submit: document.getElementById("pinSubmit"),
   help: document.getElementById("pinHelp")
@@ -42,7 +43,8 @@ function render() {
   dom.nickWrap.hidden = mode !== "choose";
   dom.forLine.hidden = mode === "choose";
   dom.forName.textContent = sheet.name;
-  dom.input.hidden = mode === "choose" || mode === "blocked";
+  dom.boxes.hidden = mode === "choose" || mode === "blocked";
+  paintBoxes();
   dom.help.parentNode.hidden = mode === "choose" || mode === "blocked";
   if (mode === "blocked") {
     dom.title.textContent = "보호된 닉네임이에요";
@@ -70,7 +72,7 @@ function render() {
 function setMode(mode, name, msg) {
   sheet.mode = mode;
   if (name) sheet.name = name;
-  dom.input.value = "";
+  dom.input.value = ""; paintBoxes();
   dom.msg.textContent = msg || "";
   render();
   focusField();
@@ -89,7 +91,7 @@ export function openPinSheet(opts) {
   return new Promise(function (resolve, reject) {
     sheet = { mode: opts.mode, name: opts.name || "", resolve: resolve, reject: reject, busy: false };
     dom.nickInput.value = opts.name || "";
-    dom.input.value = "";
+    dom.input.value = ""; paintBoxes();
     dom.msg.textContent = "";
     render();
     if (typeof dom.sheet.showModal === "function") dom.sheet.showModal();
@@ -186,7 +188,7 @@ dom.form.addEventListener("submit", function (e) {
   if (!isPinFormat(pin)) { dom.msg.textContent = "숫자 4자리를 입력해 주세요"; dom.input.focus(); return; }
   if ((sheet.mode === "setup" || sheet.mode === "claim") && isWeakPin(pin)) {
     dom.msg.textContent = "조금 더 어려운 번호로 정해주세요";
-    dom.input.value = "";
+    dom.input.value = ""; paintBoxes();
     dom.input.focus();
     return;
   }
@@ -210,7 +212,7 @@ dom.form.addEventListener("submit", function (e) {
       if (data.code === "free") { setMode("setup", data.name); return; }
       if (data.code === "claim") { setMode("claim", data.name); return; }
       if (data.code === "reserved") { setMode("blocked", data.name); return; }
-      dom.input.value = "";
+      dom.input.value = ""; paintBoxes();
       if (data.code === "wrong") {
         dom.msg.textContent = "비밀번호가 맞지 않아요" + (data.left ? " (" + data.left + "번 남았어요)" : "");
       } else {
@@ -224,7 +226,20 @@ dom.form.addEventListener("submit", function (e) {
 dom.input.addEventListener("input", function () {
   var v = dom.input.value.replace(/[^0-9]/g, "").slice(0, 4);
   if (v !== dom.input.value) dom.input.value = v;
+  paintBoxes();
 });
+
+// 네 칸 그림: 친 자리엔 •, 다음에 칠 자리는 토마토 테두리(초점이 있을 때), 나머지는 흐린 테두리.
+function paintBoxes() {
+  var n = dom.input.value.length;
+  var focused = document.activeElement === dom.input;
+  Array.prototype.forEach.call(dom.boxes.querySelectorAll(".pin-box-row span"), function (box, i) {
+    box.textContent = i < n ? "•" : "";
+    box.className = i < n ? "is-filled" : (focused && i === n ? "is-next" : "");
+  });
+}
+dom.input.addEventListener("focus", paintBoxes);
+dom.input.addEventListener("blur", paintBoxes);
 
 document.getElementById("pinCancel").addEventListener("click", function () { finish(cancelledError()); });
 // Esc·바깥 누르기 등으로 닫혀도 취소로 끝낸다.

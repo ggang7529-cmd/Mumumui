@@ -1,7 +1,7 @@
 import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth } from "./main.js";
 import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
-import { bookmarkColorOf, BOOKMARK_COLORS } from "./bookmarkColor.js";
+import { bookmarkColorOf, BOOKMARK_COLORS, BOOKMARK_COLOR_LABELS } from "./bookmarkColor.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -337,6 +337,12 @@ export function renderSiteSearch() {
   list.hidden = false;
 
   var found = matchRegisteredBooks(q, 20);
+  if (found.length) {
+    var head = document.createElement("li");
+    head.className = "site-search-head";
+    head.textContent = "책장에 있는 책";
+    list.appendChild(head);
+  }
   found.forEach(function (r) {
     var li = document.createElement("li");
     var btn = document.createElement("button");
@@ -364,7 +370,7 @@ export function renderSiteSearch() {
     var meta = document.createElement("div");
     meta.className = "book-result-status";
     var rating = bookRating(r);
-    meta.textContent = (rating ? "★ " + rating.avg.toFixed(1) + " · " : "") + "한 줄 " + (r.commentCount || 0) + "개";
+    meta.textContent = (rating ? "★" + rating.avg.toFixed(1) + " · " : "") + "책갈피 " + (r.commentCount || 0);
     info.appendChild(t);
     info.appendChild(a);
     info.appendChild(meta);
@@ -378,24 +384,25 @@ export function renderSiteSearch() {
     list.appendChild(li);
   });
 
+  // 찾는 책이 책장에 없을 때(또는 결과 끝에) 그 말로 한 줄 남기기 시트를 여는 점선 버튼.
+  var li = document.createElement("li");
+  li.className = "book-result-empty site-search-empty";
   if (!found.length) {
-    var li = document.createElement("li");
-    li.className = "book-result-empty site-search-empty";
     var p = document.createElement("p");
     p.textContent = "책장에 아직 없는 책이에요.";
-    var go = document.createElement("button");
-    go.type = "button";
-    go.className = "btn-primary";
-    go.textContent = "이 책으로 첫 한 줄 남기기";
-    go.addEventListener("click", function () {
-      gtag("event", "click_add_from_search");
-      closeSearchSheet();
-      startBookRegistration(q);
-    });
     li.appendChild(p);
-    li.appendChild(go);
-    list.appendChild(li);
   }
+  var go = document.createElement("button");
+  go.type = "button";
+  go.className = "add-bookmark-btn";
+  go.textContent = "+ 책장에 없는 책 새로 꽂기";
+  go.addEventListener("click", function () {
+    gtag("event", "click_add_from_search");
+    closeSearchSheet();
+    startBookRegistration(q);
+  });
+  li.appendChild(go);
+  list.appendChild(li);
 }
 
 // 한 줄 남기기 시트의 검색 결과. 위에는 이미 책장에 있는 책(치는 대로 바로), 아래에는
@@ -665,7 +672,12 @@ function fillLevelProgress(box, score, myRank, myTotal, onRanking) {
 
   var now = document.createElement("p");
   now.className = "level-progress-now";
-  now.appendChild(levelIconFor(p.current));
+  // 등급 숫자가 적힌 큰 책갈피(리디자인 B안 — 헤더의 작은 책갈피와 같은 모양).
+  var mark = document.createElement("span");
+  mark.className = "lv-num lv-num--lg";
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = String(p.current.level);
+  now.appendChild(mark);
   var nowText = document.createElement("span");
   nowText.textContent = p.current.level + "등급 " + p.current.name;
   now.appendChild(nowText);
@@ -764,9 +776,15 @@ export function renderLevelGuide() {
   LEVELS.forEach(function (lv, i) {
     var next = LEVELS[i + 1];
     var li = document.createElement("li");
-    li.className = "level-row" + (lv.level === myLevel ? " is-current" : "");
+    // 접힌 표는 내 등급 앞 하나 ~ 뒤 셋(등급이 없으면 처음 다섯)만 보인다(리디자인 B안).
+    var near = myLevel ? lv.level >= myLevel - 1 && lv.level <= myLevel + 3 : lv.level <= 5;
+    li.className = "level-row" + (lv.level === myLevel ? " is-current" : "") + (near ? " is-near" : "");
 
-    li.appendChild(levelIconFor(lv));
+    // 지난 등급 = 회색 책갈피, 지금 = 토마토, 아직 = 점선.
+    var mark = document.createElement("span");
+    mark.className = "level-row-mark " + (lv.level < myLevel ? "is-past" : lv.level === myLevel ? "is-current" : "is-future");
+    mark.setAttribute("aria-hidden", "true");
+    li.appendChild(mark);
 
     var num = document.createElement("span");
     num.className = "level-row-num";
@@ -792,6 +810,10 @@ export function renderLevelGuide() {
 
     dom.levelTable.appendChild(li);
   });
+  dom.levelTable.classList.toggle("is-collapsed", !state.levelTableOpen);
+  var more = document.getElementById("levelTableMore");
+  more.textContent = state.levelTableOpen ? "접기" : "20등급 모두 보기";
+  more.setAttribute("aria-expanded", state.levelTableOpen ? "true" : "false");
 }
 
 // category에는 KDC 대분류 이름("문학")만 들어 있다 — 국립중앙도서관 조회 시점에
@@ -2611,5 +2633,20 @@ export function renderAlsoBooks() {
       openDetail(b.id);
     });
     grid.appendChild(a);
+  });
+}
+
+// 책갈피 색 고르는 동그라미 넷(한 줄 남기기 시트·한 줄 시트). 고른 것은 먹색 굵은 테두리.
+export function renderColorPicker(box, value, onSelect) {
+  box.innerHTML = "";
+  BOOKMARK_COLORS.forEach(function (c) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "bm-color bm-" + c + (c === value ? " is-on" : "");
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", c === value ? "true" : "false");
+    b.setAttribute("aria-label", BOOKMARK_COLOR_LABELS[c]);
+    b.addEventListener("click", function () { onSelect(c); });
+    box.appendChild(b);
   });
 }
