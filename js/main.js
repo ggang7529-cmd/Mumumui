@@ -1169,11 +1169,11 @@ dom.lineForm.addEventListener("submit", function (e) {
       state.my = res.review;
       closeLineSheet();
       renderAuthBox();
-      // 점수 토스트 대신 알림 띠 하나로 — "카드로 저장"을 같이 건넨다(리디자인 B안 공유 카드).
+      // 점수 토스트 대신 알림 띠 하나로 — "내 책갈피 공유"를 같이 건넨다(리디자인 B안 공유 카드).
       refreshMyScore();
       if (text) {
         showActionToast("책갈피를 꽂았어요" + (res.points > 0 ? " · +" + res.points + "점" : ""), {
-          label: "카드로 저장",
+          label: "내 책갈피 공유",
           onClick: function () { shareLineCard(bookId, "line_sheet"); }
         });
       }
