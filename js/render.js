@@ -1,4 +1,4 @@
-import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth, shareSetCard } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth, shareSetCard, shareLineFor } from "./main.js";
 import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { bookmarkColorOf, BOOKMARK_COLORS, BOOKMARK_COLOR_LABELS } from "./bookmarkColor.js";
@@ -1789,10 +1789,10 @@ export function renderDetail() {
   document.getElementById("detailAuthor").textContent = r.author + (genre && genre !== "기타" ? " · " + genre : "");
   renderDetailStats(r);
   renderDetailBom();
-  // "내 책갈피 저장"은 이 기기로 이 책에 본문 있는 한 줄을 꽂았을 때만.
-  var shareable = !!(state.my && String(state.my.text || "").trim());
-  document.getElementById("detailShareBtn").hidden = !shareable;
-  if (shareable) warmShareFonts(r.title + (state.my.name || "") + state.my.text);
+  // "내 책갈피 저장"은 이 기기의 평가나 지금 닉네임으로 이 책에 본문 있는 한 줄을 꽂았을 때만.
+  var myLine = shareLineFor(state.currentId);
+  document.getElementById("detailShareBtn").hidden = !myLine;
+  if (myLine) warmShareFonts(r.title + (myLine.name || "") + myLine.text);
 
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";

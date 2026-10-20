@@ -10,6 +10,7 @@ import {
   renderRecommend, renderRecommendScan, renderRecommendSteps, renderLevelGuide, renderLevelRanking, buildIcon
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
+import { nicknameKey } from "./pinRules.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
 import { formatAdminNickRow, renderBookOfMonth, renderBomPast, renderAlsoBooks, renderColorPicker } from "./render.js";
 import { BOOKMARK_COLORS, normalizeBookmarkColor, bookmarkColorOf } from "./bookmarkColor.js";
@@ -482,16 +483,21 @@ function markNickPromptDone() {
 // ── 공유 카드(리디자인 B안 제안 ③, js/shareCard.js) ───────────────────────────────
 //
 // 한 장: 이 책에서 공유할 한 줄 — 내가 남긴 한 줄(본문 있는 것), 없으면 좋아요 많은 한 줄.
-function shareLineFor(bookId) {
+// "내 책갈피": 이 기기의 평가(state.my)에 본문이 있으면 그것, 없으면 지금 닉네임으로 이 책에
+// 남긴 본문 있는 한 줄(다른 기기에서 남긴 것 포함, 좋아요 많은 것 → 최근 것). 공개된 글을 카드로
+// 그릴 뿐이라 닉네임만으로 찾아도 된다(고치기·지우기는 여전히 기기 단위).
+export function shareLineFor(bookId) {
   if (state.currentId !== bookId) return null;
   var my = state.my;
   if (my && String(my.text || "").trim()) {
     return { id: my.id, text: my.text, rating: my.rating, color: my.color, name: my.name || getSavedNickname() };
   }
+  var key = nicknameKey(getSavedNickname() || "");
+  if (!key) return null;
   var best = null;
   state.comments.forEach(function (c) {
-    if (c.parentId || !String(c.text || "").trim()) return;
-    if (!best || c.likes > best.likes) best = c;
+    if (c.parentId || !String(c.text || "").trim() || nicknameKey(c.authorName || "") !== key) return;
+    if (!best || (c.likes || 0) > (best.likes || 0) || ((c.likes || 0) === (best.likes || 0) && c.createdAt > best.createdAt)) best = c;
   });
   return best ? { id: best.id, text: best.text, rating: best.rating, color: best.color, name: best.authorName } : null;
 }
