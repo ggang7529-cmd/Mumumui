@@ -5696,3 +5696,32 @@
     .detail-card .ds-row { flex-direction: column; gap: 4px; }
     .detail-card .ds-dist { max-width: none; }
   }
+
+  /* 공개 기록의 책갈피 카드: 옛 가로 배치 규칙(.pr-text { flex: 1 1 200px })이 세로 카드에서는
+     높이 200px로 먹어서, 한 줄짜리 카드도 아래가 텅 비었다. */
+  .pr-link .pr-text { flex: none; }
+
+  /* 등급 진행 카드(먹색) 안의 "전체 순위": 흰 바탕에 먹 글씨. .level-fact button이 글씨를 밝게
+     덮어서 흰 바탕 위 흰 글씨가 됐었다. */
+  .level-fact .level-rank-btn {
+    border: 0;
+    background: #ECECE6;
+    color: #151515;
+    font-weight: 700;
+  }
+  .level-fact .level-rank-btn:hover,
+  .level-fact .level-rank-btn:focus-visible { background: #FFFFFF; color: #151515; }
+
+  /* PC: 책갈피 카드 아래 정보(책 제목·별점·글쓴이·날짜·좋아요·답글)를 한 줄 글자의 80% 남짓으로.
+     휴대폰 크기(12px)로는 넓은 화면에서 너무 작았다. */
+  @media (min-width: 641px) {
+    .bookmark-card .pr-text { font-size: 17px; }
+    .pr-meta { font-size: 14px; }
+    #commentList > li.bookmark-card .c-author { font-size: 14px; }
+    #commentList > li.bookmark-card .c-rating { font-size: 13px; }
+    #commentList > li.bookmark-card .c-date,
+    #commentList > li.bookmark-card .c-like,
+    #commentList > li.bookmark-card .c-reply-btn,
+    #commentList > li.bookmark-card .c-edit,
+    #commentList > li.bookmark-card .c-del { font-size: 14px; }
+  }
