@@ -8,7 +8,7 @@ import { findMyReview, upsertMyReview } from "../../../_lib/myReview.js";
 import { wantStatus } from "../../../_lib/wants.js";
 import { colorSql } from "../../../_lib/commentColor.js";
 import { normalizeBookmarkColor } from "../../../../js/bookmarkColor.js";
-import { resolveNickname, nicknameForRead, sessionKey } from "../../../_lib/nickname.js";
+import { resolveNickname, nicknameForRead, sessionKey, ownsByNickname } from "../../../_lib/nickname.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -29,6 +29,8 @@ export async function onRequestGet(context) {
   // 활동 점수/등급 표시(js/render.js buildAuthorChip)용으로 작성자 닉네임마다 현재 점수를
   // 함께 내려준다.
   var scoreMap = await fetchScoreMap(env);
+  // PIN을 맞춘 기기면 그 닉네임으로 다른 기기에서 쓴 글도 내 글(수정·삭제 버튼)이다.
+  var myNickKey = await sessionKey(env, context.request);
 
   // author_uid는 절대 응답에 싣지 않는다.
   //
@@ -56,14 +58,14 @@ export async function onRequestGet(context) {
       color: c.color || null,
       likes: c.likes,
       liked_by_me: c.liked_by_me,
-      mine: !!myUid && c.author_uid === myUid,
+      mine: (!!myUid && c.author_uid === myUid) || ownsByNickname(myNickKey, c.author_name),
       score: scoreMap[c.author_name] || 0
     };
   });
 
   // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태. PIN을 맞춘 기기면
   // 그 닉네임으로 다른 기기에서 남긴 평가도 내 평가다.
-  var mine = await findMyReview(env, bookId, myUid, await sessionKey(env, context.request));
+  var mine = await findMyReview(env, bookId, myUid, myNickKey);
   // 같은 닉네임이 다른 기기에서 담은 것까지 "담김"으로 — 그 닉네임의 PIN을 맞춘 기기일 때만.
   var myName = await nicknameForRead(env, context.request, new URL(context.request.url).searchParams.get("name"));
   var want = await wantStatus(env, bookId, myUid, myName);

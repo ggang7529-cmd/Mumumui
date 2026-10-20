@@ -150,6 +150,12 @@ export async function sessionKey(env, request) {
   }
 }
 
+// 이 요청이 그 글을 쓴 닉네임의 PIN을 맞춘 기기인지(X-Nick-Token). 수정·삭제 권한과 "내 글"
+// 표시에서 기기(author_uid) 다음으로 본다. 닉네임 글자만 같아서는 안 되고 토큰이 있어야 한다.
+export function ownsByNickname(sessionNickKey, authorName) {
+  return !!sessionNickKey && sessionNickKey === nicknameKey(authorName || "");
+}
+
 export async function createSession(env, key, deviceId) {
   var token = randomHex(32);
   var now = Date.now();
