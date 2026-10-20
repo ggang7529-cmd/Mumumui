@@ -2,7 +2,7 @@ import { getAnonUid } from "../../../_lib/identity.js";
 import { json } from "../../../_lib/db.js";
 import { checkRateLimit } from "../../../_lib/rateLimit.js";
 import { upsertMyReview, countMyRatedBooks } from "../../../_lib/myReview.js";
-import { resolveNickname } from "../../../_lib/nickname.js";
+import { resolveNickname, sessionKey } from "../../../_lib/nickname.js";
 import { normalizeMoodId } from "../../../../js/moodTags.js";
 import { normalizeBookmarkColor } from "../../../../js/bookmarkColor.js";
 
@@ -47,13 +47,15 @@ export async function onRequestPut(context) {
     }
   }
 
-  var result = await upsertMyReview(env, bookId, uid, input);
+  // PIN을 맞춘 기기면 그 닉네임으로 다른 기기에서 남긴 평가도 내 평가다(functions/_lib/myReview.js).
+  var nickKey = await sessionKey(env, context.request);
+  var result = await upsertMyReview(env, bookId, uid, input, nickKey);
   if (result.error) return json({ error: result.error }, { status: result.status });
 
   return json({
     review: result.review,
     created: result.created,
     points: result.points,
-    ratedCount: await countMyRatedBooks(env, uid)
+    ratedCount: await countMyRatedBooks(env, uid, nickKey)
   });
 }

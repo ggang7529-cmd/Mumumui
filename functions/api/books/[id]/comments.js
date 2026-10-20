@@ -8,7 +8,7 @@ import { findMyReview, upsertMyReview } from "../../../_lib/myReview.js";
 import { wantStatus } from "../../../_lib/wants.js";
 import { colorSql } from "../../../_lib/commentColor.js";
 import { normalizeBookmarkColor } from "../../../../js/bookmarkColor.js";
-import { resolveNickname, nicknameForRead } from "../../../_lib/nickname.js";
+import { resolveNickname, nicknameForRead, sessionKey } from "../../../_lib/nickname.js";
 
 export async function onRequestGet(context) {
   var env = context.env;
@@ -61,8 +61,9 @@ export async function onRequestGet(context) {
     };
   });
 
-  // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태.
-  var mine = await findMyReview(env, bookId, myUid);
+  // 이 기기가 이 책에 남긴 평가(별점 카드의 "내 평가")와 읽고 싶어요 상태. PIN을 맞춘 기기면
+  // 그 닉네임으로 다른 기기에서 남긴 평가도 내 평가다.
+  var mine = await findMyReview(env, bookId, myUid, await sessionKey(env, context.request));
   // 같은 닉네임이 다른 기기에서 담은 것까지 "담김"으로 — 그 닉네임의 PIN을 맞춘 기기일 때만.
   var myName = await nicknameForRead(env, context.request, new URL(context.request.url).searchParams.get("name"));
   var want = await wantStatus(env, bookId, myUid, myName);
@@ -135,7 +136,7 @@ export async function onRequestPost(context) {
   if (!parentId) {
     var result = await upsertMyReview(env, bookId, uid, {
       rating: rating, text: text, mood: mood, name: name, color: normalizeBookmarkColor(body.color) || undefined
-    });
+    }, await sessionKey(env, context.request));
     if (result.error) return json({ error: result.error }, { status: result.status });
     return json({ id: result.id, updated: !result.created, points: result.points }, { status: result.created ? 201 : 200 });
   }

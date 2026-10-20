@@ -5,19 +5,24 @@ import { colorSql, saveCommentColor } from "./commentColor.js";
 // 이 기기(X-Anon-Id)가 이 책에 남긴 평가 하나. 같은 기기는 책당 하나만 갖는다 — 다시 누르면
 // 고치고, 한 줄을 더 남겨도 새 행 대신 이 행을 채운다. 2026-10-09 이전에는 같은 책에 둘을
 // 남길 수 있어서 그런 옛 기록(6건)은 가장 최근 것을 "내 평가"로 본다.
-export async function findMyReview(env, bookId, uid) {
-  if (!uid) return null;
+// nickKey(이 요청이 PIN을 맞춘 닉네임의 열쇠 — functions/_lib/nickname.js sessionKey)가 있으면
+// 그 닉네임으로 다른 기기에서 남긴 평가도 "내 평가"다. 둘 다 있으면 가장 최근 것 하나.
+// PIN 없이 닉네임만으로는 절대 넓히지 않는다(닉네임은 누구나 적을 수 있다).
+export async function findMyReview(env, bookId, uid, nickKey) {
+  if (!uid && !nickKey) return null;
   return await env.DB.prepare(
     "SELECT id, text, rating, mood, author_name, created_at, " + (await colorSql(env)) + " AS color FROM comments " +
-    "WHERE book_id = ?1 AND author_uid = ?2 AND parent_id IS NULL ORDER BY created_at DESC LIMIT 1"
-  ).bind(bookId, uid).first();
+    "WHERE book_id = ?1 AND parent_id IS NULL AND (author_uid = ?2 OR (?3 != '' AND lower(trim(author_name)) = ?3)) " +
+    "ORDER BY created_at DESC LIMIT 1"
+  ).bind(bookId, uid || "", nickKey || "").first();
 }
 
-export async function countMyRatedBooks(env, uid) {
-  if (!uid) return 0;
+export async function countMyRatedBooks(env, uid, nickKey) {
+  if (!uid && !nickKey) return 0;
   var row = await env.DB.prepare(
-    "SELECT count(DISTINCT book_id) AS n FROM comments WHERE author_uid = ?1 AND parent_id IS NULL"
-  ).bind(uid).first();
+    "SELECT count(DISTINCT book_id) AS n FROM comments WHERE parent_id IS NULL AND " +
+    "(author_uid = ?1 OR (?2 != '' AND lower(trim(author_name)) = ?2))"
+  ).bind(uid || "", nickKey || "").first();
   return (row && row.n) || 0;
 }
 
@@ -25,9 +30,10 @@ export async function countMyRatedBooks(env, uid) {
 // 것만으로 예전에 쓴 한 줄이 지워지면 안 된다.
 //   rating: 1~5, text: 문자열(60자로 다듬어 옴), mood: 태그 id 또는 null, name: 닉네임,
 //   color: 책갈피 색(js/bookmarkColor.js — 틀린 값·undefined는 그대로 둠)
+// nickKey는 findMyReview와 같다 — PIN을 맞춘 기기면 다른 기기에서 남긴 그 닉네임의 평가를 고친다.
 // 실패하면 { error, status }를 돌려준다.
-export async function upsertMyReview(env, bookId, uid, input) {
-  var existing = await findMyReview(env, bookId, uid);
+export async function upsertMyReview(env, bookId, uid, input, nickKey) {
+  var existing = await findMyReview(env, bookId, uid, nickKey);
 
   var rating = input.rating !== undefined ? Number(input.rating) : (existing ? existing.rating : NaN);
   if (!(rating >= 1 && rating <= 5)) return { error: "별점을 선택해주세요.", status: 400 };
