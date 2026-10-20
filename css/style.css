@@ -5672,13 +5672,18 @@
   }
 
   @media (min-width: 1024px) {
-    /* 표지 | 별점 카드 | 별점 분포. 본문 폭이 870px 남짓이라 오른쪽을 반씩 나눈다. */
-    .panel.detail-card { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
-    .detail-cover { margin-right: 16px; }
-    .detail-card header { grid-column: 2 / -1; }
+    /* 표지·제목 아래 한 줄에 별점 카드 | 요약 카드를 반씩. 둘째 열을 "절반 - 표지 - 간격"으로
+       잡아야 별점 카드(1~2열)와 요약 카드(3열)의 경계가 정확히 가운데에 온다(표지는 이 폭에서 176px). */
+    .panel.detail-card {
+      --dc-cover: 176px;
+      grid-template-columns: var(--dc-cover) calc(50% - 36px - var(--dc-cover)) minmax(0, 1fr);
+      column-gap: 24px;
+    }
+    .detail-cover { grid-row: 2; }
+    .detail-card header { grid-column: 2 / -1; align-self: end; }
     .detail-card .rate-card,
-    .detail-card .detail-summary { grid-row: 3; align-self: stretch; max-width: none; margin: 20px 0 0; }
-    .detail-card .rate-card { grid-column: 2; }
+    .detail-card .detail-summary { grid-row: 3; align-self: stretch; max-width: none; margin: 24px 0 0; }
+    .detail-card .rate-card { grid-column: 1 / span 2; }
     .detail-card .detail-summary {
       grid-column: 3;
       align-content: start;
@@ -5686,8 +5691,7 @@
       border-radius: var(--radius-lg);
       background: var(--surface);
     }
-    /* 요약이 없으면(평가 1개 이하) 별점 카드만 예전처럼. */
-    .panel.detail-card:has(.detail-summary[hidden]) .rate-card { grid-column: 2 / -1; max-width: 460px; }
+    /* 요약이 없으면(평가 1개 이하) 별점 카드만 왼쪽 절반에. */
     :root[data-theme="dark"] .detail-card .detail-summary { border: 1px solid var(--line); }
     .detail-card .ds-row { flex-direction: column; gap: 4px; }
     .detail-card .ds-dist { max-width: none; }
