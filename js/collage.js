@@ -65,8 +65,8 @@ function drawBrand(W, cy, dark) {
   var urlColor = dark ? "#b9a897" : "#6f6155";
 
   var name = "책갈피", tail = "book-galpi.com";
-  var nameFont = '800 32px "NanumSquareRound", "Pretendard", sans-serif';
-  var tailFont = '400 26px "Pretendard", sans-serif';
+  var nameFont = '400 32px "Black Han Sans", "IBM Plex Sans KR", sans-serif';
+  var tailFont = '400 26px "IBM Plex Sans KR", sans-serif';
   // 사이트 헤더에서 심볼 높이는 글자 크기의 1.5배다. 그 비율을 그대로 가져왔다.
   var markH = 48, markW = MARK_W * (markH / MARK_H);
   var gapMark = 14, gapName = 16;
@@ -122,13 +122,13 @@ export function drawCollage() {
   var top = (c.top || "").trim(), bottom = (c.bottom || "").trim();
   if (top) {
     ctx.fillStyle = sub;
-    ctx.font = '600 44px "Pretendard", sans-serif';
+    ctx.font = '500 44px "IBM Plex Sans KR", sans-serif';
     ctx.fillText(top, W / 2, pad + 30);
     y0 = pad + 90;
   }
   if (bottom) {
     ctx.fillStyle = ink;
-    ctx.font = '800 76px "NanumSquareRound", "Pretendard", sans-serif';
+    ctx.font = '400 76px "Black Han Sans", "IBM Plex Sans KR", sans-serif';
     ctx.fillText(bottom, W / 2, brandY - 96);
     y1 = brandY - 166;
   }
@@ -138,7 +138,7 @@ export function drawCollage() {
 
   if (n === 0) {
     ctx.fillStyle = sub;
-    ctx.font = '400 40px "Pretendard", sans-serif';
+    ctx.font = '400 40px "IBM Plex Sans KR", sans-serif';
     ctx.fillText("책을 고르면 여기에 모여요", W / 2, (y0 + y1) / 2);
     drawBrand(W, brandY, dark);
     return canvas.toDataURL("image/png");
@@ -196,7 +196,7 @@ export function drawCollage() {
       ctx.shadowColor = "transparent";
       ctx.fillStyle = "#f3eee4";
       var fs = Math.round(w * 0.11);
-      ctx.font = '800 ' + fs + 'px "NanumSquareRound", "Pretendard", sans-serif';
+      ctx.font = '400 ' + fs + 'px "Black Han Sans", "IBM Plex Sans KR", sans-serif';
       wrapTitle(book.title, w * 0.82, fs).forEach(function (line, k, arr) {
         ctx.fillText(line, 0, (k - (arr.length - 1) / 2) * fs * 1.35);
       });
@@ -568,14 +568,14 @@ export function initCollage() {
 
   dom.collageSaveBtn.addEventListener("click", saveCollage);
 
-  // 글꼴이 늦게 와도 미리보기가 기본 글꼴로 굳어 있지 않게 한 번 더 그린다. 프리텐다드는
+  // 글꼴이 늦게 와도 미리보기가 기본 글꼴로 굳어 있지 않게 한 번 더 그린다. 구글 폰트는
   // 글자 범위별로 나눠 받는 글꼴이라, 한글 조각까지 받게 하려면 한글 예시를 같이 넘겨야 한다.
   if (document.fonts && document.fonts.load) {
     var sample = "책갈피 올해 읽은 책 다 좋았다 book-galpi.com";
     Promise.all([
-      document.fonts.load('800 76px "NanumSquareRound"', sample),
-      document.fonts.load('600 44px "Pretendard"', sample),
-      document.fonts.load('400 26px "Pretendard"', sample)
+      document.fonts.load('400 76px "Black Han Sans"', sample),
+      document.fonts.load('500 44px "IBM Plex Sans KR"', sample),
+      document.fonts.load('400 26px "IBM Plex Sans KR"', sample)
     ]).then(function () {
       if (state.view === "collage") updatePreview();
     }).catch(function () {});

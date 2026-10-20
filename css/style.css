@@ -1,72 +1,74 @@
-  /* 기본(라이트)은 크림 테마다(2026-10-03). 배경 #F7F3EC 위에 흰 카드, 포인트는 버건디
-     #8C2F39, 보조는 로즈 #C88E92, 본문 #2A211F, 보조 글씨 #5E524C.
-     다크는 아래 :root[data-theme="dark"] 하나뿐이고, 헤더의 해/달 버튼으로만 켠다 — 예전엔
-     기기의 다크 설정을 따라 저절로 바뀌었는데, 크림이 사이트의 기본 얼굴이라 기기 설정과
-     무관하게 크림으로 시작한다(index.html <head>, js/main.js 테마).
-     --accent2(클레이)는 표지 모음판 같은 곳의 보조 채움색으로 남겨 둔다. */
+  /* 색(2026-10-20, 리디자인 B안 "모으는 책갈피" — 디자인 원본은 Claude Design 핸드오프의
+     tokens.css). 차가운 종이색 바탕 #ECECE6 + 흰 카드 + 먹색 #151515, 강조는 원색 책갈피 4색
+     (토마토·코발트·민트·버터). 토마토·민트·버터 위의 글자는 반드시 먹색이다(흰 글자는 대비가
+     안 나옴). 예전 크림 테마(버건디·로즈)의 변수 이름은 그대로 두고 값만 바꿨다 — --accent는
+     이제 먹색이라 "강조 글자·테두리·채운 버튼"이 모두 먹색이 되고, 원색은 새 이름으로 쓴다.
+     다크는 아래 :root[data-theme="dark"] 하나뿐이고, 헤더의 해/달 버튼으로만 켠다. */
   :root {
-    --paper: #F7F3EC;
-    --paper-soft: #EFE8DD;
-    --paper-raised: #FFFFFF;
-    --ink: #2A211F;
-    --ink-soft: #5E524C;
-    /* 배경(#F7F3EC) 대비 5.3:1, 흰 카드 대비 5.9:1 — 가장 흐린 글자도 AA를 넘긴다. */
-    --ink-faint: #706259;
-    --accent: #8C2F39;
-    --accent-soft: #A84A52;
-    --rose: #C88E92;
-    /* 흰 글자를 얹는 버튼(표지 모음판 등)에 쓰이므로 4.9:1이 나오는 깊이로 잡았다. */
-    --accent2: #A85C46;
-    --accent2-soft: #C07253;
-    --line: rgba(42, 33, 31, 0.12);
-    --shadow: rgba(42, 33, 31, 0.08);
-    --logo-front: #8C2F39;
-    --logo-back: #C88E92;
-    /* 채운 버튼은 라이트/다크 모두 "진한 버건디(또는 클레이) 바탕 + 밝은 글자"로 통일한다.
-       텍스트 색인 --accent를 그대로 버튼 배경에 쓰면, 다크에서는 그 값이 밝은 로즈라
-       버튼만 쨍하게 떠서 라이트와 인상이 달라졌다. */
-    --btn-fill: #8C2F39;
-    --btn-fill-hover: #A33945;
+    /* 새 이름(디자인 토큰 그대로) */
+    --surface: #FFFFFF;
+    --muted: #55554F;
+    --on-ink: #FFFFFF;
+    --tomato: #F2643F;
+    --cobalt: #2E46D8;
+    --mint: #9ED9BC;
+    --butter: #F6D24A;
+    --danger: #B42318;
+    --radius: 4px;
+    --radius-lg: 6px;
+
+    /* 예전 이름 → 새 값 */
+    --paper: #ECECE6;
+    --paper-soft: #E2E2DA;
+    --paper-raised: var(--surface);
+    --ink: #151515;
+    --ink-soft: var(--muted);
+    /* 바탕(#ECECE6) 대비 4.9:1 — 가장 흐린 글자도 AA를 넘긴다. */
+    --ink-faint: #66665F;
+    --accent: #151515;
+    --accent-soft: #3A3A38;
+    --rose: var(--tomato);
+    --accent2: var(--cobalt);
+    --accent2-soft: #4A5FE0;
+    --line: #D2D2CA;
+    --shadow: rgba(21, 21, 21, 0.10);
+    --logo-front: #151515;
+    --logo-back: var(--tomato);
+    --btn-fill: #151515;
+    --btn-fill-hover: #2E2E2C;
     --btn-fill-ink: #FFFFFF;
-    --btn-alt: #A85C46;
-    --btn-alt-hover: #BE6D54;
-    /* 등급 아이콘 5티어 색. 브랜드 계열 안에서 입문(밝은 클레이) → 전설(가장 깊은 버건디)로
-       점점 진해지게 잡아, 모양뿐 아니라 색으로도 등급이 올라간 게 읽히게 한다. */
-    --lv-bookmark: #A85C46;
-    --lv-books: #A84A52;
-    --lv-ghost: #7A4A52;
-    --lv-owl: #8C3A38;
-    --lv-crown: #6E2733;
+    --btn-alt: var(--cobalt);
+    --btn-alt-hover: #4A5FE0;
+    /* 등급 아이콘 5티어 색 — 책갈피 색에서 골랐다(입문 토마토 → 전설 먹색). */
+    --lv-bookmark: #F2643F;
+    --lv-books: #2E46D8;
+    --lv-ghost: #3E8F6A;
+    --lv-owl: #B8930F;
+    --lv-crown: #151515;
   }
 
   :root[data-theme="dark"] {
-    --rose: #8C4E56;
-    --paper: #17140F;
-    --paper-soft: #241F19;
-    --paper-raised: #211D17;
-    --ink: #EDE7DC;
-    --ink-soft: #B5AA9B;
-    --ink-faint: #8D8274;
-    --accent: #D9848B;
-    --accent-soft: #E8A0A6;
-    --accent2: #D89B84;
-    --accent2-soft: #E8B49F;
-    --line: rgba(237, 231, 220, 0.14);
+    --surface: #232321;
+    --muted: #A9A9A2;
+    --on-ink: #151515;
+    --paper: #151515;
+    --paper-soft: #1E1E1C;
+    --ink: #ECECE6;
+    /* 카드(#232321) 위 4.8:1 */
+    --ink-faint: #8E8E87;
+    --accent: #ECECE6;
+    --accent-soft: #CFCFC8;
+    --accent2-soft: #6E80F0;
+    --line: #3A3A38;
     --shadow: rgba(0, 0, 0, 0.45);
-    --logo-front: #D9848B;
-    --logo-back: #8C4E56;
-    --btn-fill: #8C3A44;
-    --btn-fill-hover: #A34551;
-    --btn-fill-ink: #FBEDED;
-    --btn-alt: #A15942;
-    --btn-alt-hover: #B96A4F;
-    /* 어두운 바탕에서는 같은 순서로 흐린 톤 → 밝은 톤으로 올라간다(라이트의 반대 방향이
-       아니라, 낮은 등급이 눈에 덜 띄고 높은 등급이 도드라진다는 관계를 유지한 것). */
-    --lv-bookmark: #C08268;
-    --lv-books: #CE7F86;
-    --lv-ghost: #C295A0;
-    --lv-owl: #E0918C;
-    --lv-crown: #F0B9BE;
+    --logo-front: #ECECE6;
+    --btn-fill: #ECECE6;
+    --btn-fill-hover: #FFFFFF;
+    --btn-fill-ink: #151515;
+    --btn-alt-hover: #4A5FE0;
+    --lv-ghost: #9ED9BC;
+    --lv-owl: #F6D24A;
+    --lv-crown: #ECECE6;
   }
 
   * { box-sizing: border-box; }
@@ -81,31 +83,16 @@
     font-family: var(--font-body);
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
+    font-synthesis: none;
   }
 
-  /* 글꼴(2026-10-04). 제목·책 제목·로고는 나눔스퀘어라운드(둥근 고딕), 본문·UI는 프리텐다드.
-     예전엔 제목이 고운바탕(명조)·본문이 본고딕이었다(홈 "한 줄"에만 쓰던 손글씨는 뺐다).
-     나눔스퀘어라운드는 구글 폰트에 없어서 /fonts에 직접 올렸고, 용량 때문에 자주 쓰는 한글
-     2,350자(KS X 1001)+영문만 담았다 — 그 밖의 드문 글자는 다음 후보(프리텐다드)로 그려진다. */
-  @font-face {
-    font-family: "NanumSquareRound";
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-    src: url("/fonts/NanumSquareRound-Bold-ks.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: "NanumSquareRound";
-    font-weight: 800;
-    font-style: normal;
-    font-display: swap;
-    src: url("/fonts/NanumSquareRound-ExtraBold-ks.woff2") format("woff2");
-  }
-
+  /* 글꼴(2026-10-20, 리디자인 B안). 제목·로고·숫자는 Black Han Sans(굵기 하나뿐), 본문·UI는
+     IBM Plex Sans KR 400/500/700 — 둘 다 구글 폰트(index.html <head>). 예전 나눔스퀘어라운드
+     (/fonts)·프리텐다드는 뺐다. Black Han Sans는 400 한 벌이라 예전 규칙의 font-weight
+     700/800이 붙으면 브라우저가 가짜 굵기를 덧칠해 뭉개진다 — body의 font-synthesis로 막는다. */
   :root {
-    --font-display: "NanumSquareRound", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    --font-body: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-display: "Black Han Sans", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   }
 
   /* 타이포 스케일 6단계. 예전엔 제목(2rem)과 본문(0.95rem) 사이가 비어 있어서
