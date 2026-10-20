@@ -5659,3 +5659,36 @@
     white-space: pre-line;
     cursor: pointer;
   }
+
+  /* PC 책 상세 정리(2026-10-20): 별점 분포(.detail-summary)는 격자 자리를 정하지 않아서 비어 있는
+     1행(이달의 책 질문 자리)으로 올라가 표지 위에 떠 있었다. 넓은 화면에서는 별점 카드 오른쪽에
+     같은 높이의 카드로 나란히, 그보다 좁은 PC·태블릿에서는 별점 카드 바로 아래에 둔다. */
+  @media (min-width: 641px) {
+    .detail-card .detail-summary { grid-column: 2; grid-row: 4; max-width: 460px; }
+    /* 위 칸들이 모두 줄을 정해 두면, 줄을 안 정한 아래 칸들이 비어 있는 1행으로 끼어든다. */
+    .detail-card .comments { grid-row: 5; }
+    .detail-card .also-books { grid-row: 6; }
+    .detail-card .admin-zone { grid-row: 7; }
+  }
+
+  @media (min-width: 1024px) {
+    /* 표지 | 별점 카드 | 별점 분포. 본문 폭이 870px 남짓이라 오른쪽을 반씩 나눈다. */
+    .panel.detail-card { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
+    .detail-cover { margin-right: 16px; }
+    .detail-card header { grid-column: 2 / -1; }
+    .detail-card .rate-card,
+    .detail-card .detail-summary { grid-row: 3; align-self: stretch; max-width: none; margin: 20px 0 0; }
+    .detail-card .rate-card { grid-column: 2; }
+    .detail-card .detail-summary {
+      grid-column: 3;
+      align-content: start;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+    }
+    /* 요약이 없으면(평가 1개 이하) 별점 카드만 예전처럼. */
+    .panel.detail-card:has(.detail-summary[hidden]) .rate-card { grid-column: 2 / -1; max-width: 460px; }
+    :root[data-theme="dark"] .detail-card .detail-summary { border: 1px solid var(--line); }
+    .detail-card .ds-row { flex-direction: column; gap: 4px; }
+    .detail-card .ds-dist { max-width: none; }
+  }

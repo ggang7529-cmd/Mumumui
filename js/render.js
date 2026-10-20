@@ -1789,10 +1789,10 @@ export function renderDetail() {
   document.getElementById("detailAuthor").textContent = r.author + (genre && genre !== "기타" ? " · " + genre : "");
   renderDetailStats(r);
   renderDetailBom();
-  // 공유 카드는 본문 있는 한 줄이 하나라도 있을 때만.
-  var shareable = state.comments.some(function (c) { return !c.parentId && String(c.text || "").trim(); });
+  // "내 책갈피 저장"은 이 기기로 이 책에 본문 있는 한 줄을 꽂았을 때만.
+  var shareable = !!(state.my && String(state.my.text || "").trim());
   document.getElementById("detailShareBtn").hidden = !shareable;
-  if (shareable) warmShareFonts(r.title + state.comments.map(function (c) { return (c.authorName || "") + (c.text || ""); }).join(""));
+  if (shareable) warmShareFonts(r.title + (state.my.name || "") + state.my.text);
 
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";
