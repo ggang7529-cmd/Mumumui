@@ -236,21 +236,32 @@
 
   .header-me .user-chip-name { min-width: 0; }
 
-  /* 알약으로 감싸 "내 정보"가 아이콘 줄 사이에서 한 덩어리로 보이게 한다(글자만 두면 잘
-     안 보였다). */
-  .header-me .user-chip {
-    padding: 0.2rem 0.65rem 0.2rem 0.3rem;
-    background: var(--paper-raised);
-    border: 1px solid var(--rose);
-    border-radius: 999px;
-    box-shadow: 0 1px 4px var(--shadow);
-  }
+  /* 리디자인 B안: 알약 칩 대신 "등급 숫자가 적힌 작은 토마토 책갈피 + 굵은 닉네임". 등급명은
+     헤더에서 빼고 등급 안내에서만 보인다. 책갈피(.lv-num)는 등급 안내 버튼, 닉네임은 내 기록
+     버튼이라 둘은 여전히 따로 누른다(기능은 그대로). */
+  .header-me .user-chip { gap: 0; }
 
-  .header-me .lv-badge-btn .lv-icon { width: 1.25em; height: 1.25em; }
+  .lv-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 28px;
+    padding-bottom: 5px;
+    background: var(--tomato);
+    color: #151515;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+    font-variant-numeric: tabular-nums;
+  }
 
   .header-me .user-name {
     display: block;
-    font-size: 1.12rem;
+    font-size: 13px;
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -261,15 +272,14 @@
   @media (max-width: 640px) {
     .header-me-level { display: none; }
     .header-me { margin-right: 0; }
-    .header-me .user-name { font-size: 1.04rem; }
-    .header-me .user-chip { padding: 0.15rem 0.55rem 0.15rem 0.2rem; }
+    .header-me .user-name { font-size: 13px; }
     /* 칩이 자리를 쓰는 만큼 아이콘 버튼 폭과 사이 간격을 줄인다. 높이는 44px 그대로라
        누르는 자리는 세로로 넉넉하다. 그래도 아주 좁은 화면(320px)이나 긴 닉네임은 끝이
        말줄임으로 잘린다. */
     .site-header { gap: 0.5rem; }
     .site-header .header-actions { gap: 0; }
     .site-header .icon-btn { width: 38px; }
-    .header-me .lv-badge-btn { width: 26px; }
+    .header-me .lv-badge-btn { width: 30px; }
   }
 
   /* 헤더의 아이콘 버튼(돋보기·해/달·알림 종). 손가락 기준 44px. */
@@ -289,8 +299,8 @@
     transition: background 0.15s ease, color 0.15s ease;
   }
 
-  /* 헤더 줄 전체(로고·칩·아이콘)를 한 번 10% 키웠다 — 돋보기가 잘 안 보인다는 말에. */
-  .icon-btn svg { width: 24px; height: 24px; stroke-width: 2; }
+  /* 22px 선 아이콘(선 굵기 2) — 리디자인 B안. */
+  .icon-btn svg { width: 22px; height: 22px; stroke-width: 2; }
   .icon-btn:hover { background: var(--paper-soft); color: var(--ink); }
 
   .brand {
@@ -409,12 +419,11 @@
     width: 100%;
     max-width: 480px;
     margin: 1.4rem 0 0;
-    padding: 0.95rem 1rem;
-    border-radius: 999px;
-    font-size: 1.05rem;
+    min-height: 52px;
+    padding: 0 22px;
+    border-radius: var(--radius);
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.01em;
-    box-shadow: 0 6px 16px rgba(140, 47, 57, 0.18);
   }
 
   /* 큰 버튼 아래 바로가기 셋(추천 · 한 컷 · 내 기록). 처음엔 작은 글자 링크였는데 "한 줄
@@ -433,31 +442,44 @@
   /* #authBox는 "내 기록" 타일을 담는 칸일 뿐이라 상자를 만들지 않는다. */
   .intro-links .auth-box { display: contents; }
 
+  /* 리디자인 B안: 색 블록 타일 + 왼쪽 위 펀칭 구멍. 추천 = 코발트(흰 글자), 한 컷 = 토마토,
+     내 책장 = 민트(둘 다 먹색 글자 — 토마토·민트 위 흰 글자는 대비가 안 나온다). 색은 다크에서도
+     그대로라 글자색을 고정값으로 둔다. */
   .quick-tile {
+    position: relative;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
+    align-items: flex-end;
     min-width: 0;
-    min-height: 3.2rem;
-    padding: 0.75rem 0.4rem;
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 2px 8px var(--shadow);
-    color: var(--ink);
+    min-height: 84px;
+    padding: 30px 10px 10px;
+    background: var(--mint);
+    border: 0;
+    border-radius: var(--radius);
+    color: #151515;
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 14px;
     font-weight: 700;
-    line-height: 1.25;
-    text-align: center;
+    line-height: 1.3;
+    text-align: left;
     word-break: keep-all;
     cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: transform 0.15s ease;
   }
 
-  .quick-tile:hover { border-color: var(--rose); transform: translateY(-1px); }
+  .quick-tile::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--paper);
+  }
+
+  #recommendBtn.quick-tile { background: var(--cobalt); color: #FFFFFF; }
+  #collageBtn.quick-tile { background: var(--tomato); }
+  .quick-tile:hover { transform: translateY(-2px); }
 
   /* 휴대폰에서만 줄을 바꾸는 <br> */
   .br-m { display: none; }
@@ -469,19 +491,25 @@
   }
 
   /* 글자처럼 보이는 링크 버튼. */
+  /* ③ 글자 링크(리디자인 B안): 밑줄 글자, 누르는 높이는 44px. */
   .text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     background: none;
     border: none;
-    padding: 0.3rem 0;
-    color: var(--ink-soft);
+    padding: 0;
+    color: var(--muted);
     font-family: inherit;
-    font-size: var(--t-meta);
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 400;
+    text-decoration: underline;
+    text-underline-offset: 4px;
     cursor: pointer;
   }
 
   .text-link:hover,
-  .text-link:focus-visible { color: var(--accent); }
+  .text-link:focus-visible { color: var(--ink); }
 
   /* 바로가기 버튼 바로 밑: 등급 안내 · 의견 보내기. 버튼 줄과 같은 폭 안에서 가운데. */
   .home-footer-links {
@@ -495,8 +523,8 @@
     font-size: var(--t-meta);
   }
 
-  .home-footer-links .text-link { color: var(--ink-faint); }
-  .home-footer-links .text-link:hover { color: var(--accent); }
+  .home-footer-links .text-link { color: var(--muted); }
+  .home-footer-links .text-link:hover { color: var(--ink); }
 
   @media (max-width: 640px) {
     .intro-cta { max-width: none; }
@@ -519,11 +547,11 @@
     }
     .btn-primary.intro-cta {
       margin-top: 1.6rem;
-      padding: 1rem;
-      font-size: 1.05rem;
+      min-height: 52px;
+      padding: 0 22px;
+      font-size: 16px;
       font-weight: 700;
     }
-    .quick-tile { min-height: 3.4rem; font-size: 0.95rem; }
   }
 
   /* 헤더 돋보기 "책 찾기" 시트 */
@@ -555,15 +583,18 @@
 
   .site-search-empty p { margin: 0; }
 
+  /* ① 기본 버튼(리디자인 B안): 먹색 바탕 + 흰 글자 굵게, 높이 44(큰 자리 52), 모서리 4. */
   .btn-primary {
     flex: none;
+    min-height: 44px;
     background: var(--btn-fill);
     color: var(--btn-fill-ink);
     border: none;
-    border-radius: 3px;
-    padding: 0.65rem 1.1rem;
+    border-radius: var(--radius);
+    padding: 0 18px;
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease, transform 0.15s ease;
   }
@@ -574,10 +605,11 @@
 
   .btn-random {
     flex: none;
+    min-height: 44px;
     background: var(--btn-alt);
-    color: var(--btn-fill-ink);
+    color: #FFFFFF;
     border: none;
-    border-radius: 3px;
+    border-radius: var(--radius);
     padding: 0.65rem 1.1rem;
     font-family: inherit;
     font-size: 0.95rem;
@@ -676,22 +708,16 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 44px;
     padding: 0;
     border: none;
-    border-radius: 999px;
     background: none;
     color: inherit;
     cursor: pointer;
   }
 
   .lv-badge-btn .lv-icon { margin-right: 0; }
-
-  .lv-badge-btn:hover,
-  .lv-badge-btn:focus-visible {
-    background: var(--paper-soft);
-  }
 
   .user-avatar {
     width: 28px;
@@ -833,41 +859,58 @@
   .chip-row::-webkit-scrollbar { display: none; }
   .chip-row + .chip-row { margin-top: 0.5rem; }
 
-  .sort-tab,
-  .genre-chip {
+  /* 정렬 = 밑줄 탭(리디자인 B안). 고른 것 = 굵게 + 3px 토마토 밑줄, 줄 아래 1px 선. */
+  #sortTabs {
+    gap: 1.1rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+  }
+
+  .sort-tab {
     flex: none;
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    color: var(--ink-soft);
-    border-radius: 999px;
-    padding: 0.4rem 0.85rem;
+    min-height: 44px;
+    margin-bottom: -1px;
+    padding: 0 2px;
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: 14px;
     cursor: pointer;
     white-space: nowrap;
   }
 
-  .sort-tab:hover,
-  .genre-chip:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .sort-tab:hover { color: var(--ink); }
+  .sort-tab.active { color: var(--ink); font-weight: 700; border-bottom-color: var(--tomato); }
 
-  .sort-tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--btn-fill-ink);
+  /* 분류 = 알약 칩. 1.5px 먹색 테두리, 고른 것 = 먹색 바탕 + 흰 글자. */
+  .genre-chip {
+    flex: none;
+    min-height: 36px;
+    padding: 0 14px;
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    border-radius: 18px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
   }
 
-  /* 분류 칩은 정렬과 구분되게 고른 것도 채우지 않고 테두리·글자만 버건디로. 정렬은
-     늘 하나가 골라져 있는 "방식"이고, 분류는 거르는 "조건"이라 무게를 달리 둔다. */
+  .genre-chip:hover { background: var(--paper-soft); }
+
   .genre-chip.active {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ink);
+    color: var(--on-ink);
     font-weight: 700;
   }
 
   .genre-chip-count {
     margin-left: 0.3rem;
-    font-size: 0.72rem;
-    color: var(--ink-faint);
+    font-size: 12px;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
 
@@ -1481,15 +1524,16 @@
   /* 등록은 "찾는 책이 없을 때"의 다음 단계라 버튼 대신 글자 링크로 둔다. */
   .recommend-empty-alt {
     display: block;
-    margin: 0.85rem auto 0;
+    min-height: 44px;
+    margin: 0.4rem auto 0;
     background: none;
     border: none;
-    padding: 0.2rem;
-    color: var(--ink-faint);
+    padding: 0 0.4rem;
+    color: var(--muted);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 14px;
     text-decoration: underline;
-    text-underline-offset: 3px;
+    text-underline-offset: 4px;
     cursor: pointer;
   }
 
@@ -1797,21 +1841,24 @@
   }
 
   /* 글자처럼 보이는 작은 버튼("다시 검색", 닉네임 "변경"). */
+  /* ③ 글자 링크와 같은 모양. 문장 안에 끼는 자리("○○ 님으로 남겨요 · 변경")라 높이는
+     글줄을 벌리지 않게 두고, 위아래 여백으로 누르는 자리만 넓힌다. */
   .link-btn {
     flex: none;
     background: none;
     border: none;
-    padding: 0.2rem 0.1rem;
-    color: var(--ink-faint);
+    padding: 0.7rem 0.15rem;
+    margin: -0.7rem 0;
+    color: var(--muted);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: 14px;
     text-decoration: underline;
-    text-underline-offset: 3px;
+    text-underline-offset: 4px;
     cursor: pointer;
   }
 
   .link-btn:hover,
-  .link-btn:focus-visible { color: var(--accent); }
+  .link-btn:focus-visible { color: var(--ink); }
 
   .write-stars .star-picker button { font-size: 2rem; }
 
@@ -1916,17 +1963,21 @@
     margin-top: 1.5rem;
   }
 
+  /* ② 보조 버튼(리디자인 B안): 투명 바탕 + 2px 먹색 테두리, 굵게, 높이 44. */
   .btn-ghost {
+    min-height: 44px;
     background: none;
-    border: 1px solid var(--line);
-    color: var(--ink-soft);
-    border-radius: 3px;
-    padding: 0.6rem 1rem;
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    border-radius: var(--radius);
+    padding: 0 18px;
     font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
   }
 
-  .btn-ghost:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .btn-ghost:hover { background: var(--paper-soft); }
 
   .btn-accent-outline {
     background: none;
@@ -2132,6 +2183,7 @@
     gap: 0.25rem;
   }
 
+  /* 별(리디자인 B안): 누르는 자리 48px, 별 34px. 빈 별 = 먹색 선, 채운 별 = 먹색. */
   .rate-stars button {
     display: grid;
     place-items: center;
@@ -2141,19 +2193,20 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--star-off);
+    color: var(--ink);
     -webkit-tap-highlight-color: transparent;
   }
 
   .rate-stars .icon {
-    width: 38px;
-    height: 38px;
-    fill: currentColor;
-    stroke: none;
+    width: 34px;
+    height: 34px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
     transition: color 0.12s ease, transform 0.15s ease;
   }
 
-  .rate-stars button.is-on { color: var(--accent); }
+  .rate-stars button.is-on .icon { fill: currentColor; }
   .rate-stars button.is-pop .icon { animation: ratePop 0.32s ease-out both; }
   .rate-stars button:active .icon { transform: scale(0.9); }
 
@@ -2170,22 +2223,24 @@
     gap: 0.4rem;
     width: 100%;
     margin-top: 0.9rem;
-    padding: 0.85rem 1rem;
+    min-height: 44px;
+    padding: 0 14px;
     background: transparent;
-    border: 1.5px solid var(--accent);
-    border-radius: 12px;
-    color: var(--accent);
+    border: 2px solid var(--ink);
+    border-radius: 22px;
+    color: var(--ink);
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
 
+  /* 켜짐 = 먹색 바탕 + 토마토 책갈피 아이콘(리디자인 B안). */
   .want-btn[hidden] { display: none; }
   .want-btn .want-icon { width: 20px; height: 20px; }
-  .want-btn.is-on { background: var(--accent); color: var(--paper-raised); }
-  .want-btn.is-on .want-icon { fill: currentColor; }
+  .want-btn.is-on { background: var(--ink); color: var(--on-ink); }
+  .want-btn.is-on .want-icon { color: var(--tomato); fill: var(--tomato); }
 
   .meta-date {
     color: var(--ink-faint);
@@ -2207,19 +2262,22 @@
     font-size: 1rem;
   }
 
+  /* ④ 관리·위험(리디자인 B안): 회색 테두리. 진짜 지우는 버튼만 .is-delete로 빨강. */
   .btn-ghost-danger {
+    min-height: 44px;
     background: none;
-    border: 1px solid var(--line);
-    color: var(--ink-faint);
-    border-radius: 3px;
-    padding: 0.35rem 0.7rem;
+    border: 1px solid #A9A9A2;
+    color: var(--ink);
+    border-radius: var(--radius);
+    padding: 0 16px;
     font-family: inherit;
-    font-size: 0.75rem;
+    font-size: 13px;
     cursor: pointer;
     margin-top: 2rem;
   }
 
-  .btn-ghost-danger:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost-danger:hover { background: var(--paper-soft); }
+  .btn-ghost-danger.is-delete { border-color: var(--danger); color: var(--danger); }
 
   .comments {
     margin-top: 2.25rem;
@@ -2330,39 +2388,41 @@
     align-items: center;
     gap: 0.3rem;
     background: none;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.15rem 0.6rem;
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.15rem 0.5rem;
     font-family: inherit;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
+    font-size: 13px;
+    color: var(--muted);
     cursor: pointer;
     font-variant-numeric: tabular-nums;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease;
   }
 
-  #commentList .c-like:hover { border-color: var(--accent); color: var(--accent); }
+  #commentList .c-like:hover { color: var(--ink); }
 
-  #commentList .c-like.liked {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
+  /* 눌린 좋아요 = 토마토로 채운 하트(리디자인 B안). */
+  #commentList .c-like.liked { color: var(--ink); }
+  #commentList .c-like.liked .like-icon { color: var(--tomato); fill: var(--tomato); }
 
   #commentList .c-reply-btn {
     order: 5;
     flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
     background: none;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.15rem 0.6rem;
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.15rem 0.5rem;
     font-family: inherit;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
+    font-size: 13px;
+    color: var(--muted);
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease;
   }
 
-  #commentList .c-reply-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #commentList .c-reply-btn:hover { color: var(--ink); }
 
   #commentList .c-date {
     order: 6;
@@ -2679,7 +2739,8 @@
     #commentList .c-like,
     #commentList .c-reply-btn,
     #commentList .c-reply-like {
-      padding: 0.35rem 0.75rem;
+      min-height: 44px;
+      padding: 0 0.6rem;
     }
 
     #commentList .c-like {
@@ -2890,15 +2951,15 @@
   .today-dots {
     display: flex;
     justify-content: center;
-    gap: 0.45rem;
-    margin-top: 0.9rem;
+    gap: 0;
+    margin-top: 0.5rem;
   }
 
-  /* 점 자체는 작게, 누르는 자리는 넉넉하게(버튼 22px 안에 6px 점). 지금 문장은 길쭉한 점. */
+  /* 점 자체는 작게, 누르는 자리는 넉넉하게(32×44 안에 6px 점). 지금 문장은 18×6 먹색 막대. */
   .today-dot {
     position: relative;
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 44px;
     padding: 0;
     border: none;
     background: none;
@@ -2912,17 +2973,15 @@
     top: 50%;
     width: 6px;
     height: 6px;
-    border-radius: 999px;
-    background: var(--ink-faint);
-    opacity: 0.35;
+    border-radius: 3px;
+    background: #A9A9A2;
     transform: translate(-50%, -50%);
-    transition: width 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    transition: width 0.2s ease, background 0.2s ease;
   }
 
   .today-dot.is-active::after {
-    width: 16px;
-    background: var(--accent);
-    opacity: 1;
+    width: 18px;
+    background: var(--ink);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -3800,8 +3859,8 @@
 
     /* 손가락으로 누를 자리를 확보한다 — PC에서는 26px이면 충분하지만 모바일에서는 좁다. */
     .lv-badge-btn {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 44px;
     }
   }
 
@@ -4054,27 +4113,33 @@
 
   .collage-chip-x { flex: none; font-size: 1rem; line-height: 1; }
 
+  /* 붙은 세그먼트(리디자인 B안): 2px 먹색 테두리 상자, 고른 칸 = 먹색 바탕. */
   .collage-seg {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    overflow: hidden;
   }
 
   .collage-seg button {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+    flex: 1;
+    min-height: 40px;
+    padding: 0 0.6rem;
+    border: 0;
+    border-left: 2px solid var(--ink);
+    border-radius: 0;
     background: none;
-    color: var(--ink-soft);
+    color: var(--ink);
     font-family: inherit;
-    font-size: var(--t-meta);
+    font-size: 13px;
     cursor: pointer;
   }
 
+  .collage-seg button:first-child { border-left: 0; }
+
   .collage-seg button[aria-pressed="true"] {
-    background: var(--btn-fill);
-    border-color: var(--btn-fill);
-    color: var(--btn-fill-ink);
+    background: var(--ink);
+    color: var(--on-ink);
     font-weight: 700;
   }
 
@@ -4193,9 +4258,10 @@
   .btn-primary.line-submit {
     width: 100%;
     margin-top: 0.3rem;
-    padding: 0.95rem 1rem;
-    border-radius: 12px;
-    font-size: 1.05rem;
+    min-height: 52px;
+    padding: 0 1rem;
+    border-radius: var(--radius);
+    font-size: 16px;
     font-weight: 700;
   }
 
@@ -4258,7 +4324,7 @@
   .nick-notice p,
   .my-nick-prompt p { flex: 1 1 14rem; margin: 0; font-size: 0.92rem; color: var(--ink); text-align: left; }
   .btn-primary.nick-notice-btn,
-  .btn-primary.my-nick-prompt-btn { flex: none; padding: 0.55rem 1rem; border-radius: 10px; font-size: 0.9rem; }
+  .btn-primary.my-nick-prompt-btn { flex: none; min-height: 44px; padding: 0 1rem; border-radius: var(--radius); font-size: 14px; }
 
   .nick-notice-close,
   .my-nick-prompt-close {
@@ -4353,7 +4419,7 @@
   .bom-line-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .bom-line-who { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--ink-faint); }
 
-  .btn-primary.bom-cta { width: 100%; margin-top: 0.9rem; padding: 0.8rem 1rem; border-radius: 12px; font-size: 1rem; font-weight: 700; }
+  .btn-primary.bom-cta { width: 100%; margin-top: 0.9rem; min-height: 52px; padding: 0 1rem; border-radius: var(--radius); font-size: 16px; font-weight: 700; }
   .bom-past-link { display: block; margin: 0.6rem auto 0; font-size: 0.82rem; }
   .bom-past-link[hidden] { display: none; }
 
@@ -4525,24 +4591,26 @@
   /* 탭: 고른 쪽만 글자가 진하고 아래 버건디 줄. */
   .my-tabs {
     display: flex;
-    gap: 1.4rem;
+    gap: 1.1rem;
     margin: 1.2rem 0 1rem;
     border-bottom: 1px solid var(--line);
   }
 
+  /* 정렬 탭(.sort-tab)과 같은 모양: 고른 것 = 굵게 + 3px 토마토 밑줄. */
   .my-tab {
     position: relative;
-    padding: 0.6rem 0.1rem;
+    min-height: 44px;
+    padding: 0 2px;
     background: none;
     border: none;
-    color: var(--ink-faint);
+    color: var(--muted);
     font-family: inherit;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
     cursor: pointer;
   }
 
-  .my-tab.is-on { color: var(--ink); }
+  .my-tab.is-on { color: var(--ink); font-weight: 700; }
 
   .my-tab.is-on::after {
     content: "";
@@ -4550,8 +4618,8 @@
     left: 0;
     right: 0;
     bottom: -1px;
-    height: 2px;
-    background: var(--accent);
+    height: 3px;
+    background: var(--tomato);
   }
 
   .my-tab-count { margin-left: 0.15rem; font-variant-numeric: tabular-nums; }

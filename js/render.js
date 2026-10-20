@@ -453,7 +453,12 @@ function renderHeaderMe() {
   badge.type = "button";
   badge.className = "lv-badge-btn";
   badge.setAttribute("aria-label", "등급 안내 보기 (지금 " + lvl.level + "등급 " + lvl.name + ")");
-  badge.appendChild(buildIcon(lvl.icon, "lv-icon lv-icon--" + lvl.icon));
+  // 리디자인 B안: 등급 숫자가 적힌 작은 토마토 책갈피. 등급명은 헤더에서 빼고 등급 안내에서만.
+  var num = document.createElement("span");
+  num.className = "lv-num";
+  num.setAttribute("aria-hidden", "true");
+  num.textContent = String(lvl.level);
+  badge.appendChild(num);
   badge.addEventListener("click", function () { openLevelGuide("badge"); });
   chip.appendChild(badge);
 
@@ -464,12 +469,7 @@ function renderHeaderMe() {
   nameBtn.addEventListener("click", function () { openProfile(nickname); });
   var name = document.createElement("span");
   name.className = "user-name";
-  name.appendChild(document.createTextNode(lvl.level + " "));
-  var lvName = document.createElement("span");
-  lvName.className = "header-me-level";
-  lvName.textContent = "[" + lvl.name + "] ";
-  name.appendChild(lvName);
-  name.appendChild(document.createTextNode(nickname));
+  name.textContent = nickname;
   nameBtn.appendChild(name);
   chip.appendChild(nameBtn);
   box.appendChild(chip);
@@ -1958,7 +1958,8 @@ export function renderDetail() {
       var replyBtn = document.createElement("button");
       replyBtn.type = "button";
       replyBtn.className = "c-reply-btn";
-      replyBtn.textContent = "답글";
+      replyBtn.appendChild(buildIcon("reply", "reply-icon"));
+      replyBtn.appendChild(document.createTextNode("답글"));
       item.appendChild(replyBtn);
 
       var repliesList = document.createElement("ul");
@@ -2447,7 +2448,7 @@ export function renderBomPast() {
     if (admin) {
       var del = document.createElement("button");
       del.type = "button";
-      del.className = "btn-ghost-danger bom-past-admin";
+      del.className = "btn-ghost-danger is-delete bom-past-admin";
       del.textContent = "지우기";
       del.addEventListener("click", function (e) { e.stopPropagation(); deleteBookOfMonth(item); });
       body.appendChild(del);
