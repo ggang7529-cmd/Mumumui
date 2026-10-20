@@ -1588,13 +1588,14 @@ export function renderPinNotice() {
   var claim = pinNoticeStatus && pinNoticeStatus.status === "reserved" && pinNoticeStatus.claimable;
   if (claim) {
     document.getElementById("pinNoticeText").textContent =
-      "‘" + pinNoticeStatus.name + "’ 닉네임을 지키려면 4자리 비밀번호를 정해주세요";
-    document.getElementById("pinNoticeBtn").textContent = "비밀번호 정하기";
+      "‘" + pinNoticeStatus.name + "’ 닉네임을 지키려면 비밀번호를 정해주세요";
+    document.getElementById("pinNoticeBtn").textContent = "정하기";
     box.hidden = false;
     return;
   }
-  document.getElementById("pinNoticeText").textContent = "닉네임 보호 기능이 생겼어요. 내 닉네임에 4자리 비밀번호를 걸어두세요.";
-  document.getElementById("pinNoticeBtn").textContent = "비밀번호 걸기";
+  // 리디자인 B안: 한 줄 띠에 맞게 짧게.
+  document.getElementById("pinNoticeText").textContent = "닉네임에 4자리 비밀번호를 걸어두세요";
+  document.getElementById("pinNoticeBtn").textContent = "걸기";
   box.hidden = Date.now() >= PIN_NOTICE_UNTIL;
 }
 

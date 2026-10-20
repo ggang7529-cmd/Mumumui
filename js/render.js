@@ -886,18 +886,14 @@ function buildBookCard(r) {
     titleEl.textContent = r.title;
     info.appendChild(titleEl);
 
+    // 리디자인 B안: 제목 → 대표 한 줄 → "★4.0 · 책갈피 2" 순서.
     var meta = document.createElement("div");
     meta.className = "b-meta";
     if (rating) {
-      meta.appendChild(buildStarIcon(true));
-      var avg = document.createElement("strong");
-      avg.textContent = rating.avg.toFixed(1);
-      meta.appendChild(avg);
-      meta.appendChild(document.createTextNode("· 한 줄 " + (r.commentCount || rating.count)));
+      meta.textContent = "★" + rating.avg.toFixed(1) + " · 책갈피 " + (r.commentCount || 0);
     } else {
-      meta.textContent = "아직 한 줄이 없어요";
+      meta.textContent = "아직 책갈피가 없어요";
     }
-    info.appendChild(meta);
 
     // 대표 한 줄: 좋아요 많은 한줄평(목록 API의 top_text) > 첫 한줄평 > 첫 한줄평의 태그.
     // 한줄평이 다 지워진 책(rating 없음)은 books.text가 지워진 첫 한줄평이라 쓰지 않는다.
@@ -909,6 +905,7 @@ function buildBookCard(r) {
       line.textContent = lineText ? "“" + lineText + "”" : tag.emoji + " " + tag.label;
       info.appendChild(line);
     }
+    info.appendChild(meta);
     card.appendChild(info);
 
     card.addEventListener("click", function (id) {
@@ -953,10 +950,10 @@ export function renderLibrary() {
   if (!state.booksLoaded) {
     dom.countLabel.textContent = "";
   } else if (filtered) {
-    dom.countLabel.textContent = state.categoryFilter + " 칸에 " + visible.length + "권이 있어요";
+    dom.countLabel.textContent = state.categoryFilter + " " + visible.length + "권";
   } else {
     dom.countLabel.textContent = state.books.length
-      ? "지금 " + state.books.length + "권이 있어요"
+      ? "지금 " + state.books.length + "권"
       : "아직 비어 있어요";
   }
 
@@ -1447,6 +1444,8 @@ export function renderFeatured() {
   box.innerHTML = "";
   section.hidden = reviews.length === 0;
   if (!reviews.length) return;
+
+  renderHeroBookmarks(reviews);
 
   var track = document.createElement("div");
   track.className = "today-track";
@@ -2349,6 +2348,34 @@ export function formatAdminNickRow(r, onAction) {
   return row;
 }
 
+// ── 홈 첫 화면 책갈피 세 장 ─────────────────────────────────────────────────────
+//
+// 오늘의 한 줄 후보(functions/api/featured.js)에서 본문이 있는 것 셋을 세로 책갈피로
+// 부채꼴처럼 놓는다(리디자인 B안). 색은 자리마다 코발트·토마토·민트로 고정 — 시안의
+// 구성 그대로다. 셋이 안 되면 장식째 숨긴다(한두 장만 덩그러니 있으면 어색하다).
+var HERO_COLORS = ["cobalt", "tomato", "mint"];
+function renderHeroBookmarks(reviews) {
+  var box = document.getElementById("heroBookmarks");
+  if (!box) return;
+  var picks = (reviews || []).filter(function (r) { return String(r.text || "").trim(); }).slice(0, 3);
+  box.innerHTML = "";
+  box.hidden = picks.length < 3;
+  if (box.hidden) return;
+  picks.forEach(function (r, i) {
+    var bm = document.createElement("div");
+    bm.className = "hero-bm hero-bm-" + (i + 1) + " bm-" + HERO_COLORS[i];
+    var text = document.createElement("div");
+    text.className = "hero-bm-text";
+    text.textContent = "“" + r.text + "”";
+    bm.appendChild(text);
+    var book = document.createElement("div");
+    book.className = "hero-bm-book";
+    book.textContent = r.title;
+    bm.appendChild(book);
+    box.appendChild(bm);
+  });
+}
+
 // ── 이달의 책 ──────────────────────────────────────────────────────────────────
 
 function bomCoverInto(el, item) {
@@ -2385,9 +2412,20 @@ export function renderBookOfMonth() {
   if (!live) return;
 
   document.getElementById("bomLabel").textContent = b.label;
-  bomCoverInto(document.getElementById("bomCover"), b);
+  var $bomCover = document.getElementById("bomCover");
+  bomCoverInto($bomCover, b);
+  // 표지 위 책갈피 탭 두 장(리디자인 B안).
+  ["tomato", "butter"].forEach(function (c, i) {
+    var tab = document.createElement("span");
+    tab.className = "bm-tab bm-tab--" + (i + 1) + " bm-" + c;
+    tab.setAttribute("aria-hidden", "true");
+    $bomCover.appendChild(tab);
+  });
   document.getElementById("bomTitle").textContent = b.title;
-  document.getElementById("bomAuthor").textContent = b.author;
+  // "저자 · 책갈피 N장" — N은 이 책의 한 줄 수(책장 목록이 아직 없으면 저자만).
+  var bomBook = findBook(b.bookId);
+  document.getElementById("bomAuthor").textContent = b.author +
+    (bomBook && bomBook.commentCount ? " · 책갈피 " + bomBook.commentCount + "장" : "");
   document.getElementById("bomQuestion").textContent = b.question;
   var $talkers = document.getElementById("bomTalkers");
   $talkers.hidden = b.talkers < 3;

@@ -16,7 +16,7 @@ var EMPTY_SHELF = '<div class="shelf" id="shelfGrid"></div>';
 function renderShelfHtml(books) {
   var cards = books.map(function (b) {
     var rating = b.rating_count > 0 ? b.rating_sum / b.rating_count : null;
-    var metaText = rating !== null ? "★ " + rating.toFixed(1) + " · 한 줄 " + b.comment_count : "아직 한 줄이 없어요";
+    var metaText = rating !== null ? "★" + rating.toFixed(1) + " · 책갈피 " + b.comment_count : "아직 책갈피가 없어요";
     var title = escapeHtml(b.title);
     var cover = b.cover
       ? '<img class="b-cover-img" src="' + escapeHtml(b.cover) + '" alt="' + title + ' 표지" loading="lazy">'

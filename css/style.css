@@ -385,18 +385,20 @@
   }
 
 
+  /* 리디자인 B안: Black Han Sans 36px(넓은 화면 44px), 휴대폰 세 줄. */
   .intro-headline {
     margin: 0;
     color: var(--ink);
     font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--t-display);
-    line-height: 1.25;
-    letter-spacing: -0.01em;
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.18;
+    letter-spacing: -1px;
+    word-break: keep-all;
   }
 
   .intro-subtext {
-    margin: 0.5rem 0 0;
+    margin: 12px 0 0;
     color: var(--ink-soft);
     font-size: var(--t-body);
     font-weight: 400;
@@ -404,9 +406,9 @@
 
   /* "한 줄 남기기" 바로 아래 작은 회색 한 줄. 버튼과 한 묶음으로 보이게 바짝 붙인다. */
   .intro-cta-note {
-    margin: 0.45rem 0 0;
-    color: var(--ink-faint);
-    font-size: 0.8rem;
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 12px;
     text-align: center;
   }
 
@@ -418,11 +420,11 @@
     display: block;
     width: 100%;
     max-width: 480px;
-    margin: 1.4rem 0 0;
-    min-height: 52px;
+    margin: 0;
+    min-height: 54px;
     padding: 0 22px;
     border-radius: var(--radius);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
   }
 
@@ -434,8 +436,8 @@
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    gap: 0.6rem;
-    margin-top: 0.9rem;
+    gap: 8px;
+    margin-top: 26px;
     max-width: 480px;
   }
 
@@ -486,8 +488,7 @@
 
   @media (max-width: 640px) {
     .br-m { display: inline; }
-    .intro-links,
-    .home-footer-links { max-width: none; }
+    .intro-links { max-width: none; }
   }
 
   /* 글자처럼 보이는 링크 버튼. */
@@ -511,17 +512,20 @@
   .text-link:hover,
   .text-link:focus-visible { color: var(--ink); }
 
-  /* 바로가기 버튼 바로 밑: 등급 안내 · 의견 보내기. 버튼 줄과 같은 폭 안에서 가운데. */
+  /* 홈 맨 아래 작은 링크들(등급 안내·의견 보내기·지난 이달의 책·닉네임 관리). 위에 1px 선. */
   .home-footer-links {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
-    max-width: 480px;
-    margin-top: 0.55rem;
-    color: var(--ink-faint);
-    font-size: var(--t-meta);
+    gap: 0 18px;
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
   }
+
+  .home-footer-links [hidden] { display: none; }
 
   .home-footer-links .text-link { color: var(--muted); }
   .home-footer-links .text-link:hover { color: var(--ink); }
@@ -537,22 +541,88 @@
      나오므로 두 클래스로 이겨야 한다. */
   @media (min-width: 641px) {
     .header-intro { margin-top: 2.4rem; text-align: center; }
-    .intro-subtext { margin-top: 0.6rem; }
+    .intro-headline { font-size: 44px; }
     .btn-primary.intro-cta,
-    .intro-links,
-    .home-footer-links {
+    .intro-links {
       max-width: 560px;
       margin-left: auto;
       margin-right: auto;
     }
     .btn-primary.intro-cta {
-      margin-top: 1.6rem;
-      min-height: 52px;
+      min-height: 54px;
       padding: 0 22px;
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
     }
   }
+
+  /* ── 홈 첫 화면의 세로 책갈피 세 장(리디자인 B안) ─────────────────────────────────
+     실제 한 줄 세 장을 부채꼴로(-7° / 2° / 8°). 위쪽 가운데 펀칭 구멍. 코발트 위는 흰 글자,
+     토마토·민트 위는 먹색. 휴대폰 390px 기준 시안 수치 그대로 가운데에 놓는다. */
+  .hero-bookmarks {
+    position: relative;
+    height: 290px;
+    max-width: 390px;
+    margin: 0 auto;
+  }
+
+  .hero-bookmarks[hidden] { display: none; }
+
+  .hero-bm {
+    position: absolute;
+    width: 100px;
+    padding: 40px 12px 12px;
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--bm);
+    color: var(--bm-ink);
+    box-shadow: 0 10px 22px rgba(21, 21, 21, 0.16);
+    text-align: left;
+    overflow: hidden;
+  }
+
+  .hero-bm::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 13px;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--paper);
+  }
+
+  .hero-bm-1 { left: calc(50% - 165px); top: 34px; height: 230px; transform: rotate(-7deg); }
+  .hero-bm-2 { left: calc(50% - 50px); top: 8px; height: 250px; transform: rotate(2deg); }
+  .hero-bm-3 { left: calc(50% + 65px); top: 40px; height: 225px; transform: rotate(8deg); }
+
+  .hero-bm-text {
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 700;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-bm-book {
+    font-size: 10px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 장식이 없을 때(한 줄이 아직 없음) 버튼이 제목에 붙지 않게. */
+  .hero-bookmarks[hidden] + .intro-cta { margin-top: 1.4rem; }
 
   /* 헤더 돋보기 "책 찾기" 시트 */
   .search-sheet-panel { max-width: 520px; max-height: min(80vh, 680px); }
@@ -843,7 +913,15 @@
   /* 모두의 책장: 제목 + 정렬 칩 + 분류 칩. 예전엔 헤더 아래 붙어 따라다니던 도구 막대였는데,
      홈 순서(인트로 → 오늘의 한 줄 → 책장)에 맞춰 책 그리드 바로 위로 내려왔다. */
   .library-toolbar {
-    margin: 2.6rem 0 1.1rem;
+    margin: 28px 0 16px;
+  }
+
+  .home-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 12px;
   }
 
   /* 칩 줄. 넘치면 옆으로 밀어 보게 한다(줄바꿈하면 분류가 많을 때 두세 줄을 먹는다). */
@@ -919,7 +997,8 @@
   .shelf {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1.1rem;
+    gap: 30px 16px;
+    padding-top: 16px;
   }
 
   /* 카드 표지 위 오버레이 텍스트 전용 고정 밝은 톤. 사이트 전체 라이트/다크 테마
@@ -934,7 +1013,7 @@
   .book-card {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 7px;
     min-width: 0;
     color: var(--ink);
     text-decoration: none;
@@ -1027,14 +1106,14 @@
   .b-info {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 7px;
     min-width: 0;
   }
 
   .book-card .b-title {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-weight: 700;
-    font-size: 0.98rem;
+    font-size: 14px;
     line-height: 1.35;
     overflow: hidden;
     display: -webkit-box;
@@ -1046,8 +1125,8 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
+    font-size: 12px;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
@@ -1058,8 +1137,8 @@
 
   /* 대표 한 줄(좋아요 많은 한줄평). 두 줄까지만. */
   .b-line {
-    margin: 0.15rem 0 0;
-    font-size: 0.82rem;
+    margin: 0;
+    font-size: 13px;
     line-height: 1.5;
     color: var(--ink-soft);
     overflow: hidden;
@@ -1117,8 +1196,8 @@
     }
 
     .shelf {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px 16px;
     }
   }
 
@@ -2888,30 +2967,35 @@
   }
 
   /* 홈 섹션 제목("모두의 책장 N권"). */
+  /* 홈 섹션 제목(오늘의 한 줄 · 모두의 책장) — Black Han Sans 24px. */
   .home-section-title {
-    margin: 0 0 0.8rem;
+    margin: 0;
     font-family: var(--font-display);
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 400;
     color: var(--ink);
   }
 
   .shelf-count {
-    margin-left: 0.35rem;
     font-family: var(--font-body);
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--accent);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
   }
 
   /* 오늘의 한 줄: 카드·박스 없이 얇은 구분선 아래 가운데 정렬로 한 문장만. 바로 위가 버튼
      줄(한 줄 남기기·바로가기)이라, 테두리 상자를 또 두면 버튼과 무게를 다툰다. 글자만으로
      "읽을거리"임을 보여준다. */
   .today-line {
-    margin-top: 1.8rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-    text-align: center;
+    margin-top: 40px;
+    text-align: left;
+  }
+
+  .today-line .home-section-title { margin-bottom: 14px; }
+
+  @media (min-width: 641px) {
+    .today-line,
+    .bom-card { max-width: 560px; margin-left: auto; margin-right: auto; }
   }
 
   .today-label {
@@ -3017,6 +3101,19 @@
   }
 
   .today-quote:hover .today-text { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* 홈 오늘의 한 줄은 큰 책갈피 카드: 높이 150, 본문 19px, 구멍은 세로 가운데(시안). */
+  .today-quote.bookmark-card {
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 150px;
+    max-width: none;
+    padding: 22px 22px 18px 52px;
+  }
+
+  .today-quote.bookmark-card::after { top: 50%; margin-top: -6px; }
+  .today-quote.bookmark-card .today-text { font-size: 19px; line-height: 1.55; }
+  .today-quote .today-meta { font-size: 12px; color: var(--muted); }
 
   .today-meta {
     font-size: var(--t-meta);
@@ -4347,88 +4444,137 @@
     cursor: pointer;
   }
 
-  /* 홈 맨 위. PC는 인트로 버튼 줄과 같은 폭으로 가운데. */
-  .nick-notice { margin: 0 0 1.1rem; }
-  @media (min-width: 641px) {
-    .nick-notice { max-width: 560px; margin-left: auto; margin-right: auto; }
+  /* 홈 맨 위 알림 띠(리디자인 B안): 먹색 띠 + 토마토 "걸기" + ×. */
+  .nick-notice.nick-notice {
+    margin: 0 0 18px;
+    padding: 4px 6px 4px 16px;
+    border: 0;
+    border-radius: var(--radius);
+    background: #151515;
+    color: #ECECE6;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
-  /* ── 이달의 책: 홈 카드 (#bomCard) ──────────────────────────────────────────────
-     인트로의 바로가기 아래, 오늘의 한 줄 위. 흰 카드 하나에 표지·제목 → 질문(크게) → 이야기한
-     사람 수 → 최근 한 줄 둘 → "내 생각 남기기". PC는 인트로 버튼 줄과 같은 560px 폭. */
+  :root[data-theme="dark"] .nick-notice { background: #2A2A27; }
+  .nick-notice p { flex: 1 1 auto; font-size: 13px; color: #ECECE6; }
+
+  .btn-primary.nick-notice-btn {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 3px;
+    background: var(--tomato);
+    color: #151515;
+    font-size: 13px;
+  }
+
+  .nick-notice .nick-notice-close {
+    position: static;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    color: #ECECE6;
+    font-size: 18px;
+  }
+
+  @media (min-width: 641px) {
+    .nick-notice.nick-notice { max-width: 560px; margin-left: auto; margin-right: auto; }
+  }
+
+  /* ── 이달의 책: 홈 카드 (#bomCard, 리디자인 B안) ──────────────────────────────────
+     먹색 카드(다크에서도 먹색 — 바탕보다 한 톤 밝게). 라벨은 토마토, 표지 위 책갈피 탭,
+     제목 Black Han Sans 26px, 질문, 이야기한 사람 수, 최근 한 줄 둘, 토마토 "내 생각 남기기" +
+     "지난 이달의 책 →". 카드 안 색은 테마와 상관없이 고정이라 값으로 적는다. */
   .bom-card {
-    margin: 1.6rem 0 0;
-    padding: 1.1rem 1.1rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: var(--paper-raised);
+    margin: 36px 0 0;
+    padding: 22px 18px;
+    border-radius: var(--radius-lg);
+    background: #151515;
+    color: #ECECE6;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     text-align: left;
   }
+
+  :root[data-theme="dark"] .bom-card { background: #2A2A27; }
 
   .bom-card[hidden] { display: none; }
 
   .bom-label {
-    margin: 0 0 0.7rem;
-    font-size: var(--t-micro);
+    margin: 0;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--accent);
+    letter-spacing: 1px;
+    color: var(--tomato);
   }
 
-  .bom-book { display: flex; align-items: center; gap: 0.85rem; }
+  .bom-book { display: flex; align-items: flex-end; gap: 16px; }
 
   .bom-cover {
     flex: none;
     position: relative;
-    width: 56px;
-    height: 82px;
+    width: 92px;
+    height: 132px;
     padding: 0;
     border: none;
-    border-radius: 5px;
-    overflow: hidden;
-    background: var(--cover, var(--paper-soft));
-    box-shadow: 0 2px 8px var(--shadow);
+    border-radius: 2px;
+    background: var(--cover, #1F3D33);
     cursor: pointer;
   }
 
-  .bom-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .bom-cover-typo { position: absolute; inset: 6px; color: #fff; font-family: var(--font-display); font-size: 0.62rem; line-height: 1.2; overflow: hidden; text-align: left; }
+  .bom-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+  .bom-cover-typo { position: absolute; inset: 8px; color: #ECECE6; font-family: var(--font-display); font-size: 12px; line-height: 1.25; overflow: hidden; text-align: left; }
+  .bom-cover .bm-tab { width: 18px; top: -10px; }
+  .bom-cover .bm-tab--1 { right: 10px; height: 46px; }
+  .bom-cover .bm-tab--2 { right: 22px; height: 36px; }
 
-  .bom-info { min-width: 0; }
-  .bom-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
-  .bom-author { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+  .bom-info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .bom-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.15; color: #ECECE6; }
+  .bom-author { margin: 0; font-size: 13px; color: #B9B9B2; }
 
   .bom-question {
-    margin: 1rem 0 0;
-    font-family: var(--font-display);
+    margin: 0;
+    font-size: 16px;
     font-weight: 700;
-    font-size: 1.2rem;
-    line-height: 1.45;
-    color: var(--ink);
+    line-height: 1.6;
+    color: #ECECE6;
     word-break: keep-all;
   }
 
-  .bom-talkers { margin: 0.45rem 0 0; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+  .bom-talkers { margin: -8px 0 0; font-size: 13px; color: #D6D6CF; }
   .bom-talkers[hidden] { display: none; }
 
-  .bom-lines { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .bom-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .bom-lines:empty { display: none; }
 
   .bom-lines li {
-    padding: 0.55rem 0.75rem;
-    border-radius: 10px;
-    background: var(--paper);
-    font-size: 0.88rem;
-    color: var(--ink);
+    padding: 10px 12px;
+    border-left: 3px solid var(--tomato);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: rgba(236, 236, 230, 0.08);
+    font-size: 14px;
+    color: #ECECE6;
     cursor: pointer;
   }
 
   .bom-line-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .bom-line-who { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--ink-faint); }
+  .bom-line-who { display: block; margin-top: 2px; font-size: 12px; color: #B9B9B2; }
 
-  .btn-primary.bom-cta { width: 100%; margin-top: 0.9rem; min-height: 52px; padding: 0 1rem; border-radius: var(--radius); font-size: 16px; font-weight: 700; }
-  .bom-past-link { display: block; margin: 0.6rem auto 0; font-size: 0.82rem; }
-  .bom-past-link[hidden] { display: none; }
+  .bom-actions { display: flex; align-items: center; gap: 12px; }
+  .btn-primary.bom-cta {
+    flex: 1;
+    min-height: 48px;
+    padding: 0 1rem;
+    border-radius: var(--radius);
+    background: var(--tomato);
+    color: #151515;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .btn-primary.bom-cta:hover { background: #F57A5A; }
+  .bom-card .bom-past-link { color: #ECECE6; font-size: 13px; font-weight: 700; }
+  .bom-card .bom-past-link[hidden] { display: none; }
 
   @media (min-width: 641px) {
     .bom-card { max-width: 560px; margin-left: auto; margin-right: auto; }
@@ -4460,6 +4606,13 @@
   .bom-past-item .bom-question { margin-top: 0.45rem; font-size: 1rem; }
   .bom-past-item .bom-talkers { margin-top: 0.3rem; }
   .bom-past-body { min-width: 0; flex: 1; }
+  /* 지난 이달의 책 목록은 밝은 카드라 홈 먹색 카드용 글자색을 되돌린다. */
+  .bom-past-item .bom-cover { width: 56px; height: 82px; }
+  .bom-past-item .bom-label { color: var(--ink); }
+  .bom-past-item .bom-title { color: var(--ink); font-size: 18px; }
+  .bom-past-item .bom-author { color: var(--muted); }
+  .bom-past-item .bom-question { color: var(--ink); font-size: 15px; }
+  .bom-past-item .bom-talkers { margin: 0.3rem 0 0; color: var(--ink); }
   .bom-past-admin { margin-top: 0.5rem; }
 
   /* ── 책갈피 카드(리디자인 B안) ─────────────────────────────────────────────────
