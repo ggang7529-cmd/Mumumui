@@ -1649,7 +1649,7 @@ function renderDetailStats(r) {
   } else {
     $meta.appendChild(document.createTextNode("아직 평가가 없어요"));
   }
-  $meta.appendChild(document.createTextNode(" · 한 줄 " + (r.commentCount || 0)));
+  $meta.appendChild(document.createTextNode(" · 책갈피 " + (r.commentCount || 0)));
 
   var $want = document.getElementById("detailWantCount");
   $want.hidden = !(state.wantCount >= 3);
@@ -1664,22 +1664,51 @@ function renderDetailSummary() {
   if (!state.ratingDist) return;
   var moods = {};
   state.comments.forEach(function (c) { if (!c.parentId && c.mood) moods[c.mood] = (moods[c.mood] || 0) + 1; });
-  var rows = [["남긴 태그", tagsText(topTags(moods))], ["별점 분포", distText(state.ratingDist)]];
+  var tags = tagsText(topTags(moods));
   $box.innerHTML = "";
-  rows.forEach(function (row) {
-    if (!row[1]) return;
+  if (tags) {
     var p = document.createElement("p");
     p.className = "ds-row";
     var label = document.createElement("span");
     label.className = "ds-label";
-    label.textContent = row[0];
+    label.textContent = "남긴 태그";
     var value = document.createElement("span");
     value.className = "ds-value";
-    value.textContent = row[1];
+    value.textContent = tags;
     p.appendChild(label);
     p.appendChild(value);
     $box.appendChild(p);
-  });
+  }
+  // 별점 분포는 가로 막대(리디자인 B안). 문장(distText)은 서버가 첫 HTML에 쓰고, 화면은 막대로
+  // 이어받는다 — 그래서 평가 2개 이상이라는 기준은 문장과 같다(distText가 빈 값이면 안 그림).
+  if (distText(state.ratingDist)) {
+    var dist = state.ratingDist;
+    var max = Math.max.apply(null, dist) || 1;
+    var head = document.createElement("p");
+    head.className = "ds-dist-title";
+    head.textContent = "별점 분포";
+    $box.appendChild(head);
+    var grid = document.createElement("div");
+    grid.className = "ds-dist";
+    for (var star = 5; star >= 1; star--) {
+      var n = dist[star - 1] || 0;
+      var lab = document.createElement("span");
+      lab.textContent = "★" + star;
+      var bar = document.createElement("span");
+      bar.className = "ds-bar";
+      var fill = document.createElement("span");
+      fill.className = "ds-bar-fill";
+      fill.style.width = Math.round((n / max) * 100) + "%";
+      bar.appendChild(fill);
+      var num = document.createElement("span");
+      num.textContent = n + "명";
+      grid.appendChild(lab);
+      grid.appendChild(bar);
+      grid.appendChild(num);
+    }
+    grid.setAttribute("aria-label", "별점 분포: " + distText(dist));
+    $box.appendChild(grid);
+  }
   $box.hidden = !$box.children.length;
 }
 
@@ -1688,7 +1717,7 @@ function renderDetailSummary() {
 export function renderRateCard() {
   var mine = state.my && state.my.rating ? state.my.rating : 0;
   var $label = document.getElementById("rateLabel");
-  $label.textContent = mine ? "내 평가" : "어떠셨나요? 별점을 남겨주세요";
+  $label.textContent = mine ? "내 평가" : "어떠셨나요? 별을 누르면 책갈피를 꽂을 수 있어요";
   $label.classList.toggle("is-mine", !!mine);
 
   var $stars = document.getElementById("rateStars");
@@ -1750,6 +1779,13 @@ export function renderDetail() {
     coverImg.alt = r.title + " 표지";
     $detailCover.appendChild(coverImg);
   }
+  // 표지 위로 튀어나온 책갈피 탭(리디자인 B안) — 홈 카드와 같은 규칙.
+  for (var t = 0; t < Math.min(r.commentCount || 0, 4); t++) {
+    var tab = document.createElement("span");
+    tab.className = "bm-tab bm-tab--" + (t + 1) + " bm-" + BOOKMARK_COLORS[t];
+    tab.setAttribute("aria-hidden", "true");
+    $detailCover.appendChild(tab);
+  }
 
   // 상세 페이지에 처음 진입한 순간에만(카드 클릭/딥링크 등) 표지 펼침 연출을 재생한다.
   // 8초 폴링으로 renderDetail이 다시 불릴 때는 이 플래그가 꺼져 있어 재생되지 않는다.
@@ -1766,6 +1802,8 @@ export function renderDetail() {
 
   document.getElementById("deleteBtn").hidden = !isAdminMode();
   document.getElementById("bomSetBtn").hidden = !isAdminMode();
+  document.getElementById("adminZone").hidden = !isAdminMode();
+  renderAlsoBooks();
   renderRateCard();
   renderDetailSummary();
 
@@ -1802,7 +1840,7 @@ export function renderDetail() {
     var li = document.createElement("li");
     li.style.color = "var(--ink-faint)";
     li.style.fontSize = "0.88rem";
-    li.textContent = "아직 한 줄이 없어요. 별을 누르고 첫 한 줄을 남겨보세요.";
+    li.textContent = "첫 책갈피를 꽂아주세요";
     $list.appendChild(li);
   } else {
     var sortedComments = topLevel.slice().sort(function (a, b) { return b.likes - a.likes; });
@@ -2523,5 +2561,55 @@ export function renderBomPast() {
       openDetail(item.bookId);
     });
     $list.appendChild(row);
+  });
+}
+
+// ── 이 책을 꽂은 사람이 함께 꽂은 책(리디자인 B안 제안 ②) ───────────────────────────
+// js/main.js openDetail이 받은 목록(state.also)을 표지 셋으로. 겹치는 사람이 없으면 숨긴다.
+export function renderAlsoBooks() {
+  var box = document.getElementById("alsoBooks");
+  var grid = document.getElementById("alsoGrid");
+  var data = state.also;
+  var list = data && data.bookId === state.currentId ? data.books : [];
+  box.hidden = !list.length;
+  grid.innerHTML = "";
+  list.forEach(function (b) {
+    var a = document.createElement("a");
+    a.className = "also-book";
+    a.href = "/book/" + encodeURIComponent(b.id);
+    a.setAttribute("aria-label", b.title);
+    var cover = document.createElement("span");
+    cover.className = "also-cover";
+    cover.style.setProperty("--cover", coverFor(b.title));
+    if (b.cover) {
+      var img = document.createElement("img");
+      img.src = upscaleCover(b.cover);
+      img.alt = "";
+      img.loading = "lazy";
+      cover.appendChild(img);
+    } else {
+      var t = document.createElement("span");
+      t.className = "also-cover-typo";
+      t.textContent = b.title;
+      cover.appendChild(t);
+    }
+    for (var i = 0; i < Math.min(b.commentCount || 0, 2); i++) {
+      var tab = document.createElement("span");
+      tab.className = "bm-tab bm-tab--" + (i + 1) + " bm-" + BOOKMARK_COLORS[(i + 1) % BOOKMARK_COLORS.length];
+      tab.setAttribute("aria-hidden", "true");
+      cover.appendChild(tab);
+    }
+    a.appendChild(cover);
+    var title = document.createElement("span");
+    title.className = "also-name";
+    title.textContent = b.title;
+    a.appendChild(title);
+    a.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      gtag("event", "click_also_book", { from_book_id: state.currentId, book_id: b.id });
+      openDetail(b.id);
+    });
+    grid.appendChild(a);
   });
 }

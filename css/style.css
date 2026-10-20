@@ -4813,10 +4813,8 @@
     }
 
     .detail-card .comments,
-    .detail-card #bomSetBtn,
-    .detail-card #deleteBtn { grid-column: 1 / -1; }
-    .detail-card #bomSetBtn,
-    .detail-card #deleteBtn { justify-self: start; }
+    .detail-card .also-books,
+    .detail-card .admin-zone { grid-column: 1 / -1; }
   }
 
   /* ── 내 책장(/my) ─────────────────────────────────────────────────────────────── */
@@ -4961,3 +4959,200 @@
   @media (min-width: 641px) {
     .detail-card .detail-summary { grid-column: 1 / -1; }
   }
+
+  /* ── 책 상세(리디자인 B안 5단계) ─────────────────────────────────────────────────
+     표지(책갈피 탭) + 제목 Black Han Sans 28 + 저자 + "★4.5 · 평가 2 · 책갈피 2" → 흰 카드
+     (별 5개 + 읽고 싶어요) → 별점 분포 막대 → "이 책에 꽂힌 책갈피 N" 카드 목록 → 점선 "+ 내
+     책갈피도 꽂기" → 함께 꽂은 책 → 관리자 영역. 예전 규칙을 덮어쓰는 블록이라 파일 맨 끝에 둔다. */
+  .detail-cover {
+    overflow: visible;
+    border-radius: 2px;
+    box-shadow: 0 10px 20px rgba(21, 21, 21, 0.2);
+  }
+
+  .detail-cover img { border-radius: 2px; }
+  .detail-cover--typo::before { font-weight: 400; overflow: hidden; border-radius: 2px; }
+
+  .detail-card h2 {
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  @media (min-width: 641px) {
+    .detail-card h2 { font-size: 36px; }
+  }
+
+  @media (max-width: 640px) {
+    .detail-cover { width: 120px; }
+    .detail-card h2 { font-size: 28px; }
+  }
+
+  .detail-author { font-size: 14px; color: var(--muted); }
+  .rating-meta { font-size: 13px; color: var(--muted); }
+  .rating-meta .rating-avg { color: var(--ink); font-weight: 700; }
+
+  .rate-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 28px 0 0;
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+    text-align: left;
+  }
+
+  :root[data-theme="dark"] .rate-card { border: 0; }
+
+  .rate-label { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+  .rate-label.is-mine { color: var(--ink); }
+  .rate-stars { justify-content: space-between; gap: 0; }
+  .rate-stars button { width: 52px; height: 52px; }
+
+  .want-btn {
+    align-self: flex-start;
+    width: auto;
+    margin-top: 0;
+  }
+
+  /* 별점 분포: ★5 ~ ★1 가로 막대(토마토). */
+  .detail-summary { margin-top: 22px; gap: 8px; font-size: 13px; }
+  .ds-dist-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+
+  .ds-dist {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 36px;
+    gap: 6px 10px;
+    align-items: center;
+    max-width: 460px;
+    font-size: 12px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ds-bar { position: relative; display: block; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .ds-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--tomato); }
+
+  /* "이 책에 꽂힌 책갈피 N" */
+  .comments { margin-top: 34px; }
+
+  .comments h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 24px;
+    margin: 0 0 14px;
+    padding-top: 0;
+  }
+
+  .comments h3::before { content: none; }
+  .comments h3 .count { color: var(--muted); font-size: 18px; }
+
+  /* 책갈피 카드 안 배치: 본문(+태그) 전체 폭 → 글쓴이 · 별점 · 날짜(늘어남) · 좋아요 · 답글 · 관리 버튼.
+     예전 규칙(#commentList .c-*)과 휴대폰 규칙을 이기려고 #commentList > li.bookmark-card로 짚는다. */
+  #commentList > li.bookmark-card { align-items: center; gap: 0 2px; padding: 18px 16px 8px 50px; }
+  #commentList > li.bookmark-card .c-mood { order: 0; flex: 1 1 100%; margin: 0 0 4px; }
+  #commentList > li.bookmark-card .c-text { order: 0; flex: 1 1 100%; margin: 0 0 6px; }
+  #commentList > li.bookmark-card .c-text:empty { display: none; }
+  #commentList > li.bookmark-card .c-author { order: 1; min-height: 44px; margin: 0; padding-right: 8px; white-space: nowrap; }
+  #commentList > li.bookmark-card .c-rating { order: 2; margin: 0 6px 0 0; font-size: 11px; color: var(--ink); }
+  #commentList > li.bookmark-card .c-date { order: 3; display: inline; flex: 1 1 auto; font-size: 12px; color: var(--muted); }
+  #commentList > li.bookmark-card .c-like,
+  #commentList > li.bookmark-card .c-reply-btn { min-height: 44px; margin: 0; padding: 0 8px; font-size: 12px; }
+  #commentList > li.bookmark-card .c-like { order: 4; }
+  #commentList > li.bookmark-card .c-reply-btn { order: 5; }
+
+  #commentList > li.bookmark-card .c-edit,
+  #commentList > li.bookmark-card .c-del {
+    order: 6;
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+    border-radius: var(--radius);
+    color: var(--muted);
+  }
+
+  #commentList > li.bookmark-card .c-pin { order: 7; margin-left: 4px; }
+
+  /* 답글: 카드 안에서 왼쪽 2px 선으로 들여 쓴다. */
+  #commentList > li.bookmark-card .c-replies {
+    margin: 0 0 8px;
+    padding: 8px 0 4px 14px;
+    border-top: 0;
+    border-left: 2px solid var(--line);
+  }
+
+  #commentList .c-replies li::before { content: none; }
+  #commentList .c-replies li { padding-left: 0; font-size: 13px; }
+  #commentList .c-reply-author { font-size: 12px; }
+
+  #commentList > li.bookmark-card .c-reply-form {
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+    padding: 12px 0 4px 14px;
+    border-left: 2px solid var(--line);
+  }
+
+  #commentList .c-reply-form input[type="text"],
+  #commentList .c-edit-form input[type="text"] {
+    min-height: 44px;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 0 10px;
+    font-size: 14px;
+    background: var(--surface);
+  }
+
+  #commentList .c-reply-form button,
+  #commentList .c-edit-form .c-edit-save {
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: var(--radius);
+    background: var(--btn-fill);
+    color: var(--btn-fill-ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  #commentList .c-reply-form button:hover { background: var(--btn-fill-hover); }
+
+  /* 점선 "+ 내 책갈피도 꽂기" */
+  .add-bookmark-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    margin-top: 4px;
+    border: 2px dashed var(--ink);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .add-bookmark-btn:hover { background: var(--paper-soft); }
+
+  /* 이 책을 꽂은 사람이 함께 꽂은 책 */
+  .also-books { margin-top: 34px; }
+  .also-books[hidden] { display: none; }
+  .also-title { margin: 0 0 22px; font-family: var(--font-display); font-weight: 400; font-size: 20px; }
+  .also-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 460px; }
+  .also-book { display: flex; flex-direction: column; gap: 6px; min-width: 0; color: var(--ink); text-decoration: none; }
+  .also-cover { position: relative; display: block; height: 130px; border-radius: 2px; background: var(--cover, #1F3D33); }
+  .also-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+  .also-cover-typo { position: absolute; inset: 8px; color: #ECECE6; font-family: var(--font-display); font-size: 13px; line-height: 1.25; overflow: hidden; }
+  .also-cover .bm-tab { width: 16px; top: -10px; }
+  .also-cover .bm-tab--1 { right: 10px; height: 40px; }
+  .also-cover .bm-tab--2 { right: 20px; height: 32px; }
+  .also-name { font-size: 12px; font-weight: 700; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+  /* 관리자 영역(페이지 맨 아래) */
+  .admin-zone { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .admin-zone[hidden] { display: none; }
+  .admin-zone-label { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+  .admin-zone-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .admin-zone .btn-ghost-danger { margin-top: 0; }

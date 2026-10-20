@@ -11,7 +11,7 @@ import {
 } from "./render.js";
 import { initCollage, openCollage } from "./collage.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
-import { formatAdminNickRow, renderBookOfMonth, renderBomPast } from "./render.js";
+import { formatAdminNickRow, renderBookOfMonth, renderBomPast, renderAlsoBooks } from "./render.js";
 
 // "nickname" = 가입 없이 닉네임만 입력해서 작성 (현재 사용 중).
 // "google" = Google 로그인 필요 (D1 + Google OAuth 설정 끝나면 이 값으로 되돌리면 됨. 관련 코드는 지우지 않고 남겨둠).
@@ -88,6 +88,8 @@ export var state = {
   bom: null,
   bomHasPast: false,
   bomPast: null,
+  // 이 책을 꽂은 사람이 함께 꽂은 책 { bookId, books } (openDetail이 받음)
+  also: null,
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
   formMood: null,
@@ -591,7 +593,25 @@ export function openDetail(id) {
   showView("detail");
   renderGoogleButtons();
   refreshComments();
+  // 이 책을 꽂은 사람이 함께 꽂은 책 — 책을 열 때 한 번만(폴링마다 다시 받을 만큼 자주 바뀌지 않는다).
+  api("/api/books/" + encodeURIComponent(id) + "/also")
+    .then(function (data) {
+      state.also = { bookId: id, books: data.books || [] };
+      if (state.view === "detail" && state.currentId === id) renderAlsoBooks();
+    })
+    .catch(function () {});
 }
+
+// "+ 내 책갈피도 꽂기": 아직 별점이 없으면 별점 카드로 데려가고(별을 누르면 시트가 뜬다), 있으면
+// 한 줄 시트를 바로 연다.
+document.getElementById("addBookmarkBtn").addEventListener("click", function () {
+  gtag("event", "click_add_bookmark", { book_id: state.currentId, rated: !!(state.my && state.my.rating) });
+  if (state.my && state.my.rating) { openLineSheet(); return; }
+  var card = document.getElementById("rateCard");
+  card.scrollIntoView({ block: "center", behavior: "smooth" });
+  var first = card.querySelector("#rateStars button");
+  if (first) first.focus({ preventScroll: true });
+});
 
 function openRandomView() {
   state.randomPickedId = null;

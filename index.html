@@ -310,7 +310,7 @@
              스크롤 없이 보여야 한다. 별을 누르면 바로 저장되고(PUT /api/books/:id/mine) 아래에서
              "한 줄도 남겨볼래요?" 시트가 올라온다. 그리기는 js/render.js renderRateCard. -->
         <div class="rate-card" id="rateCard">
-          <p class="rate-label" id="rateLabel">어떠셨나요? 별점을 남겨주세요</p>
+          <p class="rate-label" id="rateLabel">어떠셨나요? 별을 누르면 책갈피를 꽂을 수 있어요</p>
           <div class="rate-stars" id="rateStars" role="radiogroup" aria-label="내 별점"></div>
           <button type="button" class="want-btn" id="wantBtn" aria-pressed="false">
             <svg class="icon want-icon" aria-hidden="true" focusable="false"><use href="#i-bookmark"></use></svg>
@@ -323,12 +323,26 @@
         <div class="detail-summary" id="detailSummary" hidden></div>
 
         <section class="comments">
-          <h3>한 줄 <span class="count" id="commentCount"></span></h3>
+          <h3>이 책에 꽂힌 책갈피 <span class="count" id="commentCount"></span></h3>
           <ul id="commentList"></ul>
+          <!-- 점선 버튼: 아직 별점이 없으면 별점 카드로, 있으면 한 줄 시트를 연다(js/main.js). -->
+          <button type="button" class="add-bookmark-btn" id="addBookmarkBtn">+ 내 책갈피도 꽂기</button>
         </section>
 
-        <button class="btn-ghost-danger" id="bomSetBtn" type="button" hidden>이달의 책으로 지정</button>
-        <button class="btn-ghost-danger is-delete" id="deleteBtn" type="button" hidden>이 책 리뷰 삭제하기</button>
+        <!-- 이 책을 꽂은 사람이 함께 꽂은 책(functions/api/books/[id]/also.js). 없으면 숨김. -->
+        <section class="also-books" id="alsoBooks" hidden aria-labelledby="alsoTitle">
+          <h3 class="also-title" id="alsoTitle">이 책을 꽂은 사람이 함께 꽂은 책</h3>
+          <div class="also-grid" id="alsoGrid"></div>
+        </section>
+
+        <!-- 관리자만 보이는 영역(페이지 맨 아래). -->
+        <div class="admin-zone" id="adminZone" hidden>
+          <p class="admin-zone-label">관리자만 보여요</p>
+          <div class="admin-zone-btns">
+            <button class="btn-ghost-danger" id="bomSetBtn" type="button" hidden>이달의 책으로 지정</button>
+            <button class="btn-ghost-danger is-delete" id="deleteBtn" type="button" hidden>이 책 리뷰 삭제하기</button>
+          </div>
+        </div>
       </div>
     </section>
 
