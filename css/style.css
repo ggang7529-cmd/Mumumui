@@ -512,15 +512,14 @@
   .text-link:hover,
   .text-link:focus-visible { color: var(--ink); }
 
-  /* 홈 맨 아래 작은 링크들(등급 안내·의견 보내기·지난 이달의 책·닉네임 관리). 위에 1px 선. */
+  /* 바로가기 바로 밑 작은 글자 링크(등급 안내·의견 보내기·지난 이달의 책·닉네임 관리). */
   .home-footer-links {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
     gap: 0 18px;
-    margin-top: 40px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+    margin-top: 6px;
     color: var(--muted);
     font-size: 14px;
   }

@@ -231,6 +231,16 @@
       <button class="quick-tile" id="collageBtn" type="button">내 책장 한 컷</button>
       <span class="auth-box" id="authBox"></span>
     </nav>
+    <!-- 등급 안내 · 의견 보내기 등 작은 글자 링크. 리디자인 시안은 홈 맨 아래였지만 책이 70권을
+         넘어 그리드를 끝까지 내려야 보여서(예전에도 같은 이유로 올렸다) 바로가기 바로 밑에 둔다. -->
+    <nav class="home-footer-links" aria-label="더 보기">
+      <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
+      <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
+      <span aria-hidden="true" id="bomPastSep" hidden></span>
+      <button class="text-link" id="bomPastFooter" type="button" hidden>지난 이달의 책</button>
+      <span aria-hidden="true" id="adminNickSep" hidden></span>
+      <button class="text-link" id="adminNickLink" type="button" hidden>닉네임 관리</button>
+    </nav>
     <!-- 이달의 책(js/render.js renderBookOfMonth, functions/api/book-of-month). 관리자가 정한
          기간 안에만 보이고 끝나면 저절로 사라진다. "내 생각 남기기"는 책 상세의 별점 카드로 간다. -->
     <section class="bom-card" id="bomCard" hidden aria-labelledby="bomLabel">
@@ -277,15 +287,6 @@
         <div class="chip-row" id="genreChips" role="group" aria-label="분류"></div>
       </div>
       <div class="shelf" id="shelfGrid"></div>
-      <!-- 홈 맨 아래 작은 링크들(리디자인 B안 — 예전엔 바로가기 타일 바로 밑이었다). -->
-      <nav class="home-footer-links" aria-label="더 보기">
-        <button class="text-link" id="levelGuideLink" type="button">등급 안내</button>
-        <button class="text-link" id="feedbackBtn" type="button">의견 보내기</button>
-        <span aria-hidden="true" id="bomPastSep" hidden></span>
-        <button class="text-link" id="bomPastFooter" type="button" hidden>지난 이달의 책</button>
-        <span aria-hidden="true" id="adminNickSep" hidden></span>
-        <button class="text-link" id="adminNickLink" type="button" hidden>닉네임 관리</button>
-      </nav>
     </section>
 
     <section id="detailView" hidden>
