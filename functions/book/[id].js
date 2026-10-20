@@ -128,7 +128,7 @@ export async function onRequestGet(context) {
   var staticOgBlock =
     '<meta property="og:title" content="책갈피 - 책을 덮고 나면, 이야기하고 싶어지잖아요">\n' +
     '<meta property="og:description" content="같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">\n' +
-    '<meta property="og:image" content="https://book-galpi.com/og-image.png">\n' +
+    '<meta property="og:image" content="https://book-galpi.com/og-image.png?v=2">\n' +
     '<meta property="og:image:width" content="1200">\n' +
     '<meta property="og:image:height" content="630">\n' +
     '<meta property="og:type" content="website">\n' +

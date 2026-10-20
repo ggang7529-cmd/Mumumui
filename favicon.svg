@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="책갈피">
-  <polygon points="3,1 6.4,1 6.4,13 4.7,11.5 3,13" fill="#7A2E3F"/>
-  <polygon points="7.8,1 11.2,1 11.2,10.5 9.5,9.2 7.8,10.5" fill="#C88E92"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="책갈피">
+  <rect width="32" height="32" rx="7" fill="#151515"/>
+  <path d="M10 5h12v22l-6-4-6 4z" fill="#F2643F"/>
+  <circle cx="16" cy="10" r="2.4" fill="#151515"/>
 </svg>

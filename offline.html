@@ -4,20 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>책갈피 - 오프라인</title>
+<script>
+  // 사이트와 같은 규칙: 기기 설정이 아니라 헤더 해/달 버튼으로 고른 테마(localStorage)를 따른다.
+  try { if (localStorage.getItem("chaekgalpi_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
+</script>
 <style>
   :root {
-    --paper: #EFEAE1;
-    --ink: #241F1C;
-    --ink-soft: #6B6058;
-    --accent: #8C2F39;
+    --paper: #ECECE6;
+    --ink: #151515;
+    --muted: #55554F;
+    --tomato: #F2643F;
+    color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #1B1815;
-      --ink: #EDE6DA;
-      --ink-soft: #A79C8E;
-      --accent: #E08A90;
-    }
+  :root[data-theme="dark"] {
+    --paper: #151515;
+    --ink: #ECECE6;
+    --muted: #A9A9A2;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -30,32 +33,39 @@
     justify-content: center;
     background: var(--paper);
     color: var(--ink);
-    font-family: "Gowun Dodum", "Malgun Gothic", sans-serif;
+    font-family: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     text-align: center;
     padding: 24px;
   }
   .card {
     max-width: 360px;
   }
+  .mark {
+    display: block;
+    margin: 0 auto 20px;
+  }
   h1 {
-    font-family: "Gowun Batang", "Malgun Gothic", serif;
-    font-size: 1.3rem;
+    font-family: "Black Han Sans", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+    font-weight: 400;
+    font-size: 1.6rem;
     margin: 0 0 12px;
-    color: var(--accent);
   }
   p {
-    margin: 0 0 20px;
-    color: var(--ink-soft);
+    margin: 0 0 24px;
+    color: var(--muted);
     line-height: 1.6;
+    word-break: keep-all;
   }
   button {
     font-family: inherit;
-    font-size: 0.95rem;
-    padding: 10px 20px;
-    border: 1px solid var(--accent);
-    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 10px 24px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
     background: transparent;
-    color: var(--accent);
+    color: var(--ink);
     cursor: pointer;
   }
   button:active {
@@ -65,6 +75,7 @@
 </head>
 <body>
   <div class="card">
+    <svg class="mark" width="56" height="56" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#151515"/><path d="M10 5h12v22l-6-4-6 4z" fill="#F2643F"/><circle cx="16" cy="10" r="2.2" fill="#151515"/></svg>
     <h1>인터넷 연결이 끊겼어요</h1>
     <p>네트워크가 연결되면 다시 이용하실 수 있어요.<br>연결을 확인한 뒤 다시 시도해주세요.</p>
     <button onclick="location.reload()">다시 시도</button>

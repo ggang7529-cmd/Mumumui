@@ -1402,7 +1402,7 @@ function renderThemeBtn() {
   dom.themeBtn.appendChild(buildIcon(dark ? "sun" : "moon"));
   dom.themeBtn.setAttribute("aria-label", dark ? "밝은 테마로 바꾸기" : "다크 모드로 바꾸기");
   var meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", dark ? "#17140F" : "#F7F3EC");
+  if (meta) meta.setAttribute("content", dark ? "#151515" : "#ECECE6");
 }
 dom.themeBtn.addEventListener("click", function () {
   var next = currentTheme() === "dark" ? "light" : "dark";
