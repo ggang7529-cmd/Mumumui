@@ -1,7 +1,8 @@
-import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth } from "./main.js";
+import { state, dom, AUTH_MODE, openDetail, showView, rateBook, openMyShelf, startBookRegistration, closeSearchSheet, openProfile, openLevelGuide, openLevelRanking, closeLevelGuide, NICK_PROMPT_KEY, isBomBook, deleteBookOfMonth, shareSetCard } from "./main.js";
 import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { bookmarkColorOf, BOOKMARK_COLORS, BOOKMARK_COLOR_LABELS } from "./bookmarkColor.js";
+import { warmShareFonts } from "./shareCard.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -1075,16 +1076,25 @@ export function renderMyShelf() {
   var $grid = document.getElementById("myShelfGrid");
   var $empty = document.getElementById("myShelfEmpty");
   $grid.innerHTML = "";
+  var $emptyTitle = document.getElementById("myEmptyTitle");
+  var $emptyText = document.getElementById("myEmptyText");
   if (!data) {
     $empty.hidden = false;
-    $empty.textContent = "불러오는 중이에요…";
+    $empty.classList.add("is-loading");
+    $emptyTitle.textContent = "불러오는 중이에요…";
+    $emptyText.textContent = "";
     return;
   }
+  $empty.classList.remove("is-loading");
   var items = data[tab];
   $empty.hidden = items.length > 0;
-  $empty.textContent = tab === "rated"
-    ? "아직 평가한 책이 없어요. 읽은 책을 찾아 별을 눌러보세요."
-    : "아직 담은 책이 없어요. 책 상세에서 \"읽고 싶어요\"를 눌러 담아보세요.";
+  if (tab === "rated") {
+    $emptyTitle.textContent = "첫 책갈피를 꽂아볼까요?";
+    $emptyText.textContent = "읽은 책을 찾아 별을 누르면\n여기에 책갈피가 하나씩 쌓여요.";
+  } else {
+    $emptyTitle.textContent = "읽고 싶은 책을 담아볼까요?";
+    $emptyText.textContent = "책에서 \"읽고 싶어요\"를 누르면\n여기에 하나씩 모여요.";
+  }
 
   items.forEach(function (b) {
     var a = document.createElement("a");
@@ -1137,6 +1147,7 @@ export function renderProfile() {
   dom.profileName.textContent = data ? data.nickname : "";
   if (!data) {
     document.getElementById("profileProgress").hidden = true;
+    document.getElementById("profileBadge").hidden = true;
     dom.profileSub.textContent = "불러오는 중...";
     dom.profileStats.innerHTML = "";
     dom.profileShelf.innerHTML = "";
@@ -1147,7 +1158,12 @@ export function renderProfile() {
   }
 
   var lvl = getLevel(data.score);
-  dom.profileSub.textContent = (isMe ? "내 기록 · " : "") + lvl.name + " · " + data.score + "점";
+  // 이름 앞 큰 등급 책갈피(리디자인 B안).
+  var $badge = document.getElementById("profileBadge");
+  $badge.textContent = String(lvl.level);
+  $badge.hidden = false;
+  dom.profileSub.textContent = (isMe ? "내 기록 · " : "") + lvl.name + " · " + data.score + "점" +
+    (isMe && state.myRank && state.myTotal > 1 ? " · " + state.myTotal + "명 중 " + state.myRank + "위" : "");
 
   // 내 기록이면 등급 안내 팝업과 같은 진행 카드(다음 등급까지·순위·전체 순위)를 맨 위에 둔다.
   // 점수는 이 응답의 것, 순위는 refreshMyScore가 받아둔 것(openProfile이 새로 받음).
@@ -1164,13 +1180,14 @@ export function renderProfile() {
   // 요약 숫자. 값이 없는 항목(아직 별점을 안 준 경우의 평균)은 아예 빼서 "-"가 줄줄이
   // 늘어서지 않게 한다.
   var s = data.summary;
+  // 리디자인 B안: 숫자를 크게(Black Han Sans), 이름은 아래 작게.
   var stats = [
-    ["등록한 책", s.bookCount + "권"],
-    ["남긴 한줄평", s.reviewCount + "개"],
-    ["받은 좋아요", s.likesReceived + "개"]
+    ["등록한 책", String(s.bookCount)],
+    ["꽂은 책갈피", String(s.reviewCount)],
+    ["받은 좋아요", String(s.likesReceived)]
   ];
-  if (s.avgRating !== null && s.avgRating !== undefined) stats.push(["평균 별점", s.avgRating.toFixed(1) + "점"]);
-  if (s.replyCount) stats.push(["남긴 답글", s.replyCount + "개"]);
+  if (s.avgRating !== null && s.avgRating !== undefined) stats.push(["평균 별점", s.avgRating.toFixed(1)]);
+  if (s.replyCount) stats.push(["남긴 답글", String(s.replyCount)]);
 
   dom.profileStats.innerHTML = "";
   stats.forEach(function (pair) {
@@ -1182,13 +1199,32 @@ export function renderProfile() {
     dt.textContent = pair[0];
     var dd = document.createElement("dd");
     dd.textContent = pair[1];
-    cell.appendChild(dt);
     cell.appendChild(dd);
+    cell.appendChild(dt);
     dom.profileStats.appendChild(cell);
+  });
+  // 마지막 칸: 모음 카드 저장(공유 카드, 남긴 한 줄이 있을 때만).
+  if (data.reviews.length) {
+    warmShareFonts(data.nickname + data.reviews.slice(0, 5).map(function (r) { return r.book_title + (r.text || ""); }).join(""));
+    var shareTile = document.createElement("button");
+    shareTile.type = "button";
+    shareTile.className = "profile-share-tile";
+    shareTile.textContent = "모음 카드\n저장 →";
+    shareTile.addEventListener("click", shareSetCard);
+    dom.profileStats.appendChild(shareTile);
+  }
+  // 탭(꽂은 책갈피 / 등록한 책) — 둘 중 하나만 보인다.
+  var tab = state.profileTab === "books" ? "books" : "reviews";
+  [["reviews", "profileTabReviews", "profileReviewsSection"], ["books", "profileTabBooks", "profileBooksSection"]].forEach(function (t) {
+    var on = t[0] === tab;
+    var $t = document.getElementById(t[1]);
+    $t.classList.toggle("is-on", on);
+    $t.setAttribute("aria-selected", on ? "true" : "false");
+    document.getElementById(t[2]).hidden = !on;
   });
 
   // 등록한 책 — 홈 서가와 같은 카드를 쓴다.
-  dom.profileBookCount.textContent = data.books.length ? "(" + data.books.length + ")" : "";
+  dom.profileBookCount.textContent = String(data.books.length);
   dom.profileShelf.innerHTML = "";
   if (data.books.length === 0) {
     var noBook = document.createElement("p");
@@ -1202,7 +1238,7 @@ export function renderProfile() {
   }
 
   // 남긴 한줄평 — 어느 책에 남긴 건지가 핵심이라 표지와 책 제목을 앞에 둔다.
-  dom.profileReviewCount.textContent = data.reviews.length ? "(" + data.reviews.length + ")" : "";
+  dom.profileReviewCount.textContent = String(data.reviews.length);
   dom.profileReviews.innerHTML = "";
   if (data.reviews.length === 0) {
     var noReview = document.createElement("li");
@@ -1214,52 +1250,17 @@ export function renderProfile() {
       var li = document.createElement("li");
       li.className = "bookmark-card bm-" + bookmarkColorOf(r.id, r.color);
 
-      function goToBook(e) {
+      // 책갈피 카드 한 장(리디자인 B안): 태그 → 한 줄(굵게) → "책 제목 · ★4 · 좋아요 1 · 날짜".
+      // 카드 전체가 그 책으로 가는 링크다.
+      var link = document.createElement("a");
+      link.className = "pr-link";
+      link.href = "/book/" + encodeURIComponent(r.book_id);
+      link.addEventListener("click", function (e) {
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         openDetail(r.book_id);
-      }
-
-      // 표지를 작게 앞에 둔다 — 제목만 줄줄이 있으면 어떤 책이었는지 눈으로 훑기 어렵다.
-      // 표지가 없는 책(직접 등록한 옛 기록)은 서가 카드와 같은 책등 색 타일로 자리를
-      // 채운다. 빈칸으로 두면 목록의 왼쪽 선이 들쭉날쭉해진다.
-      var cover = document.createElement("a");
-      cover.className = "pr-cover";
-      cover.href = "/book/" + encodeURIComponent(r.book_id);
-      cover.style.setProperty("--cover", coverFor(r.book_title || ""));
-      // 바로 옆 제목 링크가 같은 곳으로 가므로, 스크린리더·키보드에는 같은 링크가 두 번
-      // 잡히지 않게 숨긴다. 마우스로는 그림을 눌러도 들어가지는 편이 자연스럽다.
-      cover.tabIndex = -1;
-      cover.setAttribute("aria-hidden", "true");
-      if (r.book_cover) {
-        var coverImg = document.createElement("img");
-        // 30px 남짓으로 그릴 자리라 upscaleCover로 원본을 끌어오지 않는다 — 카카오가 주는
-        // 썸네일 그대로가 훨씬 가볍고, 이 크기에서는 차이가 보이지 않는다.
-        coverImg.src = r.book_cover;
-        coverImg.alt = "";
-        coverImg.loading = "lazy";
-        cover.appendChild(coverImg);
-      }
-      cover.addEventListener("click", goToBook);
-      li.appendChild(cover);
-
-      // 표지를 뺀 나머지는 한 덩어리로 묶는다. 좁은 화면에서 제목·한줄평이 줄바꿈될 때
-      // 표지 오른쪽으로 가지런히 쌓이게 하려는 것으로, 묶지 않으면 표지만 첫 줄에 혼자
-      // 남고 제목이 그 아래로 떨어진다.
-      var main = document.createElement("div");
-      main.className = "pr-main";
-
-      var bookLink = document.createElement("a");
-      bookLink.className = "pr-book";
-      bookLink.href = "/book/" + encodeURIComponent(r.book_id);
-      bookLink.textContent = r.book_title;
-      bookLink.addEventListener("click", goToBook);
-      main.appendChild(bookLink);
-
-      var stars = document.createElement("span");
-      stars.className = "pr-rating";
-      for (var i = 1; i <= 5; i++) stars.appendChild(buildStarIcon(i <= r.rating));
-      main.appendChild(stars);
+      });
+      var main = link;
 
       var badge = buildMoodBadge(r.mood);
       if (badge) main.appendChild(badge);
@@ -1267,14 +1268,14 @@ export function renderProfile() {
       if (r.text) {
         var textEl = document.createElement("span");
         textEl.className = "pr-text";
-        textEl.textContent = r.text;
+        textEl.textContent = "“" + r.text + "”";
         main.appendChild(textEl);
       }
 
-      var date = document.createElement("span");
-      date.className = "pr-date";
-      date.textContent = formatDate(r.created_at);
-      main.appendChild(date);
+      var meta = document.createElement("span");
+      meta.className = "pr-meta";
+      meta.textContent = r.book_title + " · ★" + r.rating + (r.likes ? " · 좋아요 " + r.likes : "") + " · " + formatDate(r.created_at);
+      main.appendChild(meta);
 
       li.appendChild(main);
       dom.profileReviews.appendChild(li);
@@ -1788,6 +1789,10 @@ export function renderDetail() {
   document.getElementById("detailAuthor").textContent = r.author + (genre && genre !== "기타" ? " · " + genre : "");
   renderDetailStats(r);
   renderDetailBom();
+  // 공유 카드는 본문 있는 한 줄이 하나라도 있을 때만.
+  var shareable = state.comments.some(function (c) { return !c.parentId && String(c.text || "").trim(); });
+  document.getElementById("detailShareBtn").hidden = !shareable;
+  if (shareable) warmShareFonts(r.title + state.comments.map(function (c) { return (c.authorName || "") + (c.text || ""); }).join(""));
 
   var $detailCover = document.getElementById("detailCover");
   $detailCover.innerHTML = "";

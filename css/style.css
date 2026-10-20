@@ -5465,3 +5465,189 @@
 
   #siteSearchResults { border: 0; border-radius: 0; }
   #feedbackView textarea { border-width: 2px; }
+
+  /* ── 공개 기록 / 내 책장(리디자인 B안 6단계) ───────────────────────────────────── */
+  .panel.profile-card,
+  .panel.my-shelf { background: transparent; border: 0; padding-left: 0; padding-right: 0; box-shadow: none; }
+
+  .profile-head { display: flex; align-items: flex-end; gap: 14px; }
+  .profile-head-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+  .lv-num--xl {
+    flex: none;
+    width: 54px;
+    height: 76px;
+    padding-bottom: 12px;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 400;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  }
+
+  .lv-num--xl[hidden] { display: none; }
+  .profile-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.1; }
+  .profile-name::before { content: none; }
+  .profile-sub { margin: 0; font-size: 13px; color: var(--muted); }
+  .profile-progress:not(:empty) { margin-top: 22px; }
+
+  .profile-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 18px 0 0; }
+  .profile-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: var(--radius); background: var(--surface); }
+  .profile-stats dd { margin: 0; font-family: var(--font-display); font-size: 24px; color: var(--ink); }
+  .profile-stats dt { font-size: 12px; color: var(--muted); }
+
+  .profile-tabs { margin-top: 34px; }
+  .profile-section { margin-top: 12px; }
+  .profile-section[hidden] { display: none; }
+  .profile-section h3 { display: none; }
+
+  .profile-reviews li.bookmark-card { display: block; padding: 16px 16px 14px 50px; }
+  .profile-reviews li.bookmark-card::after { top: 18px; }
+  .pr-link { display: flex; flex-direction: column; gap: 8px; color: var(--ink); text-decoration: none; }
+  .pr-link .c-mood { align-self: flex-start; }
+  .bookmark-card .pr-text { font-size: 16px; line-height: 1.55; }
+  .pr-meta { font-size: 12px; color: var(--muted); }
+  .pr-link:hover .pr-text { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* 내 책장 */
+  .my-shelf-title { font-family: var(--font-display); font-weight: 400; font-size: 34px; }
+  .my-shelf-sub { font-size: 14px; color: var(--muted); }
+  .my-shelf-sub .link-btn { color: var(--ink); font-weight: 700; margin: 0; padding: 0; }
+
+  .my-nick-prompt {
+    margin: 20px 0 0;
+    padding: 16px 44px 16px 16px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--surface);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .my-nick-prompt p { font-size: 14px; line-height: 1.55; }
+  .my-nick-prompt-close { top: 0; right: 0; width: 44px; height: 44px; color: var(--ink); font-size: 20px; }
+  .my-tabs { margin-top: 26px; }
+
+  .my-empty { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 50px 0 10px; text-align: center; }
+  .my-empty[hidden] { display: none; }
+  .my-empty.is-loading .my-empty-art,
+  .my-empty.is-loading .my-empty-cta,
+  .my-empty.is-loading #myEmptySearch,
+  .my-empty.is-loading .my-empty-text { display: none; }
+  .my-empty-art { display: flex; align-items: flex-end; gap: 8px; height: 130px; }
+  .my-empty-art span { width: 34px; height: 106px; border: 2px dashed #A9A9A2; border-radius: 3px; }
+  .my-empty-art span:nth-child(1) { height: 120px; }
+  .my-empty-art span:nth-child(2) { height: 96px; }
+
+  .my-empty-art span.is-on {
+    position: relative;
+    height: 130px;
+    border: 0;
+    background: var(--tomato);
+  }
+
+  .my-empty-art span.is-on::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--paper);
+  }
+
+  .my-empty-title { margin: 0; font-family: var(--font-display); font-size: 22px; color: var(--ink); }
+  .my-empty-text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft); white-space: pre-line; }
+  .btn-primary.my-empty-cta { min-height: 52px; padding: 0 26px; font-size: 15px; }
+
+  /* ── 나머지 화면 공통: 흰 패널 대신 종이 바탕 위에 바로(리디자인 B안 6단계) ─────────── */
+  .panel {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0.5rem 0 0;
+  }
+
+  .panel h2,
+  .panel .collage-title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1.2;
+    margin: 0 0 6px;
+    padding-top: 0;
+  }
+
+  .panel h2::before,
+  .panel .collage-title::before { content: none; }
+  .collage-lead { font-size: 14px; color: var(--muted); }
+
+  /* 추천: 진행 단계는 색 띠 체크리스트, 결과는 표지 + 한 줄 가로 카드, 닉네임 이어보기는 점선 상자. */
+  .recommend-title { font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.2; }
+  .ra-step { gap: 10px; font-size: 13px; }
+  .ra-step-mark { width: 8px; height: 18px; border: 0; border-radius: 0; background: var(--line); }
+  .ra-step-mark svg { display: none; }
+  .ra-step:nth-child(1) .ra-step-mark { background: var(--tomato); }
+  .ra-step:nth-child(2) .ra-step-mark { background: var(--cobalt); }
+  .ra-step:nth-child(3) .ra-step-mark { background: var(--mint); }
+  .ra-step:nth-child(4) .ra-step-mark { background: var(--butter); }
+  .ra-step.is-todo .ra-step-mark { background: var(--line); }
+
+  .recommend-shelf.shelf { grid-template-columns: 1fr; gap: 12px; }
+
+  .recommend-shelf .book-card {
+    flex-direction: row;
+    gap: 14px;
+    padding: 14px;
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .recommend-shelf .book-card .b-cover { flex: none; width: 70px; height: 100px; padding-bottom: 0; }
+  .recommend-shelf .book-card--typo .b-cover::before { padding: 8px; font-size: 12px; }
+  .recommend-shelf .book-card--typo .b-cover::after { display: none; }
+  .recommend-shelf .bm-tab { width: 14px; top: -8px; }
+  .recommend-shelf .bm-tab--1 { right: 8px; height: 34px; }
+  .recommend-shelf .bm-tab--2 { right: 16px; height: 28px; }
+  .recommend-shelf .bm-tab--3 { right: 24px; height: 22px; }
+  .recommend-shelf .bm-tab--4 { right: 32px; height: 18px; }
+  .recommend-shelf .b-title { font-size: 15px; }
+
+  .recommend-claim { padding: 16px; border: 2px dashed #A9A9A2; border-radius: var(--radius); }
+  .recommend-claim-label { font-size: 14px; font-weight: 700; }
+  .recommend-claim-row { gap: 8px; }
+
+  /* 랜덤 한 권 뽑기(지금 입구는 없음)도 먹색 카드 톤으로. */
+  .random-panel { background: #151515; color: #ECECE6; border-radius: var(--radius-lg); padding: 20px 18px; }
+  .random-panel h2 { color: #ECECE6; }
+  .btn-random { background: var(--tomato); color: #151515; }
+
+  /* 내 책장 한 컷 */
+  .collage-save-bar .btn-primary,
+  #collageSaveBtn { min-height: 54px; font-size: 16px; }
+
+  /* 관리자 화면·지난 이달의 책도 흰 패널 없이 */
+  .admin-nick-row { border-radius: var(--radius); }
+
+  /* 공유 카드 버튼 */
+  .share-card-btn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 6px; font-size: 13px; }
+  .share-card-btn[hidden] { display: none; }
+  .profile-share-tile {
+    display: flex;
+    align-items: flex-end;
+    min-height: 72px;
+    padding: 12px;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--tomato);
+    color: #151515;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: left;
+    white-space: pre-line;
+    cursor: pointer;
+  }

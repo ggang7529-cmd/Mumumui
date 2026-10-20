@@ -12,7 +12,8 @@ import {
 import { initCollage, openCollage } from "./collage.js";
 import { withNickname, ensureNickname, openPinSheet } from "./nickAuth.js";
 import { formatAdminNickRow, renderBookOfMonth, renderBomPast, renderAlsoBooks, renderColorPicker } from "./render.js";
-import { BOOKMARK_COLORS, normalizeBookmarkColor } from "./bookmarkColor.js";
+import { BOOKMARK_COLORS, normalizeBookmarkColor, bookmarkColorOf } from "./bookmarkColor.js";
+import { drawShareOne, drawShareSet, saveShareCard } from "./shareCard.js";
 
 // 시트를 열 때 미리 골라 둘 책갈피 색 — 모두 같은 색으로 쏠리지 않게 넷 중 아무거나.
 function randomBookmarkColor() {
@@ -109,6 +110,8 @@ export var state = {
   also: null,
   // 등급 안내의 20단계 표를 펼쳤는지(접으면 내 등급 근처만)
   levelTableOpen: false,
+  // 공개 기록에서 보고 있는 탭(reviews | books)
+  profileTab: "reviews",
   formRating: 0,
   // 고른 감정 태그 id (js/moodTags.js). 고르지 않았으면 null — 선택 항목이다.
   formMood: null,
@@ -475,6 +478,76 @@ export var NICK_PROMPT_KEY = "chaekgalpi_nick_prompt_done";
 function markNickPromptDone() {
   try { localStorage.setItem(NICK_PROMPT_KEY, "1"); } catch (e) {}
 }
+
+// ── 공유 카드(리디자인 B안 제안 ③, js/shareCard.js) ───────────────────────────────
+//
+// 한 장: 이 책에서 공유할 한 줄 — 내가 남긴 한 줄(본문 있는 것), 없으면 좋아요 많은 한 줄.
+function shareLineFor(bookId) {
+  if (state.currentId !== bookId) return null;
+  var my = state.my;
+  if (my && String(my.text || "").trim()) {
+    return { id: my.id, text: my.text, rating: my.rating, color: my.color, name: my.name || getSavedNickname() };
+  }
+  var best = null;
+  state.comments.forEach(function (c) {
+    if (c.parentId || !String(c.text || "").trim()) return;
+    if (!best || c.likes > best.likes) best = c;
+  });
+  return best ? { id: best.id, text: best.text, rating: best.rating, color: best.color, name: best.authorName } : null;
+}
+
+export function shareLineCard(bookId, from) {
+  var line = shareLineFor(bookId);
+  var book = findBook(bookId);
+  if (!line || !book) return;
+  var canvas = drawShareOne({
+    name: line.name, text: line.text, title: book.title, rating: line.rating,
+    color: bookmarkColorOf(line.id, line.color)
+  });
+  var via = saveShareCard(canvas, "책갈피-" + book.title + ".png");
+  gtag("event", "share_card", { type: "one", from: from, book_id: bookId, via: via });
+}
+
+// 모음: 공개 기록의 남긴 한 줄 — 이번 달 것이 있으면 이번 달, 없으면 지금까지.
+export function shareSetCard() {
+  var data = state.profile;
+  if (!data || !data.reviews || !data.reviews.length) return;
+  var now = new Date(Date.now() + 9 * 3600 * 1000);
+  var thisMonth = data.reviews.filter(function (r) {
+    var d = new Date(r.created_at + 9 * 3600 * 1000);
+    return d.getUTCFullYear() === now.getUTCFullYear() && d.getUTCMonth() === now.getUTCMonth();
+  });
+  var list = thisMonth.length ? thisMonth : data.reviews;
+  var label = data.nickname + "의 " + (thisMonth.length ? (now.getUTCMonth() + 1) + "월" : "책장");
+  var best = null;
+  list.forEach(function (r) {
+    if (!String(r.text || "").trim()) return;
+    if (!best || (r.likes || 0) > (best.likes || 0)) best = r;
+  });
+  var canvas = drawShareSet({
+    name: data.nickname, label: label, count: list.length,
+    items: list.slice(0, 5).map(function (r) { return { title: r.book_title, color: bookmarkColorOf(r.id, r.color) }; }),
+    best: best ? best.text : ""
+  });
+  var via = saveShareCard(canvas, "책갈피-" + data.nickname + ".png");
+  gtag("event", "share_card", { type: "set", from: "profile", via: via });
+}
+
+document.getElementById("detailShareBtn").addEventListener("click", function () {
+  shareLineCard(state.currentId, "detail");
+});
+
+// 빈 내 책장의 두 버튼.
+document.getElementById("myEmptyBrowse").addEventListener("click", function () { showView("library"); });
+document.getElementById("myEmptySearch").addEventListener("click", function () { openSearchSheet(); });
+
+// 공개 기록 탭(꽂은 책갈피 / 등록한 책).
+["profileTabReviews", "profileTabBooks"].forEach(function (id) {
+  document.getElementById(id).addEventListener("click", function (e) {
+    state.profileTab = e.currentTarget.dataset.ptab;
+    renderProfile();
+  });
+});
 
 ["myTabRated", "myTabWants"].forEach(function (id) {
   document.getElementById(id).addEventListener("click", function (e) {
@@ -1090,7 +1163,14 @@ dom.lineForm.addEventListener("submit", function (e) {
       state.my = res.review;
       closeLineSheet();
       renderAuthBox();
-      refreshMyScore(res.points > 0 ? res.points : undefined);
+      // 점수 토스트 대신 알림 띠 하나로 — "카드로 저장"을 같이 건넨다(리디자인 B안 공유 카드).
+      refreshMyScore();
+      if (text) {
+        showActionToast("책갈피를 꽂았어요" + (res.points > 0 ? " · +" + res.points + "점" : ""), {
+          label: "카드로 저장",
+          onClick: function () { shareLineCard(bookId, "line_sheet"); }
+        });
+      }
       return Promise.all([refreshBooks(), refreshComments()]);
     })
     .catch(function (err) {

@@ -59,10 +59,11 @@ function drawMark(x, y, h, front, back) {
 
 function drawBrand(W, cy, dark) {
   // 색은 css/style.css의 --logo-front/--logo-back을 그대로 쓴다(어두운 배경용이 따로 있다).
-  var front = dark ? "#d9848b" : "#7c2b36";
-  var back = dark ? "#8c4e56" : "#c4837f";
-  var nameColor = dark ? "#f1e8dc" : "#231b17";
-  var urlColor = dark ? "#b9a897" : "#6f6155";
+  // 리디자인 B안: 먹색(어두운 바탕에선 종이색) 앞 띠 + 토마토 뒤 띠.
+  var front = dark ? "#ECECE6" : "#151515";
+  var back = "#F2643F";
+  var nameColor = dark ? "#ECECE6" : "#151515";
+  var urlColor = dark ? "#A9A9A2" : "#55554F";
 
   var name = "책갈피", tail = "book-galpi.com";
   var nameFont = '400 32px "Black Han Sans", "IBM Plex Sans KR", sans-serif';
@@ -107,10 +108,11 @@ export function drawCollage() {
   canvas.width = W; canvas.height = H;
 
   var dark = c.bg === "#1f1b19";
-  ctx.fillStyle = c.bg;
+  // "어둡게"는 리디자인 B안의 먹색으로 칠한다(저장된 옵션 값은 예전 그대로 둠).
+  ctx.fillStyle = dark ? "#151515" : c.bg;
   ctx.fillRect(0, 0, W, H);
-  var ink = dark ? "#f1e8dc" : "#231b17";
-  var sub = dark ? "#c7b6a4" : "#6f6155";
+  var ink = dark ? "#ECECE6" : "#151515";
+  var sub = dark ? "#A9A9A2" : "#55554F";
 
   var pad = 70;
   // 서명 자리를 먼저 떼어 둔다. 표지와 아래 문구는 그 위에서만 자리를 잡는다.
@@ -201,6 +203,11 @@ export function drawCollage() {
         ctx.fillText(line, 0, (k - (arr.length - 1) / 2) * fs * 1.35);
       });
     }
+    // 표지 위로 튀어나온 책갈피 탭(리디자인 B안) — 책마다 넷 중 한 색.
+    ctx.shadowColor = "transparent";
+    ctx.fillStyle = TAB_COLORS[i % TAB_COLORS.length];
+    var tw = Math.max(8, w * 0.1), th = h * 0.28;
+    ctx.fillRect(w / 2 - w * 0.08 - tw, -h / 2 - th * 0.25, tw, th);
     ctx.restore();
   }
 
@@ -234,7 +241,8 @@ function wrapTitle(title, maxWidth, fontSize) {
 var MAX_PICK = 12;
 
 // 표지를 못 받아온 책의 배경색. js/render.js의 COVERS와 같은 책등 색이다.
-var SPINES = ["#6E2733", "#8C3A38", "#A85C46", "#7A4A52", "#6B5240"];
+var SPINES = ["#1F3D33", "#7A2E2E", "#23264A", "#3D3A35", "#5A4632"];
+var TAB_COLORS = ["#F2643F", "#2E46D8", "#9ED9BC", "#F6D24A"];
 
 function spineFor(title) {
   var hash = 0;

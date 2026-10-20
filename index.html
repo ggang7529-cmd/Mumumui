@@ -134,6 +134,9 @@
   <symbol id="i-heart" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
   </symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>
+  </symbol>
   <symbol id="i-reply" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <path d="M4 5h16v11H9l-5 4z"/>
   </symbol>
@@ -303,6 +306,11 @@
             <p class="detail-author" id="detailAuthor"></p>
             <p class="rating-meta" id="detailRatingMeta"></p>
             <p class="detail-want-count" id="detailWantCount" hidden></p>
+            <!-- 공유 카드(한 줄 하나를 큰 책갈피로, js/shareCard.js). 본문 있는 한 줄이 있을 때만. -->
+            <button type="button" class="btn-ghost share-card-btn" id="detailShareBtn" hidden>
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-share"></use></svg>
+              카드로 공유
+            </button>
           </header>
         </div>
 
@@ -351,21 +359,28 @@
     <section id="profileView" hidden>
       <div class="panel profile-card">
         <header class="profile-head">
-          <h2 class="profile-name" id="profileName"></h2>
-          <p class="profile-sub" id="profileSub"></p>
+          <!-- 이름 앞 큰 등급 책갈피(리디자인 B안, renderProfile). -->
+          <span class="lv-num lv-num--xl" id="profileBadge" aria-hidden="true" hidden></span>
+          <div class="profile-head-text">
+            <h2 class="profile-name" id="profileName"></h2>
+            <p class="profile-sub" id="profileSub"></p>
+          </div>
         </header>
         <!-- 내 기록일 때만: 등급·다음 등급까지·순위(등급 안내 팝업과 같은 카드, renderProfile) -->
         <div class="level-progress profile-progress" id="profileProgress" hidden></div>
         <dl class="profile-stats" id="profileStats"></dl>
 
-        <section class="profile-section">
-          <h3>등록한 책 <span class="count" id="profileBookCount"></span></h3>
-          <div class="shelf profile-shelf" id="profileShelf"></div>
+        <div class="my-tabs profile-tabs" role="tablist" aria-label="기록">
+          <button type="button" class="my-tab" role="tab" id="profileTabReviews" data-ptab="reviews">꽂은 책갈피 <span class="my-tab-count" id="profileReviewCount"></span></button>
+          <button type="button" class="my-tab" role="tab" id="profileTabBooks" data-ptab="books">등록한 책 <span class="my-tab-count" id="profileBookCount"></span></button>
+        </div>
+
+        <section class="profile-section" id="profileReviewsSection" role="tabpanel">
+          <ul class="profile-reviews" id="profileReviews"></ul>
         </section>
 
-        <section class="profile-section">
-          <h3>남긴 한줄평 <span class="count" id="profileReviewCount"></span></h3>
-          <ul class="profile-reviews" id="profileReviews"></ul>
+        <section class="profile-section" id="profileBooksSection" role="tabpanel" hidden>
+          <div class="shelf profile-shelf" id="profileShelf"></div>
         </section>
       </div>
     </section>
@@ -426,7 +441,7 @@
         <p class="my-shelf-sub" id="myShelfSub"></p>
         <!-- 닉네임 없이 별점·읽고 싶어요가 3개 이상 쌓이면 한 번(닫거나 누르면 다시 안 뜸). -->
         <div class="my-nick-prompt" id="myNickPrompt" hidden>
-          <p>닉네임을 정하면 다른 기기에서도 내 책장을 볼 수 있어요</p>
+          <p>닉네임을 정하면 <b>다른 기기에서도</b> 내 책장을 볼 수 있어요</p>
           <button type="button" class="btn-primary my-nick-prompt-btn" id="myNickPromptBtn">닉네임 정하기</button>
           <button type="button" class="my-nick-prompt-close" id="myNickPromptClose" aria-label="안내 닫기">×</button>
         </div>
@@ -435,7 +450,14 @@
           <button type="button" class="my-tab" role="tab" id="myTabWants" data-tab="wants">읽고 싶은 책 <span class="my-tab-count" id="myWantsCount"></span></button>
         </div>
         <div class="my-grid" id="myShelfGrid" role="tabpanel"></div>
-        <p class="my-empty" id="myShelfEmpty" hidden></p>
+        <!-- 빈 책장(리디자인 B안): 점선 책갈피 그림 + 제목 + 안내 + 책장 둘러보기 / 책 제목으로 찾기. -->
+        <div class="my-empty" id="myShelfEmpty" hidden>
+          <div class="my-empty-art" aria-hidden="true"><span></span><span></span><span class="is-on"></span><span></span></div>
+          <p class="my-empty-title" id="myEmptyTitle"></p>
+          <p class="my-empty-text" id="myEmptyText"></p>
+          <button type="button" class="btn-primary my-empty-cta" id="myEmptyBrowse">책장 둘러보기</button>
+          <button type="button" class="text-link" id="myEmptySearch">책 제목으로 찾기</button>
+        </div>
       </div>
     </section>
 
@@ -462,7 +484,7 @@
       <div class="panel">
         <!-- 제목 문자열은 functions/collage.js가 그대로 찾아 <h1>로 바꾼다 — 고치면 같이 고칠 것. -->
         <h2>내 책장 한 컷</h2>
-        <p class="collage-lead">읽은 책 표지로 SNS용 이미지를 만들어요</p>
+        <p class="collage-lead">읽은 책을 모아 인스타·스레드용 이미지로</p>
 
         <div class="collage-layout">
           <div class="collage-controls">
