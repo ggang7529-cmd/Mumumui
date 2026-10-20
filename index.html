@@ -283,7 +283,7 @@
         </div>
         <div class="chip-row" id="sortTabs" role="group" aria-label="정렬 방식">
           <button type="button" class="sort-tab active" data-sort="latest">최신순</button>
-          <button type="button" class="sort-tab" data-sort="comments">한 줄 많은 순</button>
+          <button type="button" class="sort-tab" data-sort="comments">책갈피 많은 순</button>
           <button type="button" class="sort-tab" data-sort="rating">별점순</button>
         </div>
         <!-- 분류 칩은 js/render.js renderGenreChips가 책이 있는 갈래만 그린다(js/kdc.js genreOfBook). -->
@@ -691,7 +691,7 @@
                   <fieldset class="field write-line">
                     <legend><strong>한 줄 남기기</strong> · 태그만 골라도 OK</legend>
                     <div class="mood-picker" id="fMoods" role="radiogroup" aria-label="감정 태그"></div>
-                    <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off" aria-label="한 줄 리뷰">
+                    <input type="text" id="fText" maxlength="80" placeholder="이 책을 한 줄로 표현한다면?" autocomplete="off" aria-label="한 줄">
                     <p class="char-hint" id="fTextHint">최대 80자, 한 줄로 남겨주세요</p>
                   </fieldset>
                   <!-- 책갈피 색(리디자인 B안). 열 때마다 넷 중 하나가 미리 골라져 있다(js/main.js). -->
@@ -754,7 +754,7 @@
 <dialog class="line-sheet" id="lineSheet" aria-labelledby="lineSheetTitle">
   <form class="line-sheet-panel" id="lineForm" method="dialog">
     <span class="line-sheet-grip" aria-hidden="true"></span>
-    <h2 class="line-sheet-title" id="lineSheetTitle">한 줄도 꽂아볼래요?</h2>
+    <h2 class="line-sheet-title" id="lineSheetTitle">책갈피도 꽂아볼래요?</h2>
     <p class="line-sheet-sub" id="lineSheetSub">태그만 골라도 OK</p>
     <div class="mood-picker line-moods" id="lineMoods" role="radiogroup" aria-label="감정 태그"></div>
     <!-- 입력칸 자체가 책갈피 한 장(고른 색, 왼쪽 펀칭 구멍). -->

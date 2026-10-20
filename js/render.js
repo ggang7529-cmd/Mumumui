@@ -1243,7 +1243,7 @@ export function renderProfile() {
   if (data.reviews.length === 0) {
     var noReview = document.createElement("li");
     noReview.className = "empty-note";
-    noReview.textContent = isMe ? "아직 남긴 한줄평이 없어요." : "아직 남긴 한줄평이 없어요";
+    noReview.textContent = isMe ? "아직 꽂은 책갈피가 없어요." : "아직 꽂은 책갈피가 없어요";
     dom.profileReviews.appendChild(noReview);
   } else {
     data.reviews.forEach(function (r) {

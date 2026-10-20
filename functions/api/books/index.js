@@ -58,7 +58,7 @@ export async function onRequestPost(context) {
   if (!title || !author) return json({ error: "필수 항목이 비어있어요." }, { status: 400 });
   // 한 줄 리뷰는 감정 태그를 골랐다면 비워둘 수 있다. 둘 다 없으면 남길 내용이 없는
   // 셈이라 막는다. 별점은 예전과 똑같이 무조건 필수다.
-  if (!text && !mood) return json({ error: "한 줄 리뷰를 쓰거나 감정 태그를 골라주세요." }, { status: 400 });
+  if (!text && !mood) return json({ error: "한 줄을 쓰거나 태그를 골라주세요." }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return json({ error: "별점을 선택해주세요." }, { status: 400 });
 
   // PIN이 걸린 닉네임은 그 PIN을 맞춘 기기만, 처음 보는 닉네임은 PIN을 정한 뒤에(functions/_lib/nickname.js).

@@ -99,7 +99,7 @@ export async function onRequestPost(context) {
   }
 
   var comment = await env.DB.prepare("SELECT id, parent_id FROM comments WHERE id = ?1").bind(commentId).first();
-  if (!comment) return json({ error: "존재하지 않는 한줄평이에요." }, { status: 404 });
+  if (!comment) return json({ error: "존재하지 않는 책갈피예요." }, { status: 404 });
   if (comment.parent_id) return json({ error: "답글은 고정할 수 없어요." }, { status: 400 });
 
   // 지워진 한줄평의 고정 기록은 세지 않는다(카드에도 안 나오므로).

@@ -108,7 +108,7 @@ export async function onRequestPost(context) {
   // 한줄평은 감정 태그를 골랐다면 본문을 비워둘 수 있다. 답글은 태그가 없으니 예전처럼
   // 본문이 반드시 있어야 한다.
   if (!text && !mood) {
-    return json({ error: parentId ? "내용을 입력해주세요." : "한 줄 감상을 쓰거나 감정 태그를 골라주세요." }, { status: 400 });
+    return json({ error: parentId ? "내용을 입력해주세요." : "한 줄을 쓰거나 태그를 골라주세요." }, { status: 400 });
   }
 
   var book = await env.DB.prepare("SELECT id FROM books WHERE id = ?1").bind(bookId).first();
