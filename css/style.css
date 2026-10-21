@@ -5732,3 +5732,11 @@
   .also-cover { height: auto; }
   .also-cover img { position: static; display: block; width: 100%; height: auto; }
   .also-cover.also-cover--typo { height: 0; padding-bottom: 145%; }
+
+  /* 알림 띠(#actionToast)는 popover를 아는 브라우저에서 늘 popover="manual"로 붙여 두는데,
+     닫힌 popover를 숨기는 브라우저 기본 display: none을 위의 .action-toast { display: flex }가
+     덮어서, 안 보이는(opacity 0) 띠가 화면 맨 위에 늘 깔려 탭을 가로챘다 — 스크롤해서 헤더가
+     맨 위에 붙으면 책 찾기·테마·알림·로고가 안 눌렸다. 닫혀 있으면 아예 그리지 않고, 사라지는
+     0.22초 동안에도 누름은 통과시킨다. */
+  .action-toast[popover]:not(:popover-open) { display: none; }
+  .action-toast:not(.show) { pointer-events: none; }
