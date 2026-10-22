@@ -6,6 +6,9 @@ import { topTags, tagsText, distText } from "../../js/bookSummary.js";
 import { escapeHtml } from "../_lib/html.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
+import { findAlsoBooks } from "../_lib/alsoBooks.js";
+import { pickGenreBooks, coverFor } from "../../js/relatedBooks.js";
+import { BOOKMARK_COLORS } from "../../js/bookmarkColor.js";
 
 // index.html 상단 스프라이트(<symbol id="i-…">)를 가리키는 <use> 한 벌. 이 라우트는
 // index.html을 읽어 치환하는 방식이라 스프라이트가 이미 페이지 안에 들어 있다.
@@ -87,7 +90,7 @@ export async function onRequestGet(context) {
   var html = await indexRes.text();
 
   var book = await env.DB.prepare(
-    "SELECT id, title, author, cover, isbn, contents, text, mood, rating_sum, rating_count, comment_count, owner_name, created_at FROM books WHERE id = ?1"
+    "SELECT id, title, author, cover, isbn, contents, text, mood, rating_sum, rating_count, comment_count, owner_name, created_at, class_no, category FROM books WHERE id = ?1"
   )
     .bind(id)
     .first();
@@ -204,7 +207,7 @@ export async function onRequestGet(context) {
   // 화면의 "★ 4.8 · 평가 5 · 한 줄 3"과 같은 문구(js/render.js detailStatsText).
   var ratingMetaText =
     (avgRating !== null ? "★ " + avgRating.toFixed(1) + " · 평가 " + book.rating_count : "아직 평가가 없어요") +
-    " · 한 줄 " + (book.comment_count || 0);
+    " · 책갈피 " + (book.comment_count || 0);
 
   // 댓글(한줄평)은 페이지의 핵심 콘텐츠지만 부가 조회이므로, 실패해도 상세 페이지
   // 자체(제목/평점/설명)는 그대로 나가야 한다 — 실패 시 빈 목록으로 두면
@@ -212,6 +215,8 @@ export async function onRequestGet(context) {
   var commentCountText = "";
   var commentListHtml = "";
   var summaryHtml = "";
+  // 이 책에 한 줄(본문·태그)이 하나라도 있는지. 조회가 실패하면 모르는 채(null)로 두고 막지 않는다.
+  var hasLines = null;
   try {
     var commentRows = await env.DB.prepare(
       "SELECT id, text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
@@ -220,6 +225,7 @@ export async function onRequestGet(context) {
       .bind(id)
       .all();
     var topLevelComments = commentRows.results || [];
+    hasLines = topLevelComments.length > 0;
 
     // 이 책의 기록 요약 — 남긴 태그(한 줄 전체 기준)와 별점 분포(별점만 남긴 것까지).
     // 이 사이트에만 있는, 책마다 다른 글이라 검색엔진이 보는 첫 HTML에 같이 싣는다.
@@ -275,6 +281,34 @@ export async function onRequestGet(context) {
     // 위에서 선언한 빈 값 그대로 둔다.
   }
 
+  // 책 페이지끼리 잇는 링크 두 칸(함께 꽂은 책 · 같은 갈래의 책). 부가 조회라 실패하면 빈 칸.
+  var alsoBooks = [];
+  var genrePick = { genre: "", books: [] };
+  try {
+    alsoBooks = await findAlsoBooks(env, id, 3);
+    var allRows = (await env.DB.prepare(
+      "SELECT id, title, cover, class_no, category, comment_count, updated_at, created_at FROM books"
+    ).all()).results || [];
+    genrePick = pickGenreBooks(
+      allRows.map(function (r) {
+        return {
+          id: r.id, title: r.title, cover: r.cover, classNo: r.class_no, category: r.category,
+          commentCount: r.comment_count || 0, updatedAt: r.updated_at || r.created_at
+        };
+      }),
+      { id: book.id, classNo: book.class_no, category: book.category },
+      alsoBooks.map(function (b) { return b.id; })
+    );
+  } catch (e) {
+    // 위의 빈 값 그대로.
+  }
+
+  // 한 줄이 하나도 없는 책(별점만 있거나 기록이 없는 책) 페이지는 색인에서 뺀다. 책마다 다른 글이
+  // 제목 정도라, 이런 페이지가 많으면 사이트 전체가 얇다고 판단돼 내용 있는 책 페이지까지 같이
+  // 밀렸다(2026-10 서치 콘솔 "크롤링됨 - 현재 색인이 생성되지 않음" 65개). 링크는 따라가게 두고
+  // (follow), 한 줄이 생기면 다음 크롤링부터 자동으로 다시 색인 대상이다. sitemap.xml도 같은 기준.
+  var noindex = hasLines === false;
+
   html = html
     .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
     .replace(
@@ -283,7 +317,8 @@ export async function onRequestGet(context) {
     )
     .replace(
       '<link rel="canonical" href="https://book-galpi.com/">',
-      '<link rel="canonical" href="' + pageUrl + '">'
+      '<link rel="canonical" href="' + pageUrl + '">' +
+        (noindex ? '\n<meta name="robots" content="noindex, follow">' : "")
     )
     .replace(staticOgBlock, metaTags)
     .replace('<h1 class="brand-name">책갈피<span class="brand-dot" aria-hidden="true">.</span></h1>', '<p class="brand-name">책갈피<span class="brand-dot" aria-hidden="true">.</span></p>')
@@ -310,9 +345,47 @@ export async function onRequestGet(context) {
     .replace('<div class="header-intro" id="headerIntro">', '<div class="header-intro" id="headerIntro" hidden>')
     .replace('<section id="libraryView">', '<section id="libraryView" hidden>')
     .replace('<div class="library-toolbar" id="libraryToolbar">', '<div class="library-toolbar" id="libraryToolbar" hidden>')
-    .replace('<section id="detailView" hidden>', '<section id="detailView">');
+    .replace('<section id="detailView" hidden>', '<section id="detailView">')
+    .replace(
+      '<section class="also-books" id="alsoBooks" hidden aria-labelledby="alsoTitle">',
+      '<section class="also-books" id="alsoBooks"' + (alsoBooks.length ? "" : " hidden") + ' aria-labelledby="alsoTitle">'
+    )
+    .replace(
+      '<div class="also-grid" id="alsoGrid"></div>',
+      '<div class="also-grid" id="alsoGrid" data-book="' + escapeHtml(book.id) + '">' + alsoBooks.map(relatedLinkHtml).join("") + "</div>"
+    )
+    .replace(
+      '<section class="also-books genre-books" id="genreBooks" hidden aria-labelledby="genreBooksTitle">',
+      '<section class="also-books genre-books" id="genreBooks"' + (genrePick.books.length ? "" : " hidden") + ' aria-labelledby="genreBooksTitle">'
+    )
+    .replace(
+      '<h3 class="also-title" id="genreBooksTitle">같은 갈래의 책</h3>',
+      '<h3 class="also-title" id="genreBooksTitle">같은 갈래의 책' + (genrePick.genre ? " · " + escapeHtml(genrePick.genre) : "") + "</h3>"
+    )
+    .replace(
+      '<div class="also-grid" id="genreGrid"></div>',
+      '<div class="also-grid" id="genreGrid" data-book="' + escapeHtml(book.id) + '">' + genrePick.books.map(relatedLinkHtml).join("") + "</div>"
+    );
 
-  return new Response(html, { headers: { "Content-Type": "text/html; charset=UTF-8" } });
+  var headers = { "Content-Type": "text/html; charset=UTF-8" };
+  if (noindex) headers["X-Robots-Tag"] = "noindex, follow";
+  return new Response(html, { headers: headers });
+}
+
+// 함께 꽂은 책·같은 갈래의 책 한 칸. js/render.js buildRelatedLink와 같은 모양이다.
+function relatedLinkHtml(b) {
+  var cover = b.cover
+    ? '<img src="' + escapeHtml(upscaleCover(b.cover)) + '" alt="" loading="lazy">'
+    : '<span class="also-cover-typo">' + escapeHtml(b.title) + "</span>";
+  var tabs = "";
+  for (var i = 0; i < Math.min(b.commentCount || 0, 2); i++) {
+    tabs += '<span class="bm-tab bm-tab--' + (i + 1) + " bm-" + BOOKMARK_COLORS[(i + 1) % BOOKMARK_COLORS.length] + '" aria-hidden="true"></span>';
+  }
+  return (
+    '<a class="also-book" href="/book/' + encodeURIComponent(b.id) + '" aria-label="' + escapeHtml(b.title) + '">' +
+    '<span class="also-cover' + (b.cover ? "" : " also-cover--typo") + '" style="--cover:' + coverFor(b.title) + '">' + cover + tabs + "</span>" +
+    '<span class="also-name">' + escapeHtml(b.title) + "</span></a>"
+  );
 }
 
 // 요약 두 줄의 HTML. js/render.js renderDetailSummary와 같은 모양이다.

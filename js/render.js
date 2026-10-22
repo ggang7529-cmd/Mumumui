@@ -5,6 +5,7 @@ import { bookmarkColorOf, BOOKMARK_COLORS, BOOKMARK_COLOR_LABELS } from "./bookm
 import { warmShareFonts } from "./shareCard.js";
 import { topTags, tagsText, distText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
+import { coverFor, pickGenreBooks } from "./relatedBooks.js";
 import { groupEditions } from "./bookIdentity.js";
 import { MIN_RATINGS_FOR_RECOMMEND } from "./recommendRules.js";
 import {
@@ -19,7 +20,6 @@ import { LEVELS, SCORE_RULES, getLevel, levelProgress, formatNicknameShort, form
 // 대비가 충분한 중간~어두운 명도로 골랐다.
 // 표지 이미지가 없는 책의 책등 색. 리디자인 B안의 표지 예시처럼 깊고 차분한 색 — 위에 얹는
 // 원색 책갈피 탭과 흰 제목 글자가 잘 보이게 어둡게 잡았다.
-var COVERS = ["#1F3D33", "#7A2E2E", "#23264A", "#3D3A35", "#5A4632"];
 
 // index.html 상단 스프라이트에 정의된 선형 아이콘을 <svg><use></svg> 한 벌로 만들어 준다.
 // 크기·색은 CSS(.icon)가 정하고, stroke는 currentColor라 놓이는 자리의 글자색을 따라간다.
@@ -40,11 +40,8 @@ export function buildIcon(name, className) {
   return svg;
 }
 
-export function coverFor(title) {
-  var hash = 0;
-  for (var i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
-  return COVERS[hash % COVERS.length];
-}
+// 표지 없는 책의 책등 색(서버 첫 HTML과 같은 색이라 js/relatedBooks.js에 있다).
+export { coverFor };
 
 // 댓글/답글 작성자 닉네임 span을 공통으로 만든다. 별점·좋아요·날짜까지 같이 붙는 줄이라
 // "등급아이콘 레벨 닉네임" 축약형으로 표시한다 (예: 책아이콘 + "6 이과생").
@@ -2591,55 +2588,81 @@ export function renderBomPast() {
   });
 }
 
-// ── 이 책을 꽂은 사람이 함께 꽂은 책(리디자인 B안 제안 ②) ───────────────────────────
+// ── 이 책을 꽂은 사람이 함께 꽂은 책(리디자인 B안 제안 ②) · 같은 갈래의 책 ──────────────
+// 두 칸 모두 서버가 첫 HTML에 미리 채워 두고(functions/book/[id].js, grid의 data-book = 그 책 id),
+// 여기서 같은 모양으로 다시 그린다. 아직 데이터가 없으면(받는 중이거나 /api/를 못 받는 검색엔진의
+// 렌더러) 서버가 채운 링크를 지우지 않고 둔다 — 책 페이지끼리 잇는 링크가 이것뿐이다.
+function buildRelatedLink(b, gaEvent) {
+  var a = document.createElement("a");
+  a.className = "also-book";
+  a.href = "/book/" + encodeURIComponent(b.id);
+  a.setAttribute("aria-label", b.title);
+  var cover = document.createElement("span");
+  cover.className = "also-cover";
+  cover.style.setProperty("--cover", coverFor(b.title));
+  if (b.cover) {
+    var img = document.createElement("img");
+    img.src = upscaleCover(b.cover);
+    img.alt = "";
+    img.loading = "lazy";
+    cover.appendChild(img);
+  } else {
+    cover.classList.add("also-cover--typo");
+    var t = document.createElement("span");
+    t.className = "also-cover-typo";
+    t.textContent = b.title;
+    cover.appendChild(t);
+  }
+  for (var i = 0; i < Math.min(b.commentCount || 0, 2); i++) {
+    var tab = document.createElement("span");
+    tab.className = "bm-tab bm-tab--" + (i + 1) + " bm-" + BOOKMARK_COLORS[(i + 1) % BOOKMARK_COLORS.length];
+    tab.setAttribute("aria-hidden", "true");
+    cover.appendChild(tab);
+  }
+  a.appendChild(cover);
+  var title = document.createElement("span");
+  title.className = "also-name";
+  title.textContent = b.title;
+  a.appendChild(title);
+  a.addEventListener("click", function (e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    gtag("event", gaEvent, { from_book_id: state.currentId, book_id: b.id });
+    openDetail(b.id);
+  });
+  return a;
+}
+
+function fillRelatedGrid(box, grid, list, gaEvent) {
+  delete grid.dataset.book;
+  box.hidden = !list.length;
+  grid.innerHTML = "";
+  list.forEach(function (b) { grid.appendChild(buildRelatedLink(b, gaEvent)); });
+}
+
 // js/main.js openDetail이 받은 목록(state.also)을 표지 셋으로. 겹치는 사람이 없으면 숨긴다.
 export function renderAlsoBooks() {
   var box = document.getElementById("alsoBooks");
   var grid = document.getElementById("alsoGrid");
   var data = state.also;
-  var list = data && data.bookId === state.currentId ? data.books : [];
-  box.hidden = !list.length;
-  grid.innerHTML = "";
-  list.forEach(function (b) {
-    var a = document.createElement("a");
-    a.className = "also-book";
-    a.href = "/book/" + encodeURIComponent(b.id);
-    a.setAttribute("aria-label", b.title);
-    var cover = document.createElement("span");
-    cover.className = "also-cover";
-    cover.style.setProperty("--cover", coverFor(b.title));
-    if (b.cover) {
-      var img = document.createElement("img");
-      img.src = upscaleCover(b.cover);
-      img.alt = "";
-      img.loading = "lazy";
-      cover.appendChild(img);
-    } else {
-      cover.classList.add("also-cover--typo");
-      var t = document.createElement("span");
-      t.className = "also-cover-typo";
-      t.textContent = b.title;
-      cover.appendChild(t);
-    }
-    for (var i = 0; i < Math.min(b.commentCount || 0, 2); i++) {
-      var tab = document.createElement("span");
-      tab.className = "bm-tab bm-tab--" + (i + 1) + " bm-" + BOOKMARK_COLORS[(i + 1) % BOOKMARK_COLORS.length];
-      tab.setAttribute("aria-hidden", "true");
-      cover.appendChild(tab);
-    }
-    a.appendChild(cover);
-    var title = document.createElement("span");
-    title.className = "also-name";
-    title.textContent = b.title;
-    a.appendChild(title);
-    a.addEventListener("click", function (e) {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      gtag("event", "click_also_book", { from_book_id: state.currentId, book_id: b.id });
-      openDetail(b.id);
-    });
-    grid.appendChild(a);
-  });
+  if (data && data.bookId === state.currentId) fillRelatedGrid(box, grid, data.books, "click_also_book");
+  else if (grid.dataset.book !== state.currentId) fillRelatedGrid(box, grid, [], "click_also_book");
+  renderGenreBooks();
+}
+
+// 같은 갈래의 책 — 홈이 받아 둔 책 목록(state.books)에서 고른다(js/relatedBooks.js).
+export function renderGenreBooks() {
+  var box = document.getElementById("genreBooks");
+  var grid = document.getElementById("genreGrid");
+  var current = findBook(state.currentId);
+  if (!state.booksLoaded || !current) {
+    if (grid.dataset.book !== state.currentId) fillRelatedGrid(box, grid, [], "click_genre_book");
+    return;
+  }
+  var also = state.also && state.also.bookId === state.currentId ? state.also.books : [];
+  var picked = pickGenreBooks(state.books, current, also.map(function (b) { return b.id; }));
+  document.getElementById("genreBooksTitle").textContent = "같은 갈래의 책 · " + picked.genre;
+  fillRelatedGrid(box, grid, picked.books, "click_genre_book");
 }
 
 // 책갈피 색 고르는 동그라미 넷(한 줄 남기기 시트·한 줄 시트). 고른 것은 먹색 굵은 테두리.

@@ -1,4 +1,5 @@
 import { canonicalOrigin } from "./_lib/origin.js";
+import { hasLineSql } from "./_lib/lines.js";
 // 잘못된 값에는 예외 대신 null을 준다. new Date(x).toISOString()은 x가 undefined거나
 // NaN이거나 Date가 표현할 수 있는 범위를 벗어나면 RangeError를 던진다. 예전에는 이
 // 함수를 try/catch 바깥에서 부르고 있어서, 책 한 권의 타임스탬프만 이상해도 사이트맵
@@ -36,7 +37,10 @@ async function handle(context) {
 
   var books = [];
   try {
-    var rows = await env.DB.prepare("SELECT id, created_at, updated_at FROM books ORDER BY created_at DESC").all();
+    var rows = await env.DB.prepare("SELECT b.id, b.created_at, b.updated_at FROM books b " +
+      // 한 줄이 하나도 없는 책 페이지는 noindex라(functions/book/[id].js) 사이트맵에서도 뺀다.
+      "WHERE EXISTS (SELECT 1 FROM comments c WHERE c.book_id = b.id AND c.parent_id IS NULL AND " + hasLineSql("c") + ") " +
+      "ORDER BY b.created_at DESC").all();
     books = rows.results || [];
   } catch (err) {
     // D1 조회가 실패해도 구글/네이버 크롤러에는 최소한 홈 URL만 담은 유효한 XML을

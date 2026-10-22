@@ -343,6 +343,13 @@
           <div class="also-grid" id="alsoGrid"></div>
         </section>
 
+        <!-- 같은 갈래의 다른 책(js/relatedBooks.js pickGenreBooks). 책갈피가 있는 책끼리만 잇는다.
+             두 칸 모두 서버가 첫 HTML에 미리 채운다(functions/book/[id].js) — 여는 태그 문자열은 치환 대상. -->
+        <section class="also-books genre-books" id="genreBooks" hidden aria-labelledby="genreBooksTitle">
+          <h3 class="also-title" id="genreBooksTitle">같은 갈래의 책</h3>
+          <div class="also-grid" id="genreGrid"></div>
+        </section>
+
         <!-- 관리자만 보이는 영역(페이지 맨 아래). -->
         <div class="admin-zone" id="adminZone" hidden>
           <p class="admin-zone-label">관리자만 보여요</p>

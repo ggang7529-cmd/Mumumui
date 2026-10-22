@@ -5740,3 +5740,9 @@
      0.22초 동안에도 누름은 통과시킨다. */
   .action-toast[popover]:not(:popover-open) { display: none; }
   .action-toast:not(.show) { pointer-events: none; }
+
+  /* PC 상세 격자: "같은 갈래의 책"이 "함께 꽂은 책"(6행) 다음 줄, 관리자 영역은 그 아래. */
+  @media (min-width: 641px) {
+    .detail-card .genre-books { grid-column: 1 / -1; grid-row: 7; }
+    .detail-card .admin-zone { grid-row: 8; }
+  }
