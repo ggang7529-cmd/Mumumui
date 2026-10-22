@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- 문자 인코딩 선언은 문서 첫 1024바이트 안에 있어야 한다(그 뒤면 브라우저·크롤러가 추측한다). -->
+<meta charset="UTF-8">
 <base href="/">
 <!-- 테마: 기본은 밝은 크림이고, 헤더의 해/달 버튼으로 고른 다크가 이 브라우저에 남는다.
      기기의 다크 설정은 따르지 않는다(크림이 사이트의 기본 얼굴이라서). CSS가 그려지기 전에
@@ -24,11 +26,10 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "y87i3pjxhj");
 </script>
-<meta charset="UTF-8">
 <!-- 아래 <title>과 description 두 줄은 functions/book/[id].js가 문자열을 그대로 매칭해서
      책 전용 값으로 치환한다. 여기 문구를 고치면 그쪽 replace 대상도 같이 고쳐야 한다 —
      안 그러면 조용히 매칭에 실패해서 모든 책 페이지가 홈 제목을 달고 나간다. -->
-<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>
+<title>책갈피 - 책 한줄평·후기 모음, 읽은 책 기록</title>
 <meta name="description" content="책을 덮고 나면, 이야기하고 싶어지잖아요. 같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">
 <!-- 검색엔진 소유확인. 위가 현재 도메인(book-galpi.com)용이고, 아래는 옛
      galpi.pages.dev 속성용이다. 옛 주소는 이제 301로 넘어가서 네이버가 그 페이지를
@@ -331,6 +332,8 @@
         <div class="detail-summary" id="detailSummary" hidden></div>
 
         <section class="comments">
+          <!-- 책마다 다른 소개 문장(js/bookSummary.js bookIntroText). 서버가 첫 HTML에 채운다 — 여는 태그는 치환 대상. -->
+          <p class="detail-intro" id="detailIntro"></p>
           <h3>이 책에 꽂힌 책갈피 <span class="count" id="commentCount"></span></h3>
           <ul id="commentList"></ul>
           <!-- 점선 버튼: 아직 별점이 없으면 별점 카드로, 있으면 한 줄 시트를 연다(js/main.js). -->

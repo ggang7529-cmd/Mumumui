@@ -5746,3 +5746,7 @@
     .detail-card .genre-books { grid-column: 1 / -1; grid-row: 7; }
     .detail-card .admin-zone { grid-row: 8; }
   }
+
+  /* 책 상세 "이 책에 꽂힌 책갈피" 위 소개 문장(책마다 다른 한 문장). */
+  .detail-intro { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: var(--muted); word-break: keep-all; }
+  .detail-intro:empty { display: none; }

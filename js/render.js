@@ -3,7 +3,7 @@ import { withNickname } from "./nickAuth.js";
 import { PICKABLE_MOOD_TAGS, findMoodTag } from "./moodTags.js";
 import { bookmarkColorOf, BOOKMARK_COLORS, BOOKMARK_COLOR_LABELS } from "./bookmarkColor.js";
 import { warmShareFonts } from "./shareCard.js";
-import { topTags, tagsText, distText } from "./bookSummary.js";
+import { topTags, tagsText, distText, bookIntroText } from "./bookSummary.js";
 import { GENRE_ORDER, genreOfBook } from "./kdc.js";
 import { coverFor, pickGenreBooks } from "./relatedBooks.js";
 import { groupEditions } from "./bookIdentity.js";
@@ -1684,6 +1684,7 @@ function renderDetailSummary() {
   if (!state.ratingDist) return;
   var moods = {};
   state.comments.forEach(function (c) { if (!c.parentId && c.mood) moods[c.mood] = (moods[c.mood] || 0) + 1; });
+  renderDetailIntro(moods);
   var tags = tagsText(topTags(moods));
   $box.innerHTML = "";
   if (tags) {
@@ -2586,6 +2587,21 @@ export function renderBomPast() {
     });
     $list.appendChild(row);
   });
+}
+
+// 책마다 다른 소개 문장(js/bookSummary.js bookIntroText) — 서버가 첫 HTML에 같은 문장을 쓴다.
+// 한 줄 목록이 도착한 뒤(renderDetailSummary)에만 다시 그린다 — 그 전엔 가장 많은 태그를 모른다.
+function renderDetailIntro(moods) {
+  var $intro = document.getElementById("detailIntro");
+  var r = findBook(state.currentId);
+  if (!r) return;
+  var rating = bookRating(r);
+  var top = topTags(moods)[0];
+  $intro.textContent = bookIntroText({
+    title: r.title, author: r.author, ratingCount: rating ? rating.count : 0, avg: rating ? rating.avg : null,
+    lineCount: r.commentCount || 0, topTag: top ? top.label : ""
+  });
+  delete $intro.dataset.book;
 }
 
 // ── 이 책을 꽂은 사람이 함께 꽂은 책(리디자인 B안 제안 ②) · 같은 갈래의 책 ──────────────

@@ -2,7 +2,7 @@ import { fetchScoreMap } from "../_lib/scores.js";
 import { hasLineSql } from "../_lib/lines.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
-import { topTags, tagsText, distText } from "../../js/bookSummary.js";
+import { topTags, tagsText, distText, bookPageTitle, bookIntroText } from "../../js/bookSummary.js";
 import { escapeHtml } from "../_lib/html.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
@@ -99,7 +99,11 @@ export async function onRequestGet(context) {
   // 평균 별점은 메타 설명·JSON-LD·화면 세 곳이 함께 쓰므로 여기서 한 번만 구한다.
   var avgRating = book.rating_count > 0 ? Math.round((book.rating_sum / book.rating_count) * 10) / 10 : null;
 
-  var title = escapeHtml(book.title) + " - 리뷰 및 별점 | 책갈피";
+  // "아몬드 - 손원평 | 한줄평·후기 4개, 별점 4.6 | 책갈피" — 사람들이 치는 검색어(책 제목 + 저자 +
+  // 후기·한줄평)에 맞춘다(js/bookSummary.js, 2026-10-22).
+  var title = escapeHtml(bookPageTitle({
+    title: book.title, author: book.author, lineCount: book.comment_count || 0, avg: avgRating
+  }));
 
   // 메타 설명(검색 결과에 뜨는 문구)은 이 책에 남은 한줄평으로 만든다.
   //
@@ -177,27 +181,7 @@ export async function onRequestGet(context) {
       worstRating: 1,
     };
   }
-  // 감정 태그만 고르고 본문 없이 남긴 첫 한줄평이면 태그 문구를 대신 싣는다 — 안 그러면
-  // 링크 미리보기의 리뷰 항목이 통째로 빠진다.
-  var bookMoodTag = findMoodTag(book.mood);
-  var bookReviewBody = book.text || (bookMoodTag ? bookMoodTag.label : "");
-  if (bookReviewBody) {
-    jsonLd.review = {
-      "@type": "Review",
-      reviewBody: bookReviewBody,
-      author: { "@type": "Person", name: book.owner_name || "책갈피 사용자" },
-      reviewRating:
-        avgRating !== null
-          ? {
-              "@type": "Rating",
-              ratingValue: avgRating,
-              bestRating: 5,
-              worstRating: 1,
-            }
-          : undefined,
-    };
-  }
-  metaTags += jsonLdScript(jsonLd);
+  // review(한 줄들)와 JSON-LD 출력은 한 줄을 읽어 온 뒤 아래에서.
 
   // 이 아래는 검색봇(특히 JS를 실행하지 않는 네이버 Yeti 등)이 자바스크립트 없이도 책
   // 상세 콘텐츠를 읽을 수 있도록, 클라이언트가 fetch 후 채우는 것과 같은 내용을 서버에서
@@ -217,14 +201,16 @@ export async function onRequestGet(context) {
   var summaryHtml = "";
   // 이 책에 한 줄(본문·태그)이 하나라도 있는지. 조회가 실패하면 모르는 채(null)로 두고 막지 않는다.
   var hasLines = null;
+  var topLevelComments = [];
+  var introHtml = "";
   try {
     var commentRows = await env.DB.prepare(
-      "SELECT id, text, rating, mood, author_name FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
+      "SELECT id, text, rating, mood, author_name, created_at FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
       "ORDER BY created_at DESC LIMIT 20"
     )
       .bind(id)
       .all();
-    var topLevelComments = commentRows.results || [];
+    topLevelComments = commentRows.results || [];
     hasLines = topLevelComments.length > 0;
 
     // 이 책의 기록 요약 — 남긴 태그(한 줄 전체 기준)와 별점 분포(별점만 남긴 것까지).
@@ -238,6 +224,12 @@ export async function onRequestGet(context) {
     var dist = [0, 0, 0, 0, 0];
     (aggRows[1].results || []).forEach(function (r) { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1] = r.n; });
     summaryHtml = buildSummaryHtml(tagsText(topTags(moodCounts)), distText(dist));
+    // 책마다 다른 소개 문장(화면에도 그대로 보인다 — js/render.js renderDetailIntro).
+    var topTag = topTags(moodCounts)[0];
+    introHtml = escapeHtml(bookIntroText({
+      title: book.title, author: book.author, ratingCount: book.rating_count || 0, avg: avgRating,
+      lineCount: book.comment_count || 0, topTag: topTag ? topTag.label : ""
+    }));
 
     // 답글도 한줄평 밑에 같이 싣는다(대화가 붙은 책은 그만큼 고유한 글이 늘어난다).
     var repliesByParent = {};
@@ -281,6 +273,24 @@ export async function onRequestGet(context) {
     // 위에서 선언한 빈 값 그대로 둔다.
   }
 
+  // 구조화 데이터의 리뷰: 최근 한 줄 다섯 개를 각자의 별점·글쓴이로. 예전에는 첫 한줄평 하나에
+  // 책 평균 별점을 붙여 실었는데, 리뷰의 별점은 그 리뷰를 쓴 사람의 별점이어야 맞다.
+  var reviewItems = topLevelComments.slice(0, 5).map(function (c) {
+    var moodTag = findMoodTag(c.mood);
+    var item = {
+      "@type": "Review",
+      reviewBody: String(c.text || "").trim() || (moodTag ? moodTag.label : ""),
+      author: { "@type": "Person", name: c.author_name || "책갈피 사용자" }
+    };
+    if (c.rating >= 1 && c.rating <= 5) {
+      item.reviewRating = { "@type": "Rating", ratingValue: c.rating, bestRating: 5, worstRating: 1 };
+    }
+    if (c.created_at) item.datePublished = new Date(c.created_at).toISOString().slice(0, 10);
+    return item;
+  }).filter(function (r) { return r.reviewBody; });
+  if (reviewItems.length) jsonLd.review = reviewItems;
+  metaTags += jsonLdScript(jsonLd);
+
   // 책 페이지끼리 잇는 링크 두 칸(함께 꽂은 책 · 같은 갈래의 책). 부가 조회라 실패하면 빈 칸.
   var alsoBooks = [];
   var genrePick = { genre: "", books: [] };
@@ -310,7 +320,7 @@ export async function onRequestGet(context) {
   var noindex = hasLines === false;
 
   html = html
-    .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
+    .replace("<title>책갈피 - 책 한줄평·후기 모음, 읽은 책 기록</title>", "<title>" + title + "</title>")
     .replace(
       '<meta name="description" content="책을 덮고 나면, 이야기하고 싶어지잖아요. 같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">',
       '<meta name="description" content="' + desc + '">'
@@ -332,6 +342,10 @@ export async function onRequestGet(context) {
       '<p class="rating-meta" id="detailRatingMeta">' + escapeHtml(ratingMetaText) + "</p>"
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
+    .replace(
+      '<p class="detail-intro" id="detailIntro"></p>',
+      '<p class="detail-intro" id="detailIntro" data-book="' + escapeHtml(book.id) + '">' + introHtml + "</p>"
+    )
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
     .replace(
       '<div class="detail-summary" id="detailSummary" hidden></div>',

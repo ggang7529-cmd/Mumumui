@@ -78,7 +78,7 @@ export async function onRequestGet(context) {
     '<meta name="twitter:card" content="summary_large_image">';
 
   html = html
-    .replace("<title>책갈피 - 한 줄 독서 기록과 책 리뷰 커뮤니티</title>", "<title>" + title + "</title>")
+    .replace("<title>책갈피 - 책 한줄평·후기 모음, 읽은 책 기록</title>", "<title>" + title + "</title>")
     .replace(
       '<meta name="description" content="책을 덮고 나면, 이야기하고 싶어지잖아요. 같은 책을 읽은 사람들과 한 줄로 생각을 나눠요. 가입 없이 바로 남길 수 있어요.">',
       '<meta name="description" content="' + desc + '">'
