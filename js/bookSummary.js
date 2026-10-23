@@ -36,10 +36,10 @@ export function distText(dist) {
   return parts.join(" · ");
 }
 
-// ── 책 페이지 제목·소개 문장(2026-10-22) ─────────────────────────────────────────
+// ── 책 페이지 제목(2026-10-22) ──────────────────────────────────────────────────
 // 사람들이 책을 찾을 때 치는 말("아몬드 후기", "손원평 아몬드 한줄평")에 맞춰 제목에 저자와
-// "한줄평·후기"를 넣고, 화면에도 책마다 다른 소개 문장을 한 줄 둔다. 서버(첫 HTML)와 화면이 같은
-// 문장이어야 해서 여기 둔다.
+// "한줄평·후기"를 넣는다. (한때 책마다 숫자만 바뀌는 소개 문장도 화면에 뒀는데, 읽기 어색하다는
+// 사용자 판단으로 2026-10-23에 뺐다.)
 
 // "아몬드 - 손원평 | 한줄평·후기 4개, 별점 4.6 | 책갈피"
 // b: { title, author, lineCount, avg(평균 별점, 없으면 null) }
@@ -47,26 +47,4 @@ export function bookPageTitle(b) {
   var tail = "한줄평·후기" + (b.lineCount > 0 ? " " + b.lineCount + "개" : "") +
     (b.avg !== null && b.avg !== undefined ? ", 별점 " + Number(b.avg).toFixed(1) : "");
   return b.title + (b.author ? " - " + b.author : "") + " | " + tail + " | 책갈피";
-}
-
-// 받침 있는 글자로 끝나면 true. 한글이 아니면 숫자만 읽는 소리로 본다(1·3·6·7·8·0은 받침).
-function endsWithBatchim(text) {
-  var ch = String(text || "").trim().slice(-1);
-  var code = ch.charCodeAt(0);
-  if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 !== 0;
-  return "136780".indexOf(ch) >= 0;
-}
-
-// "손원평의 『아몬드』를 읽은 7명이 남긴 별점은 평균 4.6점, 한줄평은 4개예요. 가장 많이 남긴 감정은
-// '감동적이었어요'예요."
-// b: { title, author, ratingCount, avg, lineCount, topTag(가장 많은 태그 이름, 없으면 "") }
-export function bookIntroText(b) {
-  var who = b.author ? b.author + "의 " : "";
-  var book = "『" + b.title + "』";
-  if (!(b.ratingCount > 0)) return who + book + "에는 아직 별점이 없어요. 첫 책갈피를 꽂아 보세요.";
-  var text = who + book + (endsWithBatchim(b.title) ? "을" : "를") + " 읽은 " + b.ratingCount +
-    "명이 남긴 별점은 평균 " + Number(b.avg).toFixed(1) + "점";
-  text += b.lineCount > 0 ? ", 한줄평은 " + b.lineCount + "개예요." : "이에요. 아직 한줄평은 없어요.";
-  if (b.topTag) text += " 가장 많이 남긴 감정은 '" + b.topTag + "'예요.";
-  return text;
 }

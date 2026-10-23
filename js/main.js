@@ -685,7 +685,6 @@ export function openDetail(id) {
     var $summary = document.getElementById("detailSummary");
     $summary.innerHTML = "";
     $summary.hidden = true;
-    document.getElementById("detailIntro").textContent = "";
   }
   firstDetailOpen = false;
   state.mySeq++;

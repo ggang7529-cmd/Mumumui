@@ -2,7 +2,7 @@ import { fetchScoreMap } from "../_lib/scores.js";
 import { hasLineSql } from "../_lib/lines.js";
 import { getLevel, formatNicknameShort } from "../_lib/levels.js";
 import { findMoodTag } from "../../js/moodTags.js";
-import { topTags, tagsText, distText, bookPageTitle, bookIntroText } from "../../js/bookSummary.js";
+import { topTags, tagsText, distText, bookPageTitle } from "../../js/bookSummary.js";
 import { escapeHtml } from "../_lib/html.js";
 import { canonicalOrigin } from "../_lib/origin.js";
 import { extractIsbn13 } from "../_lib/bookClass.js";
@@ -202,7 +202,6 @@ export async function onRequestGet(context) {
   // 이 책에 한 줄(본문·태그)이 하나라도 있는지. 조회가 실패하면 모르는 채(null)로 두고 막지 않는다.
   var hasLines = null;
   var topLevelComments = [];
-  var introHtml = "";
   try {
     var commentRows = await env.DB.prepare(
       "SELECT id, text, rating, mood, author_name, created_at FROM comments WHERE book_id = ?1 AND parent_id IS NULL AND " + hasLineSql() + " " +
@@ -224,12 +223,6 @@ export async function onRequestGet(context) {
     var dist = [0, 0, 0, 0, 0];
     (aggRows[1].results || []).forEach(function (r) { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1] = r.n; });
     summaryHtml = buildSummaryHtml(tagsText(topTags(moodCounts)), distText(dist));
-    // 책마다 다른 소개 문장(화면에도 그대로 보인다 — js/render.js renderDetailIntro).
-    var topTag = topTags(moodCounts)[0];
-    introHtml = escapeHtml(bookIntroText({
-      title: book.title, author: book.author, ratingCount: book.rating_count || 0, avg: avgRating,
-      lineCount: book.comment_count || 0, topTag: topTag ? topTag.label : ""
-    }));
 
     // 답글도 한줄평 밑에 같이 싣는다(대화가 붙은 책은 그만큼 고유한 글이 늘어난다).
     var repliesByParent = {};
@@ -342,10 +335,6 @@ export async function onRequestGet(context) {
       '<p class="rating-meta" id="detailRatingMeta">' + escapeHtml(ratingMetaText) + "</p>"
     )
     .replace('<span class="count" id="commentCount"></span>', '<span class="count" id="commentCount">' + commentCountText + "</span>")
-    .replace(
-      '<p class="detail-intro" id="detailIntro"></p>',
-      '<p class="detail-intro" id="detailIntro" data-book="' + escapeHtml(book.id) + '">' + introHtml + "</p>"
-    )
     .replace('<ul id="commentList"></ul>', '<ul id="commentList">' + commentListHtml + "</ul>")
     .replace(
       '<div class="detail-summary" id="detailSummary" hidden></div>',
