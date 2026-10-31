@@ -654,6 +654,17 @@
       <h2 class="level-guide-title" id="writeSheetTitle">한 줄 남기기</h2>
       <button type="button" class="level-guide-close" id="writeSheetClose" aria-label="닫기">×</button>
     </div>
+    <!-- 쓰던 게 있을 때 닫기를 누르면 묻는 칸. 브라우저 confirm()은 카카오톡 같은 앱 안 브라우저나
+         홈 화면에 추가한 앱에서 창을 안 띄우고 "취소"로 답해 버려, 시트가 영영 안 닫혔다(js/main.js). -->
+    <div class="write-discard" id="writeDiscard" hidden role="alertdialog" aria-labelledby="writeDiscardText">
+      <div class="write-discard-box">
+        <p id="writeDiscardText">쓰던 한 줄이 사라져요. 닫을까요?</p>
+        <div class="write-discard-btns">
+          <button type="button" class="btn-ghost" id="writeDiscardKeep">계속 쓰기</button>
+          <button type="button" class="btn-primary" id="writeDiscardClose">닫기</button>
+        </div>
+      </div>
+    </div>
     <div class="level-guide-body write-sheet-body">
             <form id="reviewForm">
               <div class="field" id="bookSearchField">

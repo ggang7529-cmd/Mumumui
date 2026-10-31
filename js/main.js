@@ -384,6 +384,8 @@ export function showView(name) {
 var writeSheetOpener = null;
 
 function openForm(prefillQuery) {
+  document.getElementById("writeDiscard").hidden = true;
+  writeDiscardThen = null;
   dom.reviewForm.reset();
   clearSelectedBook();
   state.bookSearch = { query: "", results: null };
@@ -422,14 +424,38 @@ function writeSheetDirty() {
   return !!(document.getElementById("fText").value.trim() || state.formRating || state.formMood);
 }
 
-export function closeWriteSheet(force) {
+// then: 정말 닫았을 때 이어서 할 일(의견 보내기로 넘어가기 등). 쓰던 게 있으면 시트 안의 칸으로
+// 한 번 묻는다 — 브라우저 confirm()은 앱 안 브라우저·홈 화면 앱에서 창 없이 "취소"를 돌려줘서
+// 시트가 아예 안 닫히는 일이 있었다(2026-10-31).
+var writeDiscardThen = null;
+export function closeWriteSheet(force, then) {
   if (dom.writeSheet.hidden) return;
-  if (!force && writeSheetDirty() && !confirm("쓰던 한 줄이 사라져요. 닫을까요?")) return;
+  var ask = document.getElementById("writeDiscard");
+  if (!force && writeSheetDirty()) {
+    // 이미 묻는 중에 또 닫기(×·바깥·Esc)를 누르면 묻는 칸만 내린다 — 실수로 다 날리지 않게.
+    if (!ask.hidden) { ask.hidden = true; return; }
+    writeDiscardThen = then || null;
+    ask.hidden = false;
+    document.getElementById("writeDiscardKeep").focus();
+    return;
+  }
+  ask.hidden = true;
   dom.writeSheet.classList.remove("show");
   setTimeout(function () { dom.writeSheet.hidden = true; }, 220);
   if (writeSheetOpener && writeSheetOpener.focus) writeSheetOpener.focus();
   writeSheetOpener = null;
+  if (then) then();
 }
+
+document.getElementById("writeDiscardKeep").addEventListener("click", function () {
+  document.getElementById("writeDiscard").hidden = true;
+  writeDiscardThen = null;
+});
+document.getElementById("writeDiscardClose").addEventListener("click", function () {
+  var then = writeDiscardThen;
+  writeDiscardThen = null;
+  closeWriteSheet(true, then);
+});
 
 // 한 줄 남기기 시트로 들어가는 공통 진입점. 헤더의 "한 줄 남기기" 버튼과, 홈 검색이
 // 비었을 때 뜨는 "등록하러 가기" 버튼이 같은 함수를 쓴다 — 로그인 모드일 때의 확인 절차가
@@ -1365,7 +1391,7 @@ document.getElementById("feedbackBtn").addEventListener("click", function () { o
 // (쓰던 한 줄이 있으면 closeWriteSheet가 한 번 묻는다).
 export function openFeedback() {
   closeLineSheet();
-  closeWriteSheet();
+  closeWriteSheet(false, openFeedback);
   if (!dom.writeSheet.hidden && dom.writeSheet.classList.contains("show")) return;
   gtag("event", "click_feedback");
   document.getElementById("feedbackForm").reset();

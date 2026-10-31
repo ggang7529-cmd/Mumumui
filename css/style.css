@@ -5747,3 +5747,30 @@
     .detail-card .admin-zone { grid-row: 8; }
   }
 
+
+  /* 한 줄 남기기 시트: 쓰던 게 있을 때 닫으면 시트 위에 덮어 묻는 칸(브라우저 confirm 대신). */
+  .write-sheet-panel { position: relative; }
+  .write-discard {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-radius: inherit;
+    background: rgba(21, 21, 21, 0.45);
+  }
+  .write-discard[hidden] { display: none; }
+  .write-discard-box {
+    width: 100%;
+    max-width: 320px;
+    padding: 20px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .write-discard-box p { margin: 0 0 16px; font-size: 15px; font-weight: 700; line-height: 1.5; }
+  .write-discard-btns { display: flex; gap: 8px; }
+  .write-discard-btns button { flex: 1; min-height: 44px; margin: 0; }
