@@ -1396,6 +1396,43 @@ document.getElementById("brandLink").addEventListener("click", function (e) {
   sync();
 })();
 
+// 시트 안 입력칸에 쓰는 글이 보이게. 휴대폰에서 칸을 누르면 브라우저가 먼저 그 칸으로 스크롤하고,
+// 그다음 키보드가 올라오면서 시트가 보이는 높이(--vv-height)로 줄어든다 — 그래서 칸이 키보드나
+// 시트 바닥의 저장 바(.write-actions, sticky) 뒤로 숨어, 쓰는 글이 안 보였다(2026-10-31).
+// 키보드가 자리 잡은 뒤 칸이 들어 있는 스크롤 상자만 움직여 칸을 보이는 자리로 올린다(페이지는 안 건드림).
+function scrollParentOf(el) {
+  for (var p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    var oy = getComputedStyle(p).overflowY;
+    if ((oy === "auto" || oy === "scroll") && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
+function revealFocusedField() {
+  var el = document.activeElement;
+  if (!el || !el.matches || !el.matches("input[type=text], input:not([type]), input[type=search], input[type=email], textarea")) return;
+  if (!el.closest(".level-guide, .line-sheet, .pin-sheet")) return;
+  var box = scrollParentOf(el);
+  if (!box) return;
+  var r = el.getBoundingClientRect();
+  var b = box.getBoundingClientRect();
+  var bottom = b.bottom;
+  var vv = window.visualViewport;
+  if (vv) bottom = Math.min(bottom, vv.offsetTop + vv.height);
+  // 시트 바닥에 붙은 저장 바가 있으면 그 위까지만 보이는 자리로 친다.
+  var bar = box.querySelector(".write-actions");
+  if (bar && getComputedStyle(bar).position === "sticky") bottom = Math.min(bottom, bar.getBoundingClientRect().top);
+  var gap = 16;
+  if (r.bottom > bottom - gap) box.scrollTop += r.bottom - (bottom - gap);
+  else if (r.top < b.top + gap) box.scrollTop -= b.top + gap - r.top;
+}
+
+document.addEventListener("focusin", function () {
+  // 키보드가 올라오는 동안 두어 번 — 기기마다 다 올라오는 시점이 다르다.
+  [80, 320, 600].forEach(function (ms) { setTimeout(revealFocusedField, ms); });
+});
+if (window.visualViewport) window.visualViewport.addEventListener("resize", revealFocusedField);
+
 // 테마. 기본은 크림(data-theme 없음)이고 다크를 고르면 이 브라우저에 기억한다. 첫 그림을
 // 그리기 전에 적용하는 부분은 index.html <head>의 작은 스크립트가 맡는다.
 var THEME_KEY = "chaekgalpi_theme";
