@@ -221,9 +221,13 @@
          말 마디 가운데서 끊긴다). -->
     <h2 class="intro-headline">책을 덮고 나면,<br> 이야기하고<br class="br-m"> 싶어지잖아요</h2>
     <p class="intro-subtext">같은 책을 읽은 사람들과 한 줄로 생각을 나눠요.</p>
-    <!-- 첫 화면 장식: 실제 한 줄 세 장을 세로 책갈피로 부채꼴처럼(js/render.js renderHeroBookmarks,
-         오늘의 한 줄 후보에서). 아래 오늘의 한 줄과 같은 내용이라 읽기 도구에는 숨긴다. -->
-    <div class="hero-bookmarks" id="heroBookmarks" aria-hidden="true" hidden></div>
+    <!-- 첫 화면 장식: 글 없는 세로 책갈피 세 장을 부채꼴처럼. 순수 장식이라 데이터도 안 받고
+         읽기 도구에도 숨긴다(2026-11-07 — 예전엔 오늘의 한 줄 후보 셋을 적어 넣었음). -->
+    <div class="hero-bookmarks" id="heroBookmarks" aria-hidden="true">
+      <div class="hero-bm hero-bm-1 bm-cobalt"></div>
+      <div class="hero-bm hero-bm-2 bm-tomato"></div>
+      <div class="hero-bm hero-bm-3 bm-mint"></div>
+    </div>
     <!-- 첫 화면의 행동은 이것 하나다. 2단계의 "한 줄 남기기" 시트로 간다. id는 예전 헤더
          버튼 것을 그대로 써서 GA click_add_book이 끊기지 않는다. -->
     <button class="btn-primary intro-cta" id="newReviewBtn" type="button">한 줄 남기기</button>

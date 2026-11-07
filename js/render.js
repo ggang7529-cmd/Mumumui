@@ -1465,8 +1465,6 @@ export function renderFeatured() {
   section.hidden = reviews.length === 0;
   if (!reviews.length) return;
 
-  renderHeroBookmarks(reviews);
-
   var track = document.createElement("div");
   track.className = "today-track";
   track.tabIndex = 0;
@@ -2408,34 +2406,6 @@ export function formatAdminNickRow(r, onAction) {
   });
   row.appendChild(actions);
   return row;
-}
-
-// ── 홈 첫 화면 책갈피 세 장 ─────────────────────────────────────────────────────
-//
-// 오늘의 한 줄 후보(functions/api/featured.js)에서 본문이 있는 것 셋을 세로 책갈피로
-// 부채꼴처럼 놓는다(리디자인 B안). 색은 자리마다 코발트·토마토·민트로 고정 — 시안의
-// 구성 그대로다. 셋이 안 되면 장식째 숨긴다(한두 장만 덩그러니 있으면 어색하다).
-var HERO_COLORS = ["cobalt", "tomato", "mint"];
-function renderHeroBookmarks(reviews) {
-  var box = document.getElementById("heroBookmarks");
-  if (!box) return;
-  var picks = (reviews || []).filter(function (r) { return String(r.text || "").trim(); }).slice(0, 3);
-  box.innerHTML = "";
-  box.hidden = picks.length < 3;
-  if (box.hidden) return;
-  picks.forEach(function (r, i) {
-    var bm = document.createElement("div");
-    bm.className = "hero-bm hero-bm-" + (i + 1) + " bm-" + HERO_COLORS[i];
-    var text = document.createElement("div");
-    text.className = "hero-bm-text";
-    text.textContent = "“" + r.text + "”";
-    bm.appendChild(text);
-    var book = document.createElement("div");
-    book.className = "hero-bm-book";
-    book.textContent = r.title;
-    bm.appendChild(book);
-    box.appendChild(bm);
-  });
 }
 
 // ── 이달의 책 ──────────────────────────────────────────────────────────────────

@@ -564,31 +564,22 @@
   }
 
   /* ── 홈 첫 화면의 세로 책갈피 세 장(리디자인 B안) ─────────────────────────────────
-     실제 한 줄 세 장을 부채꼴로(-7° / 2° / 8°). 위쪽 가운데 펀칭 구멍. 코발트 위는 흰 글자,
-     토마토·민트 위는 먹색. 휴대폰 390px 기준 시안 수치 그대로 가운데에 놓는다. */
+     글 없는 순수 장식(2026-11-07). 부채꼴(-7° / 2° / 8°), 위쪽 가운데 펀칭 구멍.
+     예전엔 한 줄을 적어 넣느라 230~250px였는데, 글을 빼면서 휴대폰(375x812) 첫 화면
+     아래에 이달의 책 카드 윗부분이 보이도록 줄였다. */
   .hero-bookmarks {
     position: relative;
-    height: 290px;
+    height: 200px;
     max-width: 390px;
     margin: 0 auto;
   }
 
-  .hero-bookmarks[hidden] { display: none; }
-
   .hero-bm {
     position: absolute;
-    width: 100px;
-    padding: 40px 12px 12px;
+    width: 72px;
     border-radius: var(--radius);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 10px;
     background: var(--bm);
-    color: var(--bm-ink);
     box-shadow: 0 10px 22px rgba(21, 21, 21, 0.16);
-    text-align: left;
-    overflow: hidden;
   }
 
   .hero-bm::before {
@@ -603,33 +594,9 @@
     background: var(--paper);
   }
 
-  .hero-bm-1 { left: calc(50% - 165px); top: 34px; height: 230px; transform: rotate(-7deg); }
-  .hero-bm-2 { left: calc(50% - 50px); top: 8px; height: 250px; transform: rotate(2deg); }
-  .hero-bm-3 { left: calc(50% + 65px); top: 40px; height: 225px; transform: rotate(8deg); }
-
-  .hero-bm-text {
-    font-size: 14px;
-    line-height: 1.5;
-    font-weight: 700;
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-line-clamp: 7;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .hero-bm-book {
-    font-size: 10px;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* 장식이 없을 때(한 줄이 아직 없음) 버튼이 제목에 붙지 않게. */
-  .hero-bookmarks[hidden] + .intro-cta { margin-top: 1.4rem; }
+  .hero-bm-1 { left: calc(50% - 36px - 96px); top: 26px; height: 150px; transform: rotate(-7deg); }
+  .hero-bm-2 { left: calc(50% - 36px); top: 8px; height: 164px; transform: rotate(2deg); }
+  .hero-bm-3 { left: calc(50% - 36px + 96px); top: 30px; height: 146px; transform: rotate(8deg); }
 
   /* 헤더 돋보기 "책 찾기" 시트 */
   .search-sheet-panel { max-width: 520px; max-height: min(80vh, 680px); }
